@@ -23,24 +23,46 @@ const VendorApplicationForm = () => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Form Data Submitted:", formData);
-        alert("Vendor Application Submitted Successfully!");
+
+        const data = new FormData();
+        Object.keys(formData).forEach((key) => {
+            data.append(key, formData[key]);
+        });
+
+        try {
+            const res = await fetch("http://localhost:3000/api/vendors/register", {
+                method: "POST",
+                body: data,
+                withCredentials: true,
+            });
+
+            const result = await res.json();
+            if (result.success) {
+                alert("Vendor Application Submitted Successfully!");
+            } else {
+                alert(result.message || "Something went wrong");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Submission failed!");
+        }
     };
 
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-12 px-4">
+        <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 py-12 px-4">
             <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-8 text-center">
+                <div className="bg-gradient-to-r from-teal-600 to-teal-600 px-8 py-8 text-center">
                     <div className="flex justify-center mb-3">
                         <Briefcase className="text-white" size={48} />
                     </div>
                     <h2 className="text-3xl font-bold text-white mb-2">
                         Vendor Application
                     </h2>
-                    <p className="text-blue-100 text-sm">
+                    <p className="text-teal-100 text-sm">
                         Join our network of trusted vendors
                     </p>
                 </div>
@@ -61,7 +83,7 @@ const VendorApplicationForm = () => {
                                     value={formData.fullName}
                                     onChange={handleChange}
                                     placeholder="Enter your full name"
-                                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition"
                                     required
                                 />
                             </div>
@@ -79,7 +101,7 @@ const VendorApplicationForm = () => {
                                     value={formData.businessName}
                                     onChange={handleChange}
                                     placeholder="Business name (optional)"
-                                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition"
                                 />
                             </div>
                         </div>
@@ -99,7 +121,7 @@ const VendorApplicationForm = () => {
                                     value={formData.email}
                                     onChange={handleChange}
                                     placeholder="example@email.com"
-                                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition"
                                     required
                                 />
                             </div>
@@ -117,7 +139,7 @@ const VendorApplicationForm = () => {
                                     value={formData.phone}
                                     onChange={handleChange}
                                     placeholder="Enter your phone number"
-                                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition"
                                     required
                                 />
                             </div>
@@ -136,7 +158,7 @@ const VendorApplicationForm = () => {
                                 value={formData.address}
                                 onChange={handleChange}
                                 placeholder="Street, City, State, Zip"
-                                className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none"
+                                className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition resize-none"
                                 rows="3"
                                 required
                             ></textarea>
@@ -153,7 +175,7 @@ const VendorApplicationForm = () => {
                                 name="businessType"
                                 value={formData.businessType}
                                 onChange={handleChange}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-white"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition bg-white"
                                 required
                             >
                                 <option value="">Select type</option>
@@ -170,7 +192,7 @@ const VendorApplicationForm = () => {
                                 name="govIdType"
                                 value={formData.govIdType}
                                 onChange={handleChange}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition bg-white"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition bg-white"
                                 required
                             >
                                 <option value="">Select ID type</option>
@@ -192,7 +214,7 @@ const VendorApplicationForm = () => {
                             value={formData.govIdNumber}
                             onChange={handleChange}
                             placeholder="Enter your ID number"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition"
                             required
                         />
                     </div>
@@ -202,7 +224,7 @@ const VendorApplicationForm = () => {
                         <label className="block mb-2 font-semibold text-gray-700 text-sm">
                             Upload ID Document <span className="text-red-500">*</span>
                         </label>
-                        <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-blue-500 transition">
+                        <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-teal-500 transition">
                             <div className="flex items-center justify-center">
                                 <FileUp className="text-gray-400 mr-3" size={24} />
                                 <input
@@ -228,7 +250,7 @@ const VendorApplicationForm = () => {
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                        className="w-full bg-gradient-to-r from-teal-600 to-teal-600 hover:from-teal-700 hover:to-teal-700 text-white py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                     >
                         Submit Application
                     </button>

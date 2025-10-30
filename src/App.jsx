@@ -6,6 +6,9 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 import VendorApplicationForm from "./components/Vendor/VendorApplicationForm";
+import ManageApplications from "./components/Admin/ManageApplications";
+import ManageUsers from "./components/Admin/ManageUsers";
+import ManageReservations from "./components/Admin/ManageReservations";
 
 export default function App() {
   return (
@@ -20,6 +23,10 @@ export default function App() {
         <Route path="/vendor/apply" element={<VendorApplicationForm />} />
 
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/users" element={<ManageUsers />} />
+        <Route path="/admin/reservations" element={<ManageReservations />} />
+        <Route path="/admin/applications" element={<ManageApplications />} />
+        {/* <Route path="/admin/spare-parts" element={<AdminDashboard />} /> */}
       </Routes>
     </Router>
   );
