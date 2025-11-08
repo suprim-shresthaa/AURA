@@ -9,6 +9,8 @@ import VendorApplicationForm from "./components/Vendor/VendorApplicationForm";
 import ManageApplications from "./components/Admin/ManageApplications";
 import ManageUsers from "./components/Admin/ManageUsers";
 import ManageReservations from "./components/Admin/ManageReservations";
+import VehicleUploadForm from "./components/Vendor/VehicleUploadForm";
+import VehicleListing from "./components/VehiclesListing";
 
 export default function App() {
   return (
@@ -19,8 +21,10 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/vehicles" element={<VehicleListing />} />
 
         <Route path="/vendor/apply" element={<VendorApplicationForm />} />
+        <Route path="/vendor/vehicle-upload" element={<VehicleUploadForm />} />
 
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<ManageUsers />} />

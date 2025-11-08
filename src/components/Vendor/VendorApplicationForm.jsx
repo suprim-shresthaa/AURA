@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { Building2, Mail, Phone, MapPin, IdCard, FileUp, Briefcase } from "lucide-react";
+import { useContext } from "react";
+import { AppContent } from '../context/AppContext'
 
 const VendorApplicationForm = () => {
+    const { userData } = useContext(AppContent)
     const [formData, setFormData] = useState({
         fullName: "",
         businessName: "",
@@ -13,6 +16,9 @@ const VendorApplicationForm = () => {
         govIdNumber: "",
         idDocument: null,
     });
+
+
+    console.log(userData?.userId);
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
@@ -27,15 +33,27 @@ const VendorApplicationForm = () => {
         e.preventDefault();
 
         const data = new FormData();
+
+        // Append all form fields
         Object.keys(formData).forEach((key) => {
-            data.append(key, formData[key]);
+            if (formData[key] !== null) {
+                data.append(key, formData[key]);
+            }
         });
+
+        // Append userId from context
+        if (userData?.userId) {
+            data.append("userId", userData.userId);
+        } else {
+            alert("User not authenticated. Please log in.");
+            return;
+        }
 
         try {
             const res = await fetch("http://localhost:3000/api/vendors/register", {
                 method: "POST",
                 body: data,
-                withCredentials: true,
+                credentials: "include", 
             });
 
             const result = await res.json();

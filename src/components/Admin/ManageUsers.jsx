@@ -1,15 +1,49 @@
-import React, { useState } from "react";
+// ManageUsers.jsx
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { Search, Trash2, UserCheck, UserX, Users } from "lucide-react";
 
-const ManageUsers = () => {
-    const [users, setUsers] = useState([
-        { id: 1, name: "John Doe", email: "john@example.com", role: "User", status: "Active" },
-        { id: 2, name: "Jane Smith", email: "jane@example.com", role: "Vendor", status: "Inactive" },
-        { id: 3, name: "Michael Johnson", email: "mike@example.com", role: "User", status: "Active" },
-        { id: 4, name: "Sarah Lee", email: "sarah@example.com", role: "Admin", status: "Active" },
-    ]);
+const API_BASE = "http://localhost:3000/api/user";
 
+const ManageUsers = () => {
+    const [users, setUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                const { data } = await axios.get(`${API_BASE}/all-users`);
+                const apiUsers = data.data;
+
+                const mapped = apiUsers.map((u) => ({
+                    id: u._id,
+                    name: u.name,
+                    email: u.email,
+                    role: u.role.charAt(0).toUpperCase() + u.role.slice(1),
+                    status: u.banInfo.isBanned ? "Banned" : "Active",
+                    image: u.image || null,               // <-- keep image URL
+                }));
+
+                console.log("Mapped users:", mapped);   // <<--- SEE FORMED USERS
+
+
+                setUsers(mapped);
+            } catch (err) {
+                setError(err.response?.data?.message || err.message || "Failed to load users");
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchUsers();
+    }, []);
+
 
     const filteredUsers = users.filter(
         (u) =>
@@ -17,24 +51,63 @@ const ManageUsers = () => {
             u.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const toggleStatus = (id) => {
-        setUsers(
-            users.map((user) =>
-                user.id === id
-                    ? {
-                        ...user,
-                        status: user.status === "Active" ? "Inactive" : "Active",
-                    }
-                    : user
-            )
-        );
-    };
 
-    const handleDelete = (id) => {
-        if (window.confirm("Are you sure you want to delete this user?")) {
-            setUsers(users.filter((user) => user.id !== id));
+    const toggleStatus = async (id) => {
+        const user = users.find((u) => u.id === id);
+        if (!user) return;
+
+        const willBan = user.status === "Active";
+
+        try {
+            // Replace with your real ban/unban endpoint
+            await axios.post(`${API_BASE}/${willBan ? "ban" : "unban"}/${id}`, {
+                reason: willBan ? "Banned via admin panel" : undefined,
+            });
+
+            setUsers((prev) =>
+                prev.map((u) =>
+                    u.id === id ? { ...u, status: willBan ? "Banned" : "Active" } : u
+                )
+            );
+        } catch (err) {
+            alert("Failed to update status.");
+            console.error(err);
         }
     };
+
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this user?")) return;
+
+        try {
+            // Replace with your real delete endpoint
+            await axios.delete(`${API_BASE}/${id}`);
+
+            setUsers((prev) => prev.filter((u) => u.id !== id));
+        } catch (err) {
+            alert("Failed to delete user.");
+            console.error(err);
+        }
+    };
+
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+                <div className="text-slate-600 animate-pulse">Loading users...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+                <div className="text-red-600 bg-red-50 px-6 py-4 rounded-lg">
+                    <strong>Error:</strong> {error}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-8">
@@ -47,10 +120,12 @@ const ManageUsers = () => {
                         </div>
                         <h1 className="text-3xl font-bold text-slate-900">User Management</h1>
                     </div>
-                    <p className="text-slate-600 ml-11">Manage and control user accounts and permissions</p>
+                    <p className="text-slate-600 ml-11">
+                        Manage and control user accounts and permissions
+                    </p>
                 </div>
 
-                {/* Search Bar */}
+                {/* Search */}
                 <div className="mb-6">
                     <div className="relative max-w-md">
                         <Search className="absolute left-4 top-3.5 text-slate-400" size={20} />
@@ -64,52 +139,91 @@ const ManageUsers = () => {
                     </div>
                 </div>
 
-                {/* Table Container */}
+                {/* Table */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-200">
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Name</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Email</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Role</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Status</th>
-                                    <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">Actions</th>
+                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                                        User
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                                        Email
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                                        Role
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                                        Status
+                                    </th>
+                                    <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">
+                                        Actions
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200">
-                                {filteredUsers.map((user, idx) => (
+                                {filteredUsers.map((user) => (
                                     <tr
                                         key={user.id}
                                         className="hover:bg-blue-50 transition duration-150 group"
                                     >
+                                        {/* ---- Image + Name ---- */}
                                         <td className="px-6 py-4">
-                                            <div className="font-medium text-slate-900">{user.name}</div>
+                                            <div className="flex items-center gap-3">
+                                                {/* Avatar */}
+                                                <div className="shrink-0">
+                                                    {user.image ? (
+                                                        <img
+                                                            src={user.image}
+                                                            alt={user.name}
+                                                            className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
+                                                            <span className="text-slate-500 text-sm font-medium">
+                                                                {user.name.charAt(0).toUpperCase()}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Name */}
+                                                <div className="font-medium text-slate-900">{user.name}</div>
+                                            </div>
                                         </td>
+
+                                        {/* Email */}
                                         <td className="px-6 py-4">
                                             <span className="text-slate-600 text-sm">{user.email}</span>
                                         </td>
+
+                                        {/* Role */}
                                         <td className="px-6 py-4">
                                             <span className="inline-flex px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium">
                                                 {user.role}
                                             </span>
                                         </td>
+
+                                        {/* Status */}
                                         <td className="px-6 py-4">
                                             <span
                                                 className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${user.status === "Active"
-                                                        ? "bg-emerald-100 text-emerald-700"
-                                                        : "bg-slate-200 text-slate-600"
+                                                    ? "bg-emerald-100 text-emerald-700"
+                                                    : "bg-red-100 text-red-700"
                                                     }`}
                                             >
-                                                {user.status === "Active" ? "● Active" : "● Inactive"}
+                                                {user.status}
                                             </span>
                                         </td>
+
+                                        {/* Actions */}
                                         <td className="px-6 py-4">
                                             <div className="flex justify-center gap-3">
                                                 <button
                                                     onClick={() => toggleStatus(user.id)}
                                                     className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition duration-150 opacity-0 group-hover:opacity-100"
-                                                    title={user.status === "Active" ? "Deactivate" : "Activate"}
+                                                    title={user.status === "Active" ? "Ban user" : "Unban user"}
                                                 >
                                                     {user.status === "Active" ? (
                                                         <UserX size={18} />
@@ -129,6 +243,7 @@ const ManageUsers = () => {
                                     </tr>
                                 ))}
 
+                                {/* Empty state */}
                                 {filteredUsers.length === 0 && (
                                     <tr>
                                         <td colSpan="5" className="px-6 py-12 text-center">
@@ -147,10 +262,19 @@ const ManageUsers = () => {
                     {filteredUsers.length > 0 && (
                         <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between items-center">
                             <span className="text-sm text-slate-600">
-                                Showing <span className="font-semibold text-slate-900">{filteredUsers.length}</span> of <span className="font-semibold text-slate-900">{users.length}</span> users
+                                Showing{" "}
+                                <span className="font-semibold text-slate-900">{filteredUsers.length}</span> of{" "}
+                                <span className="font-semibold text-slate-900">{users.length}</span> users
                             </span>
                             <span className="text-sm text-slate-600">
-                                Active: <span className="font-semibold text-emerald-600">{users.filter(u => u.status === "Active").length}</span>
+                                Active:{" "}
+                                <span className="font-semibold text-emerald-600">
+                                    {users.filter((u) => u.status === "Active").length}
+                                </span>{" "}
+                                | Banned:{" "}
+                                <span className="font-semibold text-red-600">
+                                    {users.filter((u) => u.status === "Banned").length}
+                                </span>
                             </span>
                         </div>
                     )}
