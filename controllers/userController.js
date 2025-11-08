@@ -30,23 +30,6 @@ export const getUserData = async (req, res) => {
             banInfo: user.banInfo,
         };
 
-        // If the user is a vendor, fetch additional data from the Vendor collection
-        if (user.role === 'vendor') {
-            const vendorData = await Vendor.findOne({ email: user.email });
-
-            if (vendorData) {
-                userData.vendorDetails = {
-                    vendorId: vendorData._id,
-                    organization: vendorData.organization,
-                    contact: vendorData.contact,
-                    address: vendorData.address,
-                    description: vendorData.description,
-                    pets: vendorData.pets, // Include pets data
-                    adoptionRequests: vendorData.adoptionRequests, // Include adoption requests data
-                };
-            }
-        }
-
         // Return the user data
         res.json({
             success: true,
@@ -58,3 +41,15 @@ export const getUserData = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 };
+
+
+export const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find().select('-password');
+        res.status(200).json({ success: true, data: users });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+

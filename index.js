@@ -6,7 +6,7 @@ import authRouter from "./routes/authRoutes.js";
 import cookieParser from "cookie-parser";
 import userRouter from "./routes/userRoutes.js";
 import vendorRoutes from "./routes/vendorRoutes.js";
-
+import vehicleRoutes from "./routes/vehicleRoutes.js";
 
 dotenv.config();
 
@@ -43,7 +43,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 
 app.use("/api/vendors", vendorRoutes);
-
+app.use("/api/vehicles", vehicleRoutes);
 
 // Start server
 const PORT = process.env.PORT || 3000;

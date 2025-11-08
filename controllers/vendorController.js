@@ -1,4 +1,6 @@
 import vendorApplicationModel from "../models/vendorApplication.model.js";
+import User from "../models/user.model.js";
+import mongoose from "mongoose";
 
 export const submitVendorApplication = async (req, res) => {
     try {
@@ -11,23 +13,40 @@ export const submitVendorApplication = async (req, res) => {
             businessType,
             govIdType,
             govIdNumber,
+            userId, // <-- Now receiving from frontend
         } = req.body;
 
+        // 1. Validate required file
         if (!req.file) {
-            return res.status(400).json({ success: false, message: "ID Document is required." });
+            return res.status(400).json({
+                success: false,
+                message: "ID Document is required.",
+            });
         }
 
-        // Cloudinary automatically uploads via multer-storage-cloudinary
-        const idDocumentUrl = req.file.path; // URL from Cloudinary
+        // 2. Get Cloudinary URL
+        const idDocumentUrl = req.file.path;
 
-        const userId = req.user?._id || null;
+        // 3. Validate userId
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: "User ID is required. Please log in.",
+            });
+        }
 
-        console.log(userId);
+        // Optional: Validate that userId is a valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid User ID format.",
+            });
+        }
 
-
+        // 4. Create new application with user reference
         const newApplication = new vendorApplicationModel({
             fullName,
-            businessName,
+            businessName: businessName || undefined,
             email,
             phone,
             address,
@@ -35,6 +54,7 @@ export const submitVendorApplication = async (req, res) => {
             govIdType,
             govIdNumber,
             idDocumentUrl,
+            user: userId, // <-- Link to User
         });
 
         await newApplication.save();
@@ -46,9 +66,13 @@ export const submitVendorApplication = async (req, res) => {
         });
     } catch (error) {
         console.error("Error submitting vendor application:", error);
-        res.status(500).json({ success: false, message: "Server error", error: error.message });
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message,
+        });
     }
-}
+};
 
 
 export const getVendorApplications = async (req, res) => {
@@ -60,3 +84,53 @@ export const getVendorApplications = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
 }
+
+
+export const approveVendorApplication = async (req, res) => {
+    try {
+        const { appId } = req.params;
+
+        const application = await vendorApplicationModel.findByIdAndUpdate(
+            appId,
+            { status: "approved" },
+            { new: true }
+        );
+
+        if (!application) {
+            return res.status(404).json({ success: false, message: "Application not found" });
+        }
+
+        if (application.user) {
+            await User.findByIdAndUpdate(application.user, { role: "vendor" });
+        }
+
+        res.json({ success: true, message: "Application approved", data: application });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+
+export const rejectVendorApplication = async (req, res) => {
+    try {
+        const { appId } = req.params;
+
+        const application = await vendorApplicationModel.findByIdAndUpdate(
+            appId,
+            { status: "rejected" },
+            { new: true }
+        );
+
+        if (!application) {
+            return res.status(404).json({ success: false, message: "Application not found" });
+        }
+
+        if (application.user) {
+            await User.findByIdAndUpdate(application.user, { role: "user" });
+        }
+
+        res.json({ success: true, message: "Application rejected", data: application });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
