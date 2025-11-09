@@ -1,7 +1,8 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { Mail, Phone, MapPin, Edit, Save, X } from 'lucide-react';
-import { AppContent } from '../../context/AppContext';
-import { toast } from 'react-toastify';
+// src/components/profile/ProfileInfo.jsx
+import React, { useContext, useEffect, useState } from "react";
+import { Mail, Phone, MapPin, Edit, Save, X } from "lucide-react";
+import { AppContent } from "../context/AppContext";
+import { toast } from "react-toastify";
 
 const ProfileInfo = () => {
     const { userData, setUserData, backendUrl } = useContext(AppContent);
@@ -13,17 +14,17 @@ const ProfileInfo = () => {
         description: "",
     });
 
-    // Sync formData when entering edit mode
+    // Sync values into form when edit mode opens
     useEffect(() => {
-        if (isEditing) {
+        if (isEditing && userData) {
             setFormData({
-                name: userData?.name || "",
-                contact: userData?.contact || "",
-                address: userData?.address || "",
-                description: userData?.description || "",
+                name: userData.name || "",
+                contact: userData.contact || "",
+                address: userData.address || "",
+                description: userData.description || "",
             });
         }
-    }, [isEditing, userData]); // Depend on isEditing and userData
+    }, [isEditing, userData]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -31,77 +32,88 @@ const ProfileInfo = () => {
 
     const handleSave = async () => {
         try {
-            const response = await fetch(`${backendUrl}/api/user/edit/profile`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: userData?.userId, ...formData }),
+            const res = await fetch(`${backendUrl}/api/user/edit/profile`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                    userId: userData?.userId,
+                    ...formData
+                }),
             });
 
-            const data = await response.json();
-            if (response.ok) {
+            const data = await res.json();
+
+            if (res.ok) {
                 setUserData(data.user);
                 setIsEditing(false);
-                toast.success("Profile updated succesfully.")
+                toast.success("Profile updated successfully!");
             } else {
-                alert(data.message);
+                toast.error(data.message || "Update failed.");
             }
-        } catch (error) {
-            console.error('Error updating profile:', error);
+        } catch (err) {
+            toast.error("Failed to update profile.");
+            console.error(err);
         }
     };
-
 
     return (
         <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center">
                 <div>
                     <h3 className="text-lg font-medium text-gray-900">Profile Information</h3>
-                    <p className="mt-1 text-sm text-gray-500">Your personal and contact details.</p>
+                    <p className="mt-1 text-sm text-gray-500">Update your personal details.</p>
                 </div>
-                {!isEditing ? (
+
+                {!isEditing && (
                     <button
                         onClick={() => setIsEditing(true)}
-                        className="flex items-center text-sm text-blue-600 hover:underline"
+                        className="flex items-center text-sm text-blue-600 hover:text-blue-800"
                     >
-                        <Edit className="mr-1 h-4 w-4" /> Edit Profile
+                        <Edit className="mr-1 h-4 w-4" /> Edit
                     </button>
-                ) : null}
+                )}
             </div>
 
-            <div className="px-6 py-5">
+            <div className="px-6 py-5 space-y-6">
+                {/* GRID */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    {/* NAME */}
                     <div>
-                        <h4 className="text-sm font-medium text-gray-500">Full Name</h4>
+                        <label className="text-sm font-medium text-gray-500">Full Name</label>
                         {isEditing ? (
                             <input
                                 type="text"
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                             />
                         ) : (
                             <p className="mt-1 text-sm text-gray-900">{userData?.name || "N/A"}</p>
                         )}
                     </div>
 
+                    {/* EMAIL */}
                     <div>
-                        <h4 className="text-sm font-medium text-gray-500">Email Address</h4>
+                        <label className="text-sm font-medium text-gray-500">Email</label>
                         <div className="mt-1 flex items-center text-sm text-gray-900">
                             <Mail className="mr-2 h-4 w-4 text-gray-400" />
                             {userData?.email || "N/A"}
                         </div>
                     </div>
 
+                    {/* PHONE */}
                     <div>
-                        <h4 className="text-sm font-medium text-gray-500">Phone Number</h4>
+                        <label className="text-sm font-medium text-gray-500">Phone</label>
                         {isEditing ? (
                             <input
                                 type="text"
                                 name="contact"
                                 value={formData.contact}
                                 onChange={handleChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
                             />
                         ) : (
                             <div className="mt-1 flex items-center text-sm text-gray-900">
@@ -111,15 +123,16 @@ const ProfileInfo = () => {
                         )}
                     </div>
 
+                    {/* ADDRESS */}
                     <div>
-                        <h4 className="text-sm font-medium text-gray-500">Location</h4>
+                        <label className="text-sm font-medium text-gray-500">Address</label>
                         {isEditing ? (
                             <input
                                 type="text"
                                 name="address"
                                 value={formData.address}
                                 onChange={handleChange}
-                                className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
                             />
                         ) : (
                             <div className="mt-1 flex items-center text-sm text-gray-900">
@@ -130,36 +143,42 @@ const ProfileInfo = () => {
                     </div>
                 </div>
 
-                <div className="mt-6">
-                    <h4 className="text-sm font-medium text-gray-500">Bio</h4>
+                {/* BIO */}
+                <div>
+                    <label className="text-sm font-medium text-gray-500">Bio</label>
                     {isEditing ? (
                         <textarea
                             name="description"
+                            rows={3}
                             value={formData.description}
                             onChange={handleChange}
-                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
                         />
                     ) : (
-                        <p className="mt-1 text-sm text-gray-900">{userData?.description || "N/A"}</p>
+                        <p className="mt-1 text-sm text-gray-900">
+                            {userData?.description || "No bio added."}
+                        </p>
                     )}
                 </div>
 
-                {isEditing ? (
-                    <div className="mt-6 flex space-x-4">
+                {/* BUTTONS */}
+                {isEditing && (
+                    <div className="flex space-x-3">
                         <button
                             onClick={handleSave}
-                            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm text-sm font-medium hover:bg-blue-700"
+                            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
                         >
                             <Save className="mr-2 h-4 w-4" /> Save
                         </button>
+
                         <button
                             onClick={() => setIsEditing(false)}
-                            className="flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                            className="flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                         >
-                            <X className="mr-2 h-4 w-4 text-gray-500" /> Cancel
+                            <X className="mr-2 h-4 w-4" /> Cancel
                         </button>
                     </div>
-                ) : null}
+                )}
             </div>
         </div>
     );
