@@ -12,6 +12,8 @@ import ManageReservations from "./components/Admin/ManageReservations";
 import VehicleUploadForm from "./components/Vendor/VehicleUploadForm";
 import VehicleListing from "./components/VehiclesListing";
 import Profile from "./components/profile/Profile";
+import VendorDashboard from "./components/Vendor/VendorDashboard";
+import MyVehicleListings from "./components/Vendor/MyVehicleListings";
 
 export default function App() {
   return (
@@ -29,6 +31,8 @@ export default function App() {
 
           <Route path="/vendor/apply" element={<VendorApplicationForm />} />
           <Route path="/vendor/vehicle-upload" element={<VehicleUploadForm />} />
+          <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+          <Route path="/vendor/listings" element={<MyVehicleListings />} />
 
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<ManageUsers />} />
