@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { Upload, Car, FileImage, Calendar, Hash, FileText } from "lucide-react";
+import { Upload, Car, FileImage, Calendar, Hash, FileText, Loader2 } from "lucide-react";
 import { AppContent } from "../context/AppContext";
 
 export default function VehicleUploadForm() {
@@ -8,9 +8,17 @@ export default function VehicleUploadForm() {
         category: "",
         modelYear: "",
         plateNumber: "",
-        rentPerDay: "",
         condition: "",
         description: "",
+        fuelType: "",
+        transmission: "",
+        seatingCapacity: "",
+        mileage: "",
+        rentPerDay: "",
+        pickupLocation: {
+            address: "",
+            city: ""
+        }
     });
 
     const [mainImage, setMainImage] = useState(null);
@@ -18,162 +26,129 @@ export default function VehicleUploadForm() {
     const [extraImages, setExtraImages] = useState([]);
     const [mainPreview, setMainPreview] = useState(null);
     const [bluebookPreview, setBluebookPreview] = useState(null);
-    const { userData } = useContext(AppContent);
+    const [loading, setLoading] = useState(false);
 
-    // Debug: Log userData on mount
-    console.log("User Data from Context:", userData);
+    const { userData } = useContext(AppContent);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        console.log(`Input changed: ${name} = ${value}`);
-        setFormData({ ...formData, [name]: value });
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleLocationChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            pickupLocation: {
+                ...prev.pickupLocation,
+                [name]: value
+            }
+        }));
     };
 
     const handleMainImage = (e) => {
         const file = e.target.files[0];
-        console.log("Main Image Selected:", file?.name);
         setMainImage(file);
         if (file) setMainPreview(URL.createObjectURL(file));
     };
 
     const handleBluebookImage = (e) => {
         const file = e.target.files[0];
-        console.log("Bluebook Image Selected:", file?.name);
         setBluebookImage(file);
         if (file) setBluebookPreview(URL.createObjectURL(file));
     };
 
     const handleExtraImages = (e) => {
         const files = Array.from(e.target.files);
-        console.log("Extra Images Selected:", files.map(f => f.name));
         setExtraImages(files);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        console.log("Form Submitted");
-        console.log("Form Data:", formData);
-        console.log("User ID:", userData?.userId);
+        setLoading(true);
 
         if (!userData?.userId) {
             alert("Error: You must be logged in to upload a vehicle.");
-            console.error("User not authenticated. userId missing.");
+            setLoading(false);
             return;
         }
 
         const data = new FormData();
 
-        // Append form fields
+        // Append all form fields
         Object.keys(formData).forEach((key) => {
-            data.append(key, formData[key]);
-            console.log(`Appending field: ${key} = ${formData[key]}`);
+            if (key === "pickupLocation") {
+                Object.keys(formData.pickupLocation).forEach((locKey) => {
+                    const value = formData.pickupLocation[locKey];
+                    if (value !== "") {
+                        data.append(`pickupLocation[${locKey}]`, value);
+                    }
+                });
+            } else {
+                data.append(key, formData[key]);
+            }
         });
 
-        // Append userId
-        data.append("userId", userData.userId);
-        console.log("Appending userId:", userData.userId);
+        // Append vendorId (from user context)
+        data.append("vendorId", userData.userId);
 
         // Append images
-        if (mainImage) {
-            data.append("mainImage", mainImage);
-            console.log("Appending mainImage:", mainImage.name);
-        } else {
-            console.warn("mainImage is missing");
-        }
-
-        if (bluebookImage) {
-            data.append("bluebook", bluebookImage);
-            console.log("Appending bluebook:", bluebookImage.name);
-        } else {
-            console.warn("bluebook is missing");
-        }
-
-        extraImages.forEach((img, i) => {
-            data.append("extraImages", img);
-            console.log(`Appending extraImage[${i}]:`, img.name);
-        });
-
-        // Debug: Log FormData entries (for browser console)
-        console.log("Final FormData entries:");
-        for (let [key, value] of data.entries()) {
-            if (value instanceof File) {
-                console.log(`  ${key}: File(${value.name}, ${value.size} bytes)`);
-            } else {
-                console.log(`  ${key}: ${value}`);
-            }
-        }
-
-        const API_URL = "http://localhost:3000/api/vehicles/create";
-        // OR use proxy: "/api/vehicles/create" (recommended)
+        if (mainImage) data.append("mainImage", mainImage);
+        if (bluebookImage) data.append("bluebook", bluebookImage);
+        extraImages.forEach((img) => data.append("images", img));
 
         try {
-            console.log(`Making POST request to: ${API_URL}`);
-            const res = await fetch(API_URL, {
+            const res = await fetch("http://localhost:3000/api/vehicles/create", {
                 method: "POST",
                 body: data,
-                credentials: "include", // Required for cookies
+                credentials: "include"
             });
 
-            console.log("Response received. Status:", res.status, res.statusText);
-
-            // Log headers for debugging
-            console.log("Response Headers:", Object.fromEntries(res.headers.entries()));
-
-            let result;
-            const contentType = res.headers.get("content-type");
-
-            if (contentType && contentType.includes("application/json")) {
-                result = await res.json();
-                console.log("Parsed JSON response:", result);
-            } else {
-                const text = await res.text();
-                console.log("Non-JSON response:", text);
-                result = { message: text };
-            }
+            const result = res.ok ? await res.json() : { success: false, message: await res.text() };
 
             if (res.ok && result.success) {
                 alert("Vehicle uploaded successfully!");
-                console.log("Success! Vehicle data:", result.data);
-
-                // Reset form
-                setFormData({
-                    name: "",
-                    category: "",
-                    modelYear: "",
-                    plateNumber: "",
-                    rentPerDay: "",
-                    condition: "",
-                    description: "",
-                });
-                setMainImage(null);
-                setBluebookImage(null);
-                setExtraImages([]);
-                setMainPreview(null);
-                setBluebookPreview(null);
-                document.querySelectorAll('input[type="file"]').forEach(input => (input.value = ""));
+                resetForm();
             } else {
-                const errorMsg = result.message || `Server error: ${res.status}`;
-                alert("Upload failed: " + errorMsg);
-                console.error("Upload failed:", errorMsg);
+                alert("Upload failed: " + (result.message || "Unknown error"));
             }
         } catch (err) {
-            console.error("Fetch failed completely:", err);
-            console.error("Error name:", err.name);
-            console.error("Error message:", err.message);
-
-            if (err.name === "TypeError" && err.message.includes("fetch")) {
-                alert("Cannot connect to server. Is the backend running on http://localhost:3000?");
-            } else {
-                alert("Network error. Check console for details.");
-            }
+            console.error("Upload error:", err);
+            alert("Network error. Please try again.");
+        } finally {
+            setLoading(false);
         }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            name: "",
+            category: "",
+            modelYear: "",
+            plateNumber: "",
+            condition: "",
+            description: "",
+            fuelType: "",
+            transmission: "",
+            seatingCapacity: "",
+            mileage: "",
+            rentPerDay: "",
+            pickupLocation: { address: "", city: "" }
+        });
+        setMainImage(null);
+        setBluebookImage(null);
+        setExtraImages([]);
+        setMainPreview(null);
+        setBluebookPreview(null);
+        document.querySelectorAll('input[type="file"]').forEach(input => (input.value = ""));
     };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-12 px-4">
             <div className="max-w-4xl mx-auto">
-                {/* Header */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
                         <Car className="text-white" size={32} />
@@ -182,7 +157,6 @@ export default function VehicleUploadForm() {
                     <p className="text-gray-600">Fill in the details to list your vehicle for rent</p>
                 </div>
 
-                {/* Form Card */}
                 <div className="bg-white rounded-2xl shadow-xl p-8">
                     <form onSubmit={handleSubmit} className="space-y-8">
                         {/* Basic Info */}
@@ -213,11 +187,9 @@ export default function VehicleUploadForm() {
                                     required
                                 >
                                     <option value="">Select category</option>
-                                    <option value="Car">Car</option>
-                                    <option value="Bike">Bike</option>
-                                    <option value="Scooter">Scooter</option>
-                                    <option value="Jeep">Jeep</option>
-                                    <option value="Van">Van</option>
+                                    {["Car", "Bike", "Scooter", "Jeep", "Van"].map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                    ))}
                                 </select>
                             </div>
 
@@ -230,6 +202,8 @@ export default function VehicleUploadForm() {
                                         placeholder="e.g., 2018"
                                         value={formData.modelYear}
                                         onChange={handleChange}
+                                        min="1900"
+                                        max={new Date().getFullYear() + 1}
                                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                         required
                                     />
@@ -246,7 +220,7 @@ export default function VehicleUploadForm() {
                                         placeholder="e.g., Ba 2 Cha 1234"
                                         value={formData.plateNumber}
                                         onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition uppercase"
                                         required
                                     />
                                     <Hash className="absolute left-3 top-3.5 text-gray-400" size={18} />
@@ -263,10 +237,70 @@ export default function VehicleUploadForm() {
                                     required
                                 >
                                     <option value="">Select condition</option>
-                                    <option value="Excellent">Excellent</option>
-                                    <option value="Good">Good</option>
-                                    <option value="Average">Average</option>
+                                    {["Excellent", "Good", "Average"].map(cond => (
+                                        <option key={cond} value={cond}>{cond}</option>
+                                    ))}
                                 </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Fuel Type</label>
+                                <select
+                                    name="fuelType"
+                                    value={formData.fuelType}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    required
+                                >
+                                    <option value="">Select fuel type</option>
+                                    {["Petrol", "Diesel", "Electric", "Hybrid"].map(fuel => (
+                                        <option key={fuel} value={fuel}>{fuel}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
+                                <select
+                                    name="transmission"
+                                    value={formData.transmission}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    required
+                                >
+                                    <option value="">Select transmission</option>
+                                    <option value="Manual">Manual</option>
+                                    <option value="Automatic">Automatic</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Seating Capacity</label>
+                                <input
+                                    type="number"
+                                    name="seatingCapacity"
+                                    placeholder="e.g., 5"
+                                    value={formData.seatingCapacity}
+                                    onChange={handleChange}
+                                    min="1"
+                                    max="50"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Mileage (km)</label>
+                                <input
+                                    type="number"
+                                    name="mileage"
+                                    placeholder="e.g., 45000"
+                                    value={formData.mileage}
+                                    onChange={handleChange}
+                                    min="0"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    required
+                                />
                             </div>
 
                             <div>
@@ -278,6 +312,7 @@ export default function VehicleUploadForm() {
                                         placeholder="Enter amount"
                                         value={formData.rentPerDay}
                                         onChange={handleChange}
+                                        min="0"
                                         className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                         required
                                     />
@@ -289,11 +324,42 @@ export default function VehicleUploadForm() {
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                                 <textarea
                                     name="description"
-                                    placeholder="Describe your vehicle, including mileage, features, and any special notes..."
+                                    placeholder="Describe your vehicle, including features, condition, and any special notes..."
                                     value={formData.description}
                                     onChange={handleChange}
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
                                     rows="4"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Pickup Location */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="md:col-span-2">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-3">Pickup Location</h3>
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                                <input
+                                    type="text"
+                                    name="address"
+                                    placeholder="Full pickup address"
+                                    value={formData.pickupLocation.address}
+                                    onChange={handleLocationChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                                <input
+                                    type="text"
+                                    name="city"
+                                    placeholder="e.g., Kathmandu"
+                                    value={formData.pickupLocation.city}
+                                    onChange={handleLocationChange}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    required
                                 />
                             </div>
                         </div>
@@ -309,9 +375,10 @@ export default function VehicleUploadForm() {
                                         onChange={handleMainImage}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         required
+                                        disabled={loading}
                                     />
                                     {mainPreview ? (
-                                        <img src={mainPreview} alt="Preview" className="w-full h-32 object-cover rounded" />
+                                        <img src={mainPreview} alt="Main preview" className="w-full h-32 object-cover rounded" />
                                     ) : (
                                         <div className="text-center">
                                             <FileImage className="mx-auto text-gray-400 mb-2" size={32} />
@@ -330,9 +397,10 @@ export default function VehicleUploadForm() {
                                         onChange={handleBluebookImage}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         required
+                                        disabled={loading}
                                     />
                                     {bluebookPreview ? (
-                                        <img src={bluebookPreview} alt="Preview" className="w-full h-32 object-cover rounded" />
+                                        <img src={bluebookPreview} alt="Bluebook preview" className="w-full h-32 object-cover rounded" />
                                     ) : (
                                         <div className="text-center">
                                             <FileText className="mx-auto text-gray-400 mb-2" size={32} />
@@ -351,6 +419,7 @@ export default function VehicleUploadForm() {
                                         multiple
                                         onChange={handleExtraImages}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        disabled={loading}
                                     />
                                     <div className="text-center">
                                         <Upload className="mx-auto text-gray-400 mb-2" size={32} />
@@ -363,12 +432,23 @@ export default function VehicleUploadForm() {
                             </div>
                         </div>
 
+                        {/* Submit Button */}
                         <button
                             type="submit"
-                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-lg font-semibold flex items-center justify-center gap-2 hover:from-blue-700 hover:to-indigo-700 transition transform hover:scale-[1.02] shadow-lg"
+                            disabled={loading}
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-lg font-semibold flex items-center justify-center gap-2 transition transform hover:scale-[1.02] shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
-                            <Upload size={20} />
-                            Upload Vehicle
+                            {loading ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={20} />
+                                    Uploading...
+                                </>
+                            ) : (
+                                <>
+                                    <Upload size={20} />
+                                    Upload Vehicle
+                                </>
+                            )}
                         </button>
                     </form>
                 </div>

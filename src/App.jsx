@@ -14,6 +14,7 @@ import VehicleListing from "./components/VehiclesListing";
 import Profile from "./components/profile/Profile";
 import VendorDashboard from "./components/Vendor/VendorDashboard";
 import MyVehicleListings from "./components/Vendor/MyVehicleListings";
+import VehicleDetailsPage from "./components/VehicleDetailsPage";
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/vehicles" element={<VehicleListing />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/vehicles/:id" element={<VehicleDetailsPage />} />
 
           <Route path="/vendor/apply" element={<VendorApplicationForm />} />
           <Route path="/vendor/vehicle-upload" element={<VehicleUploadForm />} />
