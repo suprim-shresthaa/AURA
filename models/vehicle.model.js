@@ -8,11 +8,7 @@ const vehicleSchema = new mongoose.Schema(
             required: true
         },
 
-        name: {
-            type: String,
-            required: true,
-            trim: true
-        },
+        name: { type: String, required: true, trim: true },
 
         category: {
             type: String,
@@ -20,10 +16,7 @@ const vehicleSchema = new mongoose.Schema(
             enum: ["Car", "Bike", "Scooter", "Jeep", "Van"]
         },
 
-        modelYear: {
-            type: Number,
-            required: true
-        },
+        modelYear: { type: Number, required: true },
 
         plateNumber: {
             type: String,
@@ -39,41 +32,46 @@ const vehicleSchema = new mongoose.Schema(
             enum: ["Excellent", "Good", "Average"]
         },
 
-        description: {
-            type: String,
-            trim: true
-        },
+        description: { type: String, trim: true },
 
-        rentPerDay: {
-            type: Number,
+        fuelType: {
+            type: String,
+            enum: ["Petrol", "Diesel", "Electric", "Hybrid"],
             required: true
         },
 
-        // Images
-        mainImage: {
+        transmission: {
             type: String,
+            enum: ["Manual", "Automatic"],
             required: true
         },
 
-        bluebook: {
+        seatingCapacity: { type: Number, required: true },
+
+        mileage: { type: Number, required: true },
+
+
+        rentPerDay: { type: Number, required: true },
+
+        pickupLocation: {
+            address: { type: String, required: true },
+            city: { type: String, required: true },
+        },
+
+        mainImage: { type: String, required: true },
+        bluebook: { type: String, required: true },
+        images: { type: [String], default: [] },
+
+        isAvailable: { type: Boolean, default: true },
+
+        status: {
             type: String,
-            required: true
+            enum: ["Active", "Inactive", "UnderMaintenance"],
+            default: "Active"
         },
-
-        images: {
-            type: [String],
-            default: []
-        },
-
-        // Status fields
-        isAvailable: {
-            type: Boolean,
-            default: true
-        },
+        ratings: { type: Number, default: 0 },
     },
     { timestamps: true }
 );
 
-const Vehicle = mongoose.model("Vehicle", vehicleSchema);
-
-export default Vehicle;
+export default mongoose.model("Vehicle", vehicleSchema);

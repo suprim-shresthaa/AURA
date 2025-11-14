@@ -3,68 +3,95 @@ import mongoose from "mongoose";
 import User from "../models/user.model.js";
 import { upload } from "../config/cloudinary.js";
 
-
-// Create vehicle
+// Create a new vehicle
 export const createVehicle = async (req, res) => {
     try {
         const {
-            userId,
+            vendorId,
             name,
             category,
             modelYear,
             plateNumber,
-            rentPerDay,
             condition,
             description,
+            fuelType,
+            transmission,
+            seatingCapacity,
+            mileage,
+            rentPerDay,
+            pickupLocation,
         } = req.body;
 
-        // Validate required vendorId
-        if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+        const address = pickupLocation?.address;
+        const city = pickupLocation?.city;
+
+        console.log("BODY:", req.body);
+
+        // Validation
+        if (!vendorId || !mongoose.Types.ObjectId.isValid(vendorId)) {
             return res.status(400).json({ success: false, message: "Valid vendorId is required." });
         }
 
-        // Validate required files
-        if (!req.files?.mainImage || !req.files?.bluebook) {
+        const requiredFields = {
+            name, category, modelYear, plateNumber, condition,
+            fuelType, transmission, seatingCapacity, mileage, rentPerDay, address, city
+        };
+
+        for (const [key, value] of Object.entries(requiredFields)) {
+            if (!value || value === "") {
+                return res.status(400).json({ success: false, message: `${key} is required.` });
+            }
+        }
+
+        if (!req.files?.mainImage?.[0] || !req.files?.bluebook?.[0]) {
             return res.status(400).json({ success: false, message: "Main image and bluebook are required." });
         }
 
-        const mainImageUrl = req.files.mainImage[0].path;
-        const bluebookUrl = req.files.bluebook[0].path;
+        const mainImage = req.files.mainImage[0].path;
+        const bluebook = req.files.bluebook[0].path;
+        const images = req.files.images ? req.files.images.map(f => f.path) : [];
 
-        // Optional extra images
-        const extraImagesUrls = req.files.images ? req.files.images.map(f => f.path) : [];
-
-        // Create new Vehicle
         const newVehicle = new Vehicle({
-            vendorId: userId,
-            name,
+            vendorId,
+            name: name.trim(),
             category,
-            modelYear,
-            plateNumber,
-            rentPerDay,
+            modelYear: parseInt(modelYear),
+            plateNumber: plateNumber.trim().toUpperCase(),
             condition,
-            description,
-            mainImage: mainImageUrl,
-            bluebook: bluebookUrl,
-            images: extraImagesUrls,
+            description: description?.trim() || "",
+            fuelType,
+            transmission,
+            seatingCapacity: parseInt(seatingCapacity),
+            mileage: parseInt(mileage),
+            rentPerDay: parseFloat(rentPerDay),
+            pickupLocation: {
+                address: address.trim(),
+                city: city.trim()
+            },
+            mainImage,
+            bluebook,
+            images,
+            isAvailable: true,
+            status: "Active"
         });
 
         await newVehicle.save();
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: "Vehicle uploaded successfully!",
-            data: newVehicle,
+            data: newVehicle
         });
+
     } catch (error) {
-        console.error("Error uploading vehicle:", error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: "Server error",
-            error: error.message,
+            error: error.message
         });
     }
 };
+
 
 
 export const getAllVehicles = async (req, res) => {
@@ -109,3 +136,38 @@ export const deleteVehicle = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
 };
+
+
+export const getVehicleById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const vehicle = await Vehicle.findById(id)
+            .populate({
+                path: "vendorId",
+                model: "User",
+                select: "name email image contact address"
+            });
+
+        if (!vehicle) {
+            return res.status(404).json({
+                success: false,
+                message: "Vehicle not found."
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: vehicle
+        });
+
+    } catch (error) {
+        console.error("Error fetching vehicle by ID:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
