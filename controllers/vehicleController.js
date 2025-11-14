@@ -91,3 +91,21 @@ export const getVehiclesByVendor = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
 };
+
+
+export const deleteVehicle = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: "Invalid vehicle ID." });
+        }
+        const deletedVehicle = await Vehicle.findByIdAndDelete(id);
+        if (!deletedVehicle) {
+            return res.status(404).json({ success: false, message: "Vehicle not found." });
+        }
+        res.status(200).json({ success: true, message: "Vehicle deleted successfully." });
+    } catch (error) {
+        console.error("Error deleting vehicle:", error);
+        res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+};
