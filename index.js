@@ -46,6 +46,6 @@ app.use("/api/vendors", vendorRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
