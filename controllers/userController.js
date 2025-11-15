@@ -1,4 +1,5 @@
 import User from "../models/user.model.js";
+import bcrypt from "bcryptjs";
 
 
 export const getUserData = async (req, res) => {
@@ -53,3 +54,96 @@ export const getAllUsers = async (req, res) => {
     }
 };
 
+// Update Profile Image Controller
+export const updateProfileImage = async (req, res) => {
+    try {
+        const { email, image } = req.body;
+
+        if (!email || !image) {
+            return res
+                .status(400)
+                .json({ success: false, message: "Email and image URL are required." });
+        }
+
+        // Find the user by email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res
+                .status(404)
+                .json({ success: false, message: "User not found." });
+        }
+
+        // Update user's profile image
+        user.image = image;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Profile image updated successfully.",
+            image: user.image,
+        });
+    } catch (error) {
+        console.error("Error updating profile image:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error. Please try again later.",
+        });
+    }
+};
+
+export const changePassword = async (req, res) => {
+    const { userId, oldPassword, newPassword } = req.body;
+
+    try {
+        if (!userId || !oldPassword || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required fields."
+            });
+        }
+
+        console.log("Received:", req.body);
+
+        // MUST explicitly select password
+        const user = await User.findById(userId).select("+password");
+
+        console.log("User found:", user);
+        console.log("Old Password:", oldPassword);
+        console.log("User Password:", user?.password);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found."
+            });
+        }
+
+        // Compare old password
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({
+                success: false,
+                message: "Old password is incorrect."
+            });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Save new password
+        user.password = hashedPassword;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Password updated successfully."
+        });
+
+    } catch (error) {
+        console.error("Error changing password:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }
+};
