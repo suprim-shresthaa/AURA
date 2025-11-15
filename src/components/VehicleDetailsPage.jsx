@@ -16,7 +16,7 @@ import {
     Package
 } from "lucide-react";
 
-const API_URL = "http://localhost:3000/api/vehicles";
+const API_URL = "http://localhost:5001/api/vehicles";
 
 export default function VehicleDetailsPage() {
     const { id } = useParams();

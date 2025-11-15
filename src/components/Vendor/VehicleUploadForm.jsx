@@ -101,7 +101,7 @@ export default function VehicleUploadForm() {
         extraImages.forEach((img) => data.append("images", img));
 
         try {
-            const res = await fetch("http://localhost:3000/api/vehicles/create", {
+            const res = await fetch("http://localhost:5001/api/vehicles/create", {
                 method: "POST",
                 body: data,
                 credentials: "include"

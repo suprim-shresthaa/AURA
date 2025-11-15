@@ -6,7 +6,7 @@ import Cookies from "js-cookie";
 export const AppContent = createContext();
 
 export const AppContextProvider = (props) => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5001";
     const [isLoggedin, setIsLoggedin] = useState(false);
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);

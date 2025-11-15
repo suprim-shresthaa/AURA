@@ -20,7 +20,7 @@ const VehicleListing = () => {
             try {
                 setLoading(true);
                 const response = await axios.get(
-                    'http://localhost:3000/api/vehicles/vendor-vehicles',
+                    'http://localhost:5001/api/vehicles/vendor-vehicles',
                     { params: { vendorId: userData.userId } }
                 );
                 setVehicles(response.data.data);

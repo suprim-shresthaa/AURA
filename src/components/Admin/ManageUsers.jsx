@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Search, Trash2, UserCheck, UserX, Users } from "lucide-react";
 
-const API_BASE = "http://localhost:3000/api/user";
+const API_BASE = "http://localhost:5001/api/user";
 
 const ManageUsers = () => {
     const [users, setUsers] = useState([]);

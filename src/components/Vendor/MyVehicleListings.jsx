@@ -25,7 +25,7 @@ export default function MyVehicleListings() {
     const fetchVehicles = async (id) => {
         try {
             setLoading(true);
-            const res = await fetch(`http://localhost:3000/api/vehicles/vendor-vehicles?vendorId=${id}`);
+            const res = await fetch(`http://localhost:5001/api/vehicles/vendor-vehicles?vendorId=${id}`);
             if (!res.ok) throw new Error(`Failed: ${res.status}`);
             const { data } = await res.json();
             setVehicles(data || []);
@@ -41,7 +41,7 @@ export default function MyVehicleListings() {
         if (!vehicleToDelete) return;
         setDeleting(true);
         try {
-            const res = await fetch(`http://localhost:3000/api/vehicles/${vehicleToDelete}`, {
+            const res = await fetch(`http://localhost:5001/api/vehicles/${vehicleToDelete}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
             });

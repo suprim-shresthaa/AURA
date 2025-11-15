@@ -50,7 +50,7 @@ const VendorApplicationForm = () => {
         }
 
         try {
-            const res = await fetch("http://localhost:3000/api/vendors/register", {
+            const res = await fetch("http://localhost:5001/api/vendors/register", {
                 method: "POST",
                 body: data,
                 credentials: "include", 

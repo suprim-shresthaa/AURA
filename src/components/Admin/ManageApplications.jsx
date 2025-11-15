@@ -3,7 +3,7 @@ import axios from 'axios';
 import { format } from 'date-fns';
 import { CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 
-const API_URL = "http://localhost:3000/api/vendors/applications";
+const API_URL = "http://localhost:5001/api/vendors/applications";
 
 const ManageApplications = () => {
     const [applications, setApplications] = useState([]);
@@ -35,7 +35,7 @@ const ManageApplications = () => {
 
         setProcessingId(appId);
         try {
-            const endpoint = `http://localhost:3000/api/vendors/approve/${appId}`;
+            const endpoint = `http://localhost:5001/api/vendors/approve/${appId}`;
             console.log("Sending APPROVE request:", { endpoint });
 
             const res = await axios.put(endpoint);
@@ -62,7 +62,7 @@ const ManageApplications = () => {
 
         setProcessingId(appId);
         try {
-            const endpoint = `http://localhost:3000/api/vendors/reject/${appId}`;
+            const endpoint = `http://localhost:5001/api/vendors/reject/${appId}`;
             console.log("Sending REJECT request:", { endpoint });
 
             const res = await axios.put(endpoint);
