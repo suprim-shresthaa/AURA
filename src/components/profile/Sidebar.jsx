@@ -16,6 +16,12 @@ const Sidebar = ({ activeTab, setActiveTab, userData }) => {
     const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
+
+    console.log(cloudName);
+    console.log(uploadPreset);
+
+
+
     const handleLogout = async () => {
         try {
             await fetch(`${backendUrl}/api/auth/logout`, {
@@ -41,16 +47,23 @@ const Sidebar = ({ activeTab, setActiveTab, userData }) => {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("upload_preset", uploadPreset);
+        formData.append("folder", "vendor_images");
 
         setIsUploading(true);
+
         try {
             const uploadRes = await axios.post(
-                `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-                formData
+                `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+                formData,
+                {
+                    withCredentials: false,   // 🔥 FIX
+                    headers: { "Content-Type": "multipart/form-data" },
+                }
             );
 
             const imageUrl = uploadRes.data.secure_url;
 
+            // Now your backend request can use credentials
             await axios.put(
                 `${backendUrl}/api/user/update-profile-img`,
                 { email: userData?.email, image: imageUrl },
@@ -58,13 +71,15 @@ const Sidebar = ({ activeTab, setActiveTab, userData }) => {
             );
 
             toast.success("Profile picture updated!");
-            // Update context if needed
         } catch (err) {
+            console.log(err);
             toast.error("Failed to upload image.");
         } finally {
             setIsUploading(false);
         }
     };
+
+
 
     return (
         <div className="bg-white shadow rounded-lg sticky top-6">
@@ -100,8 +115,8 @@ const Sidebar = ({ activeTab, setActiveTab, userData }) => {
                 <button
                     onClick={() => setActiveTab("profile")}
                     className={`w-full flex items-center px-6 py-3 text-sm font-medium ${activeTab === "profile"
-                            ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
-                            : "text-gray-600 hover:bg-gray-50"
+                        ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
+                        : "text-gray-600 hover:bg-gray-50"
                         }`}
                 >
                     <User className="mr-3 h-5 w-5" />
@@ -111,8 +126,8 @@ const Sidebar = ({ activeTab, setActiveTab, userData }) => {
                 <button
                     onClick={() => setActiveTab("settings")}
                     className={`w-full flex items-center px-6 py-3 text-sm font-medium ${activeTab === "settings"
-                            ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
-                            : "text-gray-600 hover:bg-gray-50"
+                        ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
+                        : "text-gray-600 hover:bg-gray-50"
                         }`}
                 >
                     <Settings className="mr-3 h-5 w-5" />

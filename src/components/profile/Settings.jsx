@@ -20,6 +20,9 @@ const Settings = () => {
     const [emailInput, setEmailInput] = useState("");
     const [deleteError, setDeleteError] = useState("");
 
+    console.log(userData?.userId);
+
+
     const togglePassword = (field) =>
         setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
 
@@ -32,9 +35,14 @@ const Settings = () => {
         setSuccess("");
 
         try {
+            const payload = {
+                ...passwords,
+                userId: userData?.userId,   // ⬅️ SEND USER ID
+            };
+
             const res = await axios.post(
                 `${backendUrl}/api/user/change-password`,
-                passwords,
+                payload,
                 { withCredentials: true }
             );
 
@@ -51,6 +59,7 @@ const Settings = () => {
             setLoading(false);
         }
     };
+
 
     const handleDeleteAccount = async () => {
         if (emailInput !== userData?.email) {
