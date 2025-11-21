@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import { PawPrint, User, Mail, Lock, Check, X } from "lucide-react";
+import { Car, User, Mail, Lock, Check, X } from "lucide-react";
 import Button from "./ui/Button";
 import InputField from "./ui/InputField";
 import { AppContent } from "./context/AppContext";
@@ -224,18 +224,18 @@ const Signup = () => {
     /*                                 JSX Return                                 */
     /* -------------------------------------------------------------------------- */
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-orange-50 px-4 sm:px-6 lg:px-8 py-6">
-            <div className="w-full max-w-md sm:max-w-lg bg-white rounded-2xl shadow-lg border border-teal-100 overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-orange-50 px-4 sm:px-6 lg:px-8 py-6">
+            <div className="w-full max-w-md sm:max-w-lg bg-white rounded-2xl shadow-lg border border-blue-100 overflow-hidden">
                 <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-6 sm:pb-8">
                     {!showVerification ? (
                         <>
                             <div className="flex justify-center mb-6 sm:mb-8">
-                                <div className="bg-gradient-to-br from-teal-400 to-teal-500 p-3 sm:p-4 rounded-full shadow-md">
-                                    <PawPrint size={24} className="text-white sm:h-8 sm:w-8" />
+                                <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-3 sm:p-4 rounded-full shadow-md">
+                                    <Car size={24} className="text-white sm:h-8 sm:w-8" />
                                 </div>
                             </div>
                             <div className="text-center mb-6 sm:mb-8">
-                                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Welcome to NayaSathi</h2>
+                                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Welcome to AURA</h2>
                                 <p className="text-gray-500 mt-2 text-xs sm:text-sm">Create an account in seconds</p>
                             </div>
 
@@ -314,7 +314,7 @@ const Signup = () => {
 
                                 <p className="text-xs sm:text-sm text-center text-gray-500 mt-4 sm:mt-6">
                                     Already have an account?{" "}
-                                    <a href="/login" className="font-semibold text-teal-600 hover:text-teal-700">
+                                    <a href="/login" className="font-semibold text-blue-600 hover:text-blue-700">
                                         Sign in
                                     </a>
                                 </p>
@@ -323,13 +323,13 @@ const Signup = () => {
                     ) : (
                         <>
                             <div className="text-center mb-6 sm:mb-8">
-                                <div className="bg-gradient-to-br from-teal-400 to-teal-500 p-3 sm:p-4 rounded-full shadow-md inline-block">
-                                    <PawPrint size={24} className="text-white sm:h-8 sm:w-8" />
+                                <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-3 sm:p-4 rounded-full shadow-md inline-block">
+                                    <Car size={24} className="text-white sm:h-8 sm:w-8" />
                                 </div>
                                 <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mt-4">Verify Your Email</h1>
                                 <p className="text-gray-600 mt-2 text-xs sm:text-sm">
                                     Enter the 6-digit code sent to{" "}
-                                    <span className="text-teal-600 font-semibold">{email}</span>
+                                    <span className="text-blue-600 font-semibold">{email}</span>
                                 </p>
                             </div>
 
@@ -369,11 +369,11 @@ const Signup = () => {
                             <div className="text-xs sm:text-sm text-center text-gray-600">
                                 Didn't receive the code?{" "}
                                 {resendDisabled ? (
-                                    <span className="text-teal-600">Resend available in {countdown}s</span>
+                                    <span className="text-blue-600">Resend available in {countdown}s</span>
                                 ) : (
                                     <button
                                         onClick={handleResendOtp}
-                                        className="text-teal-600 font-medium hover:underline"
+                                        className="text-blue-600 font-medium hover:underline"
                                     >
                                         Resend OTP
                                     </button>

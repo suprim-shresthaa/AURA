@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { PawPrint, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Car, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Button from "./ui/Button";
 import InputField from "./ui/InputField";
 import { AppContent } from "./context/AppContext";
@@ -57,13 +57,13 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-orange-50 p-4">
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden border border-teal-100">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-orange-50 p-4">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden border border-blue-100">
                 <div className="px-8 pt-10 pb-8">
                     {/* Logo */}
                     <div className="flex justify-center mb-8">
-                        <div className="bg-gradient-to-br from-teal-400 to-teal-500 p-4 rounded-full shadow-md">
-                            <PawPrint size={32} className="text-white" />
+                        <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-4 rounded-full shadow-md">
+                            <Car size={32} className="text-white" />
                         </div>
                     </div>
 
@@ -89,7 +89,7 @@ const Login = () => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 transition-all"
+                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
                             />
                         </div>
 
@@ -103,7 +103,7 @@ const Login = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400 transition-all"
+                                className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
                             />
                             <button
                                 type="button"
@@ -122,7 +122,7 @@ const Login = () => {
                         <div className="flex justify-end">
                             <Link
                                 to="/reset-password"
-                                className="text-sm text-teal-600 hover:text-teal-700 transition-colors"
+                                className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
                             >
                                 Forgot password?
                             </Link>
@@ -133,7 +133,7 @@ const Login = () => {
                             text={isLoading ? "Signing in..." : "Sign In"}
                             type="submit"
                             variant="primary"
-                            className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white py-3 rounded-xl font-medium hover:from-teal-600 hover:to-teal-700 transition-all duration-200 disabled:opacity-50 mt-4 h-12 shadow-sm"
+                            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 mt-4 h-12 shadow-sm"
                             disabled={isLoading}
                         />
 
@@ -152,7 +152,7 @@ const Login = () => {
                             Don’t have an account?{" "}
                             <Link
                                 to="/signup"
-                                className="font-semibold text-teal-600 hover:text-teal-700 transition-colors"
+                                className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
                             >
                                 Sign up
                             </Link>

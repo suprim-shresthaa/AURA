@@ -22,7 +22,7 @@ const Button = ({
 
     const variantStyles = {
         primary:
-            "bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-500 hover:to-amber-500 text-white shadow-md hover:shadow-lg",
+            "bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-500 hover:to-blue-500 text-white shadow-md hover:shadow-lg",
         secondary:
             "bg-white border border-gray-100 text-gray-700 hover:bg-gray-50 shadow-sm hover:shadow",
     };

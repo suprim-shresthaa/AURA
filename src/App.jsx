@@ -15,6 +15,8 @@ import Profile from "./components/profile/Profile";
 import VendorDashboard from "./components/Vendor/VendorDashboard";
 import MyVehicleListings from "./components/Vendor/MyVehicleListings";
 import VehicleDetailsPage from "./components/VehicleDetailsPage";
+import Footer from "./components/Footer";
+import SparePartsForm from "./components/Admin/SparePartsForm";
 
 export default function App() {
   return (
@@ -40,8 +42,11 @@ export default function App() {
           <Route path="/admin/users" element={<ManageUsers />} />
           <Route path="/admin/reservations" element={<ManageReservations />} />
           <Route path="/admin/applications" element={<ManageApplications />} />
+          <Route path="/admin/add-spare-parts" element={<SparePartsForm />} />
         </Routes>
       </div>
+
+      <Footer />
     </Router>
   );
 }
