@@ -18,14 +18,6 @@ const vehicleSchema = new mongoose.Schema(
 
         modelYear: { type: Number, required: true },
 
-        plateNumber: {
-            type: String,
-            required: true,
-            uppercase: true,
-            trim: true,
-            unique: true
-        },
-
         condition: {
             type: String,
             required: true,

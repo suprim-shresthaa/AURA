@@ -7,6 +7,8 @@ import cookieParser from "cookie-parser";
 import userRouter from "./routes/userRoutes.js";
 import vendorRoutes from "./routes/vendorRoutes.js";
 import vehicleRoutes from "./routes/vehicleRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
+import sparePartRoutes from "./routes/sparePartRoutes.js";
 
 dotenv.config();
 
@@ -44,6 +46,8 @@ app.use('/api/user', userRouter);
 
 app.use("/api/vendors", vendorRoutes);
 app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/spare-parts", sparePartRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5001;

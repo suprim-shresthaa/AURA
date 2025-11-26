@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Menu,
     X,
@@ -11,22 +11,29 @@ import {
     List,
     LogOutIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useContext } from 'react';
+import { AppContent } from '../context/AppContext';
+import useLogout from '../../hooks/useLogout';
+import { toast } from 'react-toastify';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const logout = useLogout();
 
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/vendor/dashboard' },
         { id: 'listing', label: 'My Listing', icon: List, path: '/vendor/listings' },
         { id: 'reservations', label: 'Reservations', icon: Calendar, path: '/vendor/reservations' },
-        { id: 'applications', label: 'Manage Applications', icon: Book, path: '/vendor/applications' },
     ];
 
-    const handleLogout = () => {
-        // Add your logout logic here
-        console.log('Logging out...');
-        // e.g., clear auth, redirect to login
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/');
+        } catch (error) {
+            toast.error('Logout failed');
+        }
     };
 
     const NavItem = ({ item }) => {
@@ -83,7 +90,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                             className={`font-bold text-white text-xl transition-all duration-200 ${isOpen ? 'block' : 'hidden lg:block'
                                 }`}
                         >
-                            Admin
+                            Vendor
                         </h1>
                         <button
                             onClick={() => setIsOpen(!isOpen)}

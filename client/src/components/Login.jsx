@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Car, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import Button from "./ui/Button";
+import { Button } from "@/components/ui/button";
 import InputField from "./ui/InputField";
 import { AppContent } from "./context/AppContext";
 import Loading from "./ui/Loading";
@@ -57,7 +57,7 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-orange-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-primary p-4">
             <div className="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden border border-blue-100">
                 <div className="px-8 pt-10 pb-8">
                     {/* Logo */}

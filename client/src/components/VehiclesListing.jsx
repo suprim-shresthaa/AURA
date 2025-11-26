@@ -1,29 +1,34 @@
-import React, { useState, useMemo, useContext, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useMemo } from 'react';
+import axiosInstance from '@/lib/axiosInstance';
 import { Link } from 'react-router-dom';
-import { Search, Car, Users, Settings, MapPin } from 'lucide-react';
-import { AppContent } from './context/AppContext';
+import { Search, Car, Users, Settings, MapPin, Fuel } from 'lucide-react';
 
 const VehicleListing = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedType, setSelectedType] = useState('all');
     const [selectedTransmission, setSelectedTransmission] = useState('all');
     const [priceRange, setPriceRange] = useState('all');
+    const [fuelType, setFuelType] = useState('all');
+    const [city, setCity] = useState('all');
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
-    const { userData } = useContext(AppContent);
+    const [allCities, setAllCities] = useState([]);
 
+    // Fetch all vehicles and cities on mount
     useEffect(() => {
         const fetchVehicles = async () => {
-            if (!userData?.userId) return;
-
             try {
                 setLoading(true);
-                const response = await axios.get(
-                    'http://localhost:5001/api/vehicles/vendor-vehicles',
-                    { params: { vendorId: userData.userId } }
-                );
-                setVehicles(response.data.data);
+                const response = await axiosInstance.get('/vehicles/all-vehicles');
+                const vehiclesData = response.data.data || [];
+                setVehicles(vehiclesData);
+                
+                // Extract unique cities
+                const cities = [...new Set(vehiclesData
+                    .map(v => v.pickupLocation?.city)
+                    .filter(Boolean)
+                )].sort();
+                setAllCities(cities);
             } catch (error) {
                 console.error('Error fetching vehicles:', error);
             } finally {
@@ -32,27 +37,44 @@ const VehicleListing = () => {
         };
 
         fetchVehicles();
-    }, [userData?.userId]);
+    }, []);
 
-    const filteredVehicles = useMemo(() => {
-        return vehicles.filter(vehicle => {
-            const matchesSearch =
-                vehicle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                vehicle.category.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesType = selectedType === 'all' || vehicle.category === selectedType;
-            const matchesTransmission =
-                selectedTransmission === 'all' || vehicle.transmission === selectedTransmission;
-            const matchesPrice =
-                priceRange === 'all' ||
-                (priceRange === 'low' && vehicle.rentPerDay < 500) ||
-                (priceRange === 'medium' && vehicle.rentPerDay >= 500 && vehicle.rentPerDay < 1500) ||
-                (priceRange === 'high' && vehicle.rentPerDay >= 1500);
+    // Fetch filtered vehicles when filters change
+    useEffect(() => {
+        const fetchFilteredVehicles = async () => {
+            try {
+                setLoading(true);
+                const params = {
+                    search: searchTerm || undefined,
+                    category: selectedType !== 'all' ? selectedType : undefined,
+                    transmission: selectedTransmission !== 'all' ? selectedTransmission : undefined,
+                    priceRange: priceRange !== 'all' ? priceRange : undefined,
+                    fuelType: fuelType !== 'all' ? fuelType : undefined,
+                    city: city !== 'all' ? city : undefined,
+                    isAvailable: true
+                };
 
-            return matchesSearch && matchesType && matchesTransmission && matchesPrice;
-        });
-    }, [searchTerm, selectedType, selectedTransmission, priceRange, vehicles]);
+                // Remove undefined values
+                Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
 
-    const types = ['all', ...new Set(vehicles.map(v => v.category))];
+                const response = await axiosInstance.get('/vehicles/search', { params });
+                setVehicles(response.data.data || []);
+            } catch (error) {
+                console.error('Error searching vehicles:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // Debounce search
+        const timeoutId = setTimeout(() => {
+            fetchFilteredVehicles();
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm, selectedType, selectedTransmission, priceRange, fuelType, city]);
+
+    const types = ['all', 'Car', 'Bike', 'Scooter', 'Jeep', 'Van'];
 
     if (loading) {
         return (
@@ -76,9 +98,9 @@ const VehicleListing = () => {
 
                 {/* Search and Filters */}
                 <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
                         {/* Search */}
-                        <div className="relative">
+                        <div className="relative md:col-span-2">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                                 type="text"
@@ -112,6 +134,18 @@ const VehicleListing = () => {
                         </select>
 
                         <select
+                            value={fuelType}
+                            onChange={(e) => setFuelType(e.target.value)}
+                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
+                        >
+                            <option value="all">All Fuel Types</option>
+                            <option value="Petrol">Petrol</option>
+                            <option value="Diesel">Diesel</option>
+                            <option value="Electric">Electric</option>
+                            <option value="Hybrid">Hybrid</option>
+                        </select>
+
+                        <select
                             value={priceRange}
                             onChange={(e) => setPriceRange(e.target.value)}
                             className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
@@ -122,19 +156,35 @@ const VehicleListing = () => {
                             <option value="high">Rs. 1500+/day</option>
                         </select>
                     </div>
+                    
+                    {/* City Filter */}
+                    {allCities.length > 0 && (
+                        <div className="mt-3">
+                            <select
+                                value={city}
+                                onChange={(e) => setCity(e.target.value)}
+                                className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white w-full md:w-auto"
+                            >
+                                <option value="all">All Cities</option>
+                                {allCities.map(cityName => (
+                                    <option key={cityName} value={cityName}>{cityName}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
 
                 {/* Results Count */}
                 <div className="mb-4">
                     <p className="text-sm text-gray-600">
-                        <span className="font-semibold text-gray-900">{filteredVehicles.length}</span> vehicle{filteredVehicles.length !== 1 ? 's' : ''} found
+                        <span className="font-semibold text-gray-900">{vehicles.length}</span> vehicle{vehicles.length !== 1 ? 's' : ''} found
                     </p>
                 </div>
 
                 {/* Vehicle Grid */}
-                {filteredVehicles.length > 0 ? (
+                {vehicles.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {filteredVehicles.map(vehicle => (
+                        {vehicles.map(vehicle => (
                             <Link
                                 key={vehicle._id}
                                 to={`/vehicles/${vehicle._id}`}
@@ -163,7 +213,7 @@ const VehicleListing = () => {
                                         <p className="text-xs text-gray-500 mb-2">{vehicle.modelYear} • {vehicle.category}</p>
 
                                         {/* Quick Info */}
-                                        <div className="flex items-center gap-3 mb-3 text-xs text-gray-600">
+                                        <div className="flex items-center gap-3 mb-3 text-xs text-gray-600 flex-wrap">
                                             <div className="flex items-center gap-1">
                                                 <Users className="w-3.5 h-3.5" />
                                                 <span>{vehicle.seatingCapacity}</span>
@@ -173,8 +223,12 @@ const VehicleListing = () => {
                                                 <span>{vehicle.transmission}</span>
                                             </div>
                                             <div className="flex items-center gap-1">
+                                                <Fuel className="w-3.5 h-3.5" />
+                                                <span>{vehicle.fuelType}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
                                                 <MapPin className="w-3.5 h-3.5" />
-                                                <span>{vehicle.pickupLocation.city}</span>
+                                                <span>{vehicle.pickupLocation?.city}</span>
                                             </div>
                                         </div>
 
@@ -199,7 +253,9 @@ const VehicleListing = () => {
                     <div className="text-center py-12 bg-white rounded-lg">
                         <Car className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                         <h3 className="text-lg font-semibold text-gray-600 mb-1">No vehicles found</h3>
-                        <p className="text-sm text-gray-500">Try adjusting your filters</p>
+                        <p className="text-sm text-gray-500">
+                            {loading ? 'Loading vehicles...' : 'Try adjusting your filters'}
+                        </p>
                     </div>
                 )}
             </div>

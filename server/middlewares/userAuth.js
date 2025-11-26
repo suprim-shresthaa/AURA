@@ -20,6 +20,7 @@ const userAuth = async (req, res, next) => {
         }
 
         req.user = user; // ✅ Attach full user object for use in routes
+        req.userId = tokenDecode.id; // ✅ Set userId for easy access
 
         // ✅ Only set userId safely (avoid crash on GET)
         if (!req.body) req.body = {}; // Ensure req.body exists

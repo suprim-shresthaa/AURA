@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
 import { Car, User, Mail, Lock, Check, X } from "lucide-react";
-import Button from "./ui/Button";
+import { Button } from "@/components/ui/button";
 import InputField from "./ui/InputField";
 import { AppContent } from "./context/AppContext";
 import { message } from "antd";

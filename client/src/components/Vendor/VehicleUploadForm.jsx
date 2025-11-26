@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { Upload, Car, FileImage, Calendar, Hash, FileText, Loader2 } from "lucide-react";
+import { Upload, Car, FileImage, Calendar, FileText, Loader2 } from "lucide-react";
 import { AppContent } from "../context/AppContext";
 
 export default function VehicleUploadForm() {
@@ -7,7 +7,6 @@ export default function VehicleUploadForm() {
         name: "",
         category: "",
         modelYear: "",
-        plateNumber: "",
         condition: "",
         description: "",
         fuelType: "",
@@ -128,7 +127,6 @@ export default function VehicleUploadForm() {
             name: "",
             category: "",
             modelYear: "",
-            plateNumber: "",
             condition: "",
             description: "",
             fuelType: "",
@@ -208,22 +206,6 @@ export default function VehicleUploadForm() {
                                         required
                                     />
                                     <Calendar className="absolute left-3 top-3.5 text-gray-400" size={18} />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Plate Number</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        name="plateNumber"
-                                        placeholder="e.g., Ba 2 Cha 1234"
-                                        value={formData.plateNumber}
-                                        onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition uppercase"
-                                        required
-                                    />
-                                    <Hash className="absolute left-3 top-3.5 text-gray-400" size={18} />
                                 </div>
                             </div>
 

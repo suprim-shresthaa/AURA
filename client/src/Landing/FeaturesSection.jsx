@@ -72,7 +72,7 @@ export default function FeaturesSection() {
     };
 
     return (
-        <section className="bg-white py-16 lg:py-24 relative overflow-hidden">
+        <section className="py-16 lg:py-24 relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute inset-0" style={{
                 backgroundImage: `radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.05) 0%, transparent 50%),

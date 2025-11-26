@@ -11,7 +11,6 @@ export const createVehicle = async (req, res) => {
             name,
             category,
             modelYear,
-            plateNumber,
             condition,
             description,
             fuelType,
@@ -33,7 +32,7 @@ export const createVehicle = async (req, res) => {
         }
 
         const requiredFields = {
-            name, category, modelYear, plateNumber, condition,
+            name, category, modelYear, condition,
             fuelType, transmission, seatingCapacity, mileage, rentPerDay, address, city
         };
 
@@ -56,7 +55,6 @@ export const createVehicle = async (req, res) => {
             name: name.trim(),
             category,
             modelYear: parseInt(modelYear),
-            plateNumber: plateNumber.trim().toUpperCase(),
             condition,
             description: description?.trim() || "",
             fuelType,
@@ -100,6 +98,96 @@ export const getAllVehicles = async (req, res) => {
         res.status(200).json({ success: true, data: vehicles });
     } catch (error) {
         console.error("Error fetching vehicles:", error);
+        res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+};
+
+export const searchVehicles = async (req, res) => {
+    try {
+        const {
+            search,
+            category,
+            transmission,
+            priceRange,
+            fuelType,
+            minPrice,
+            maxPrice,
+            city,
+            isAvailable
+        } = req.query;
+
+        // Build query
+        const query = {};
+
+        // Search by name or description
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: "i" } },
+                { description: { $regex: search, $options: "i" } }
+            ];
+        }
+
+        // Category filter
+        if (category && category !== "all") {
+            query.category = category;
+        }
+
+        // Transmission filter
+        if (transmission && transmission !== "all") {
+            query.transmission = transmission;
+        }
+
+        // Fuel type filter
+        if (fuelType && fuelType !== "all") {
+            query.fuelType = fuelType;
+        }
+
+        // Price range filter
+        if (priceRange && priceRange !== "all") {
+            switch (priceRange) {
+                case "low":
+                    query.rentPerDay = { $lt: 500 };
+                    break;
+                case "medium":
+                    query.rentPerDay = { $gte: 500, $lt: 1500 };
+                    break;
+                case "high":
+                    query.rentPerDay = { $gte: 1500 };
+                    break;
+            }
+        }
+
+        // Custom price range
+        if (minPrice || maxPrice) {
+            query.rentPerDay = {};
+            if (minPrice) query.rentPerDay.$gte = parseFloat(minPrice);
+            if (maxPrice) query.rentPerDay.$lte = parseFloat(maxPrice);
+        }
+
+        // City filter
+        if (city && city !== "all") {
+            query["pickupLocation.city"] = { $regex: city, $options: "i" };
+        }
+
+        // Availability filter
+        if (isAvailable !== undefined) {
+            query.isAvailable = isAvailable === "true" || isAvailable === true;
+        }
+
+        // Only show active vehicles
+        query.status = "Active";
+
+        const vehicles = await Vehicle.find(query)
+            .populate({
+                path: "vendorId",
+                model: "User",
+                select: "name email image contact address"
+            })
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({ success: true, data: vehicles });
+    } catch (error) {
+        console.error("Error searching vehicles:", error);
         res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
 };

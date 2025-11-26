@@ -1,5 +1,5 @@
 import { Search, CreditCard, Car, CheckCircle, ArrowRight } from 'lucide-react';
-import Button from '../components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 export default function HowItWorks() {
     const steps = [

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
     Car,
@@ -15,14 +15,19 @@ import {
     Settings,
     Package
 } from "lucide-react";
+import BookingModal from "./BookingModal";
+import { AppContent } from "./context/AppContext";
 
 const API_URL = "http://localhost:5001/api/vehicles";
 
 export default function VehicleDetailsPage() {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { isLoggedin } = useContext(AppContent);
     const [vehicle, setVehicle] = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState("");
+    const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchVehicle = async () => {
@@ -92,9 +97,6 @@ export default function VehicleDetailsPage() {
                                 Available Now
                             </span>
                         )}
-                        <span className="text-gray-500 text-sm ml-2">
-                            Plate: <span className="font-semibold text-gray-700">{vehicle.plateNumber}</span>
-                        </span>
                     </div>
                 </div>
 
@@ -235,12 +237,39 @@ export default function VehicleDetailsPage() {
                         </div>
 
                         {/* Action Button */}
-                        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors shadow-sm">
-                            Book Now
+                        <button 
+                            onClick={() => {
+                                if (!isLoggedin) {
+                                    navigate("/login");
+                                    return;
+                                }
+                                if (!vehicle.isAvailable) {
+                                    alert("This vehicle is not available for booking");
+                                    return;
+                                }
+                                setIsBookingModalOpen(true);
+                            }}
+                            disabled={!vehicle.isAvailable}
+                            className={`w-full font-semibold py-3 px-4 rounded-lg transition-colors shadow-sm ${
+                                vehicle.isAvailable
+                                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                    : "bg-gray-400 text-gray-600 cursor-not-allowed"
+                            }`}
+                        >
+                            {vehicle.isAvailable ? "Book Now" : "Not Available"}
                         </button>
                     </div>
                 </div>
             </div>
+
+            {/* Booking Modal */}
+            {vehicle && (
+                <BookingModal
+                    isOpen={isBookingModalOpen}
+                    onClose={() => setIsBookingModalOpen(false)}
+                    vehicle={vehicle}
+                />
+            )}
         </div>
     );
 }
