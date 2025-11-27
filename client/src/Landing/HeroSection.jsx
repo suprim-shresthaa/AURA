@@ -17,13 +17,13 @@ export default function HeroSection() {
     return (
             <div className="rounded-lg bg-cover bg-center bg-no-repeat p-4 sm:p-6 lg:p-8 flex min-h-[480px] flex-col gap-6 items-center justify-center text-center min-w-7xl mx-auto"
               style={{
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%), url(${heroContent.backgroundImage})`,
+                backgroundImage: `linear-gradient(rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%), url(${heroContent.backgroundImage})`,
               }}>
               <div className="flex flex-col gap-2">
                 <h1 className="text-white text-4xl font-black leading-tight tracking-[-0.033em] sm:text-5xl">
                   {heroContent.title}
                 </h1>
-                <p className="text-white text-sm sm:text-base leading-normal max-w-3xl mx-auto">
+                <p className="text-gray-100 text-sm sm:text-base leading-normal max-w-3xl mx-auto">
                   {heroContent.subtitle}
                 </p>
               </div>

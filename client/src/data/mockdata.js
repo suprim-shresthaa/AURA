@@ -10,7 +10,7 @@ export const heroContent = {
   subtitle:
     "Explore a wide selection of cars, motorbikes, scooters, and spare parts for your needs. Book online, verify, and pay securely.",
   backgroundImage:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuAhh5M256NxXTPCac9ZGora8SmTB2k-GEG1NP5t56kgBOOv4CtriLLU_mVGFgUiSNRkgQohCa5LiWWAfDUrrb5eqV1qNcIdGLDLEAtJxm_9FHmJxNvgJlHemCj_cNjf5ewSonTc8eEzqCwSfMAMNLidgzuv4SZKl1vNKHC7dWugK_PZmu1yXFUdh4O7XxeKnUE4p4D_vhhXQspm2dDSlySyrOysDQCgJH53jX62txEUrAoDCl_nQklSPvl4QF2wXKXKo6WV_Mc5JiNS",
+    "https://img.freepik.com/free-vector/onsite-emergency-service-by-car-insurance-service-young-man-calls-auto-insurance-service-that-provides-services-when-car-is-inoperable-vector-illustration-business-character-flat-design_1150-59749.jpg?ga=GA1.1.774625591.1764256787&semt=ais_hybrid&w=740&q=80",
   actions: [
     { label: "Rent a Vehicle", variant: "primary", path: "/vehicles" },
     { label: "Rent Spare Parts", variant: "secondary", path: "/spare-parts" },
