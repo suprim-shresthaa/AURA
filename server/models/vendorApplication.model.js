@@ -12,6 +12,7 @@ const vendorApplicationSchema = new mongoose.Schema(
         govIdNumber: { type: String, required: true },
         idDocumentUrl: { type: String, required: true },
         status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
+        rejectionReason: { type: String, trim: true },
         user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     },
     { timestamps: true }

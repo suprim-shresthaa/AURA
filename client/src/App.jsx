@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./Landing/Home";
 import Login from "./components/Login";
@@ -19,15 +19,18 @@ import VehicleDetailsPage from "./components/VehicleDetailsPage";
 import Footer from "./components/Footer";
 import SparePartsForm from "./components/Admin/SparePartsForm";
 import SparePartsListing from "./components/SparePartsListing";
+import AdminLayout from "./components/Admin/AdminLayout";
 import "./App.css"; 
 
-export default function App() {
-  return (
-    <Router>
-      <Navbar />
+function AppContent() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
-      {/* Add padding so content doesn't hide behind navbar */}
-      <div className="pt-16 bg-slate-100">
+  return (
+    <>
+      {!isAdminRoute && <Navbar />}
+
+      <div className={`bg-slate-100 ${isAdminRoute ? "" : "pt-16"}`}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -43,15 +46,25 @@ export default function App() {
           <Route path="/vendor/listings" element={<MyVehicleListings />} />
           <Route path="/vendor/reservations" element={<VendorReservations />} />
 
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/users" element={<ManageUsers />} />
-          <Route path="/admin/reservations" element={<ManageReservations />} />
-          <Route path="/admin/applications" element={<ManageApplications />} />
-          <Route path="/admin/add-spare-parts" element={<SparePartsForm />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="users" element={<ManageUsers />} />
+            <Route path="reservations" element={<ManageReservations />} />
+            <Route path="applications" element={<ManageApplications />} />
+            <Route path="add-spare-parts" element={<SparePartsForm />} />
+          </Route>
         </Routes>
       </div>
 
-      <Footer />
+      {!isAdminRoute && <Footer />}
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

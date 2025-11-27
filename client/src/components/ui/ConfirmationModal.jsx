@@ -10,7 +10,9 @@ export default function ConfirmationModal({
     confirmText = "Confirm",
     cancelText = "Cancel",
     type = "danger",
-    loading = false
+    loading = false,
+    confirmDisabled = false,
+    children
 }) {
     if (!isOpen) return null;
 
@@ -62,6 +64,7 @@ export default function ConfirmationModal({
                         <div className="flex-1 min-w-0">
                             <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
                             <p className="text-slate-600 leading-relaxed">{message}</p>
+                            {children}
                         </div>
 
                         <button
@@ -84,7 +87,7 @@ export default function ConfirmationModal({
                     </button>
                     <button
                         onClick={onConfirm}
-                        disabled={loading}
+                        disabled={loading || confirmDisabled}
                         className={`px-5 py-2.5 rounded-lg font-medium text-white ${styles.buttonBg} transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2`}
                     >
                         {loading && (

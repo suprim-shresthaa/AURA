@@ -1,8 +1,11 @@
-import React, { useState } from "react";
-import { Users, Calendar, Wrench, Car, Menu, X, TrendingUp, LogOut } from "lucide-react";
-import Sidebar from "./Sidebar";
-import ManageUsers from "./ManageUsers";
-import ManageReservations from "./ManageReservations";
+import React from "react";
+import {
+    Users,
+    Calendar,
+    Wrench,
+    Car,
+    TrendingUp,
+} from "lucide-react";
 
 const Dashboard = () => {
     const metrics = [
@@ -41,11 +44,8 @@ const Dashboard = () => {
     ];
 
     return (
-        <div className="p-8">
-            <div className="mb-8">
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">Dashboard</h1>
-                <p className="text-gray-600">Welcome back! Here's an overview of your metrics.</p>
-            </div>
+        <div className="p-8 min-h-screen">
+            <div className="max-w-7xl mx-auto">
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {metrics.map((metric) => {
@@ -53,7 +53,7 @@ const Dashboard = () => {
                     return (
                         <div
                             key={metric.title}
-                            className="relative overflow-hidden rounded-2xl bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105"
+                            className="relative overflow-hidden rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-105"
                         >
                             <div className={`absolute inset-0 bg-gradient-to-br ${metric.color} opacity-5`}></div>
 
@@ -75,11 +75,11 @@ const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6">
+                <div className="lg:col-span-2 bg-green-100 rounded-2xl p-6">
                     <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h2>
                     <div className="space-y-4">
                         {[1, 2, 3].map((item) => (
-                            <div key={item} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <div key={item} className="flex items-center justify-between p-4 bg-white rounded-lg hover:bg-gray-100 transition">
                                 <div>
                                     <p className="font-medium text-gray-900">User activity #{item}</p>
                                     <p className="text-sm text-gray-600">2 hours ago</p>
@@ -90,7 +90,7 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm p-6">
+                <div className=" rounded-2xl shadow-sm p-6">
                     <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Stats</h2>
                     <div className="space-y-4">
                         <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
@@ -109,58 +109,12 @@ const Dashboard = () => {
                 </div>
             </div>
         </div>
+        </div>
     );
 };
 
-
-
 const AdminDashboard = () => {
-    const [page, setPage] = useState("dashboard");
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-    const pageContent = {
-        dashboard: <Dashboard />,
-        users: <ManageUsers />,
-        reservations: <ManageReservations />,
-        "spare-parts": (
-            <div className="p-8">
-                <div className="mb-6">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-2">Spare Parts Management</h1>
-                    <p className="text-gray-600">Manage spare parts inventory</p>
-                </div>
-                <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-                    <Wrench size={48} className="mx-auto text-orange-500 mb-4" />
-                    <p className="text-gray-600">Spare parts management content coming soon</p>
-                </div>
-            </div>
-        ),
-    };
-
-    return (
-        <div className="flex min-h-screen bg-gray-50">
-            <Sidebar
-                setPage={setPage}
-                isOpen={isSidebarOpen}
-                setIsOpen={setIsSidebarOpen}
-                currentPage={page}
-            />
-
-            <div className="flex-1 flex flex-col">
-                <div className="bg-white border-b border-gray-200 p-4 flex items-center">
-                    <button
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition"
-                    >
-                        <Menu size={24} className="text-gray-700" />
-                    </button>
-                </div>
-
-                <div className="flex-1 overflow-auto">
-                    {pageContent[page] || pageContent.dashboard}
-                </div>
-            </div>
-        </div>
-    );
+    return <Dashboard />;
 };
 
 export default AdminDashboard;

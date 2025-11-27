@@ -2,22 +2,25 @@ import React, { useState } from "react";
 import { Building2, Mail, Phone, MapPin, IdCard, FileUp, Briefcase } from "lucide-react";
 import { useContext } from "react";
 import { AppContent } from '../context/AppContext'
+import { toast } from "sonner"
+import { Button } from "../ui/button";
 
 const VendorApplicationForm = () => {
     const { userData } = useContext(AppContent)
+    const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({
-        fullName: "",
-        businessName: "",
-        email: "",
-        phone: "",
-        address: "",
-        businessType: "",
-        govIdType: "",
-        govIdNumber: "",
+        fullName: userData?.name,
+        businessName: userData?.businessName,
+        email: userData?.email,
+        phone: userData?.phone,
+        address: userData?.address,
+        businessType: userData?.businessType,
+        govIdType: userData?.govIdType,
+        govIdNumber: userData?.govIdNumber,
         idDocument: null,
     });
 
-
+    
     console.log(userData?.userId);
 
     const handleChange = (e) => {
@@ -31,7 +34,7 @@ const VendorApplicationForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+        setSubmitting(true);
         const data = new FormData();
 
         // Append all form fields
@@ -48,7 +51,7 @@ const VendorApplicationForm = () => {
             alert("User not authenticated. Please log in.");
             return;
         }
-
+    
         try {
             const res = await fetch("http://localhost:5001/api/vendors/register", {
                 method: "POST",
@@ -57,23 +60,26 @@ const VendorApplicationForm = () => {
             });
 
             const result = await res.json();
-            if (result.success) {
-                alert("Vendor Application Submitted Successfully!");
+            if(result.success){
+                toast.success("Vendor Application Submitted Successfully!");
             } else {
-                alert(result.message || "Something went wrong");
+                toast.error(result.message || "Something went wrong");
             }
-        } catch (error) {
-            console.error("Error:", error);
-            alert("Submission failed!");
+        } catch (err) {
+            console.log(err);
+            toast.error("Submission failed!");
+        } finally {
+            setSubmitting(false);
         }
-    };
+    }
+
 
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 py-12 px-4">
+        <div className="min-h-screen  py-12 px-4">
             <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-teal-600 to-teal-600 px-8 py-8 text-center">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-8 text-center">
                     <div className="flex justify-center mb-3">
                         <Briefcase className="text-white" size={48} />
                     </div>
@@ -266,12 +272,13 @@ const VendorApplicationForm = () => {
                     </div>
 
                     {/* Submit Button */}
-                    <button
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-teal-600 to-teal-600 hover:from-teal-700 hover:to-teal-700 text-white py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                            <Button
+                            type="submit"
+                        disabled={submitting}
+                        className="w-full h-16"
                     >
-                        Submit Application
-                    </button>
+                        {submitting ? "Submitting..." : "Submit Application"}
+                    </Button>
                 </form>
             </div>
         </div>

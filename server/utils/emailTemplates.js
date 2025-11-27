@@ -105,11 +105,13 @@ const emailTemplates = {
     <p>Your vendor application has been approved.</p>
   </div>
   `,
-  vendorRejected: (vendorName) => `
+  vendorRejected: (vendorName, rejectionReason) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
     <h2 style="color: #ef4444;">Vendor Rejected</h2>
     <p>Dear ${vendorName},</p>
     <p>Your vendor application has been rejected.</p>
+    ${rejectionReason ? `<p><strong>Reason:</strong> ${rejectionReason}</p>` : ""}
+    <p>You can update your application details and apply again at any time.</p>
   </div>
   `
 };
@@ -158,7 +160,7 @@ const sendEmail = async (email, type, data) => {
         },
         'vendor-rejected': {
             subject: 'Vendor Rejected',
-            template: emailTemplates.vendorRejected(data.vendorName)
+            template: emailTemplates.vendorRejected(data.vendorName, data.rejectionReason)
         }
     };
 

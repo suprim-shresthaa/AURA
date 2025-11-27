@@ -162,18 +162,6 @@ const ManageUsers = () => {
         <>
             <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-8">
                 <div className="max-w-7xl mx-auto">
-                    {/* Header */}
-                    <div className="mb-8">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-blue-600 rounded-lg">
-                                <Users size={24} className="text-white" />
-                            </div>
-                            <h1 className="text-3xl font-bold text-slate-900">User Management</h1>
-                        </div>
-                        <p className="text-slate-600 ml-11">
-                            Manage and control user accounts and permissions
-                        </p>
-                    </div>
 
                     {/* Search */}
                     <div className="mb-6">
@@ -256,7 +244,7 @@ const ManageUsers = () => {
                                                                 ? openModal("ban", user.id, user.name)
                                                                 : openModal("unban", user.id, user.name)
                                                         }
-                                                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition duration-150 opacity-0 group-hover:opacity-100"
+                                                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition duration-150"
                                                         title={user.status === "Active" ? "Ban user" : "Unban user"}
                                                     >
                                                         {user.status === "Active" ? <UserX size={18} /> : <UserCheck size={18} />}
@@ -265,7 +253,7 @@ const ManageUsers = () => {
                                                     {/* Delete */}
                                                     <button
                                                         onClick={() => openModal("delete", user.id, user.name)}
-                                                        className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition duration-150 opacity-0 group-hover:opacity-100"
+                                                        className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition duration-150"
                                                         title="Delete user permanently"
                                                     >
                                                         <Trash2 size={18} />

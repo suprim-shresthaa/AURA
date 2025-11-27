@@ -129,18 +129,8 @@ const ManageReservations = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-8">
+        <div className="min-h-screen p-8">
             <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-blue-600 rounded-lg">
-                            <Calendar size={24} className="text-white" />
-                        </div>
-                        <h1 className="text-3xl font-bold text-slate-900">Reservations</h1>
-                    </div>
-                    <p className="text-slate-600 ml-11">View and manage all guest reservations</p>
-                </div>
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
@@ -273,14 +263,14 @@ const ManageReservations = () => {
                                             <div className="flex justify-center gap-3">
                                                 <button
                                                     onClick={() => setEditingId(editingId === reservation.id ? null : reservation.id)}
-                                                    className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition duration-150 opacity-0 group-hover:opacity-100"
+                                                    className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition duration-150"
                                                     title="Edit status"
                                                 >
                                                     <Edit2 size={18} />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(reservation.id)}
-                                                    className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition duration-150 opacity-0 group-hover:opacity-100"
+                                                    className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition duration-150 "
                                                     title="Delete reservation"
                                                 >
                                                     <Trash2 size={18} />

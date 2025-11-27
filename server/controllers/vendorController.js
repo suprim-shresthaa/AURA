@@ -93,20 +93,21 @@ export const approveVendorApplication = async (req, res) => {
     try {
         const { appId } = req.params;
 
-        const application = await vendorApplicationModel.findByIdAndUpdate(
-            appId,
-            { status: "approved" },
-            { new: true }
-        );
+        const application = await vendorApplicationModel.findById(appId);
 
         if (!application) {
             return res.status(404).json({ success: false, message: "Application not found" });
         }
 
+        application.status = "approved";
+        application.rejectionReason = undefined;
+        await application.save();
+
         if (application.user) {
             await User.findByIdAndUpdate(application.user, { role: "vendor" });
-            await sendEmail(application.email, 'vendor-approved', { vendorName: application.fullName });
         }
+
+        await sendEmail(application.email, 'vendor-approved', { vendorName: application.fullName });
         res.json({ success: true, message: "Application approved", data: application });
     } catch (error) {
         res.status(500).json({ success: false, message: "Server error" });
@@ -117,21 +118,30 @@ export const approveVendorApplication = async (req, res) => {
 export const rejectVendorApplication = async (req, res) => {
     try {
         const { appId } = req.params;
+        const { rejectionReason } = req.body;
 
-        const application = await vendorApplicationModel.findByIdAndUpdate(
-            appId,
-            { status: "rejected" },
-            { new: true }
-        );
+        if (!rejectionReason || !rejectionReason.trim()) {
+            return res.status(400).json({ success: false, message: "Rejection reason is required" });
+        }
+
+        const application = await vendorApplicationModel.findById(appId);
 
         if (!application) {
             return res.status(404).json({ success: false, message: "Application not found" });
         }
 
+        application.status = "rejected";
+        application.rejectionReason = rejectionReason.trim();
+        await application.save();
+
         if (application.user) {
             await User.findByIdAndUpdate(application.user, { role: "user" });
-            await sendEmail(application.email, 'vendor-rejected', { vendorName: application.fullName });
         }
+
+        await sendEmail(application.email, 'vendor-rejected', {
+            vendorName: application.fullName,
+            rejectionReason: application.rejectionReason
+        });
 
         res.json({ success: true, message: "Application rejected", data: application });
     } catch (error) {

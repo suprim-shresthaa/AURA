@@ -152,7 +152,7 @@ const Sidebar = ({ activeTab, setActiveTab, userData }) => {
                     </Link>
                 )}
                 {userData?.role === "user" && (
-                    <Link to="/vendor-registration" className="block">
+                    <Link to="/vendor/apply" className="block">
                         <button className="w-full flex items-center px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50">
                             <ArrowRightCircle className="mr-3 h-5 w-5" />
                             Become a Vendor
