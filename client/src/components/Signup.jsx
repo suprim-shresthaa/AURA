@@ -360,11 +360,12 @@ const Signup = () => {
                             </p>
 
                             <Button
-                                text={isLoading ? "Verifying..." : "Verify Email"}
                                 onClick={handleVerify}
                                 disabled={isLoading || timeLeft <= 0}
                                 className="w-full h-10 sm:h-12 mb-3 sm:mb-4 text-sm sm:text-base"
-                            />
+                            >
+                                {isLoading ? "Verifying..." : "Verify Email"}
+                            </Button>
 
                             <div className="text-xs sm:text-sm text-center text-gray-600">
                                 Didn't receive the code?{" "}
