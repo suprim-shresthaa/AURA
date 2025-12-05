@@ -106,6 +106,7 @@ export const searchVehicles = async (req, res) => {
     try {
         const {
             search,
+            keyword,
             category,
             transmission,
             priceRange,
@@ -119,11 +120,12 @@ export const searchVehicles = async (req, res) => {
         // Build query
         const query = {};
 
-        // Search by name or description
-        if (search) {
+        // Search by name or description (support both 'search' and 'keyword' parameters)
+        const searchTerm = keyword || search;
+        if (searchTerm) {
             query.$or = [
-                { name: { $regex: search, $options: "i" } },
-                { description: { $regex: search, $options: "i" } }
+                { name: { $regex: searchTerm, $options: "i" } },
+                { description: { $regex: searchTerm, $options: "i" } }
             ];
         }
 

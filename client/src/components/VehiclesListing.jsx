@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axiosInstance from '@/lib/axiosInstance';
 import { Search, Car, RotateCcw } from 'lucide-react';
 import VehicleCard from './VehicleCard';
 import { Button } from './ui/button';
 
 const VehicleListing = () => {
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const keywordFromUrl = searchParams.get('keyword') || '';
+    
+    const [searchTerm, setSearchTerm] = useState(keywordFromUrl);
     const [selectedType, setSelectedType] = useState('all');
     const [selectedTransmission, setSelectedTransmission] = useState('all');
     const [priceRange, setPriceRange] = useState('all');
@@ -14,6 +18,14 @@ const VehicleListing = () => {
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [allCities, setAllCities] = useState([]);
+
+    // Sync searchTerm with URL when URL changes (e.g., browser back/forward)
+    useEffect(() => {
+        const urlKeyword = searchParams.get('keyword') || '';
+        if (urlKeyword !== searchTerm) {
+            setSearchTerm(urlKeyword);
+        }
+    }, [searchParams]);
 
     // Fetch all vehicles and cities on mount
     useEffect(() => {
@@ -40,13 +52,27 @@ const VehicleListing = () => {
         fetchVehicles();
     }, []);
 
+    // Update URL when search term changes (but avoid updating if it matches URL)
+    useEffect(() => {
+        const currentKeyword = searchParams.get('keyword') || '';
+        if (searchTerm !== currentKeyword) {
+            const params = new URLSearchParams(searchParams);
+            if (searchTerm) {
+                params.set('keyword', searchTerm);
+            } else {
+                params.delete('keyword');
+            }
+            setSearchParams(params, { replace: true });
+        }
+    }, [searchTerm]);
+
     // Fetch filtered vehicles when filters change
     useEffect(() => {
         const fetchFilteredVehicles = async () => {
             try {
                 setLoading(true);
                 const params = {
-                    search: searchTerm || undefined,
+                    keyword: searchTerm || undefined,
                     category: selectedType !== 'all' ? selectedType : undefined,
                     transmission: selectedTransmission !== 'all' ? selectedTransmission : undefined,
                     priceRange: priceRange !== 'all' ? priceRange : undefined,
@@ -84,6 +110,7 @@ const VehicleListing = () => {
         setPriceRange('all');
         setFuelType('all');
         setCity('all');
+        setSearchParams({}, { replace: true });
     };
 
     if (loading) {
