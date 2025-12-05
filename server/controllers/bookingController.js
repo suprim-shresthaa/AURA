@@ -3,7 +3,7 @@ import Vehicle from "../models/vehicle.model.js";
 
 export const createBooking = async (req, res) => {
     try {
-        const { vehicleId, startDate, endDate, paymentMethod, isPaymentDeferred, notes } = req.body;
+        const { vehicleId, startDate, endDate, isPaymentDeferred, notes } = req.body;
         const userId = req.userId;
 
         if (!vehicleId || !startDate || !endDate) {
@@ -81,24 +81,20 @@ export const createBooking = async (req, res) => {
             totalDays,
             rentPerDay: vehicle.rentPerDay,
             totalAmount,
-            paymentMethod: isPaymentDeferred ? null : paymentMethod,
-            paymentStatus: isPaymentDeferred ? "pending" : "paid",
-            bookingStatus: isPaymentDeferred ? "pending" : "confirmed",
+            paymentMethod: "khalti",
+            paymentStatus: isPaymentDeferred ? "pending" : "pending", // Always pending until Khalti payment is completed
+            bookingStatus: isPaymentDeferred ? "pending" : "pending", // Always pending until payment is confirmed
             pickupLocation: vehicle.pickupLocation,
             notes: notes || "",
             isPaymentDeferred
         });
 
-        // If payment is not deferred, mark vehicle as unavailable
-        if (!isPaymentDeferred) {
-            await Vehicle.findByIdAndUpdate(vehicleId, { isAvailable: false });
-        }
+        // Don't mark vehicle as unavailable until payment is confirmed
+        // Vehicle will be marked unavailable when payment is completed via Khalti callback
 
         res.status(201).json({
             success: true,
-            message: isPaymentDeferred 
-                ? "Booking saved to your todos. Complete payment to confirm." 
-                : "Booking confirmed successfully",
+            message: "Booking created. Please complete payment via Khalti to confirm your booking.",
             data: booking
         });
     } catch (error) {
@@ -162,7 +158,6 @@ export const getBookingById = async (req, res) => {
 export const completePayment = async (req, res) => {
     try {
         const { id } = req.params;
-        const { paymentMethod } = req.body;
         const userId = req.userId;
 
         const booking = await Booking.findOne({ _id: id, userId });
@@ -181,20 +176,12 @@ export const completePayment = async (req, res) => {
             });
         }
 
-        booking.paymentStatus = "paid";
-        booking.paymentMethod = paymentMethod;
-        booking.bookingStatus = "confirmed";
-        booking.isPaymentDeferred = false;
-
-        await booking.save();
-
-        // Mark vehicle as unavailable
-        await Vehicle.findByIdAndUpdate(booking.vehicleId, { isAvailable: false });
-
-        res.json({
-            success: true,
-            message: "Payment completed successfully",
-            data: booking
+        // Payment should be completed through Khalti payment flow
+        // This endpoint is kept for backward compatibility but redirects to initiate payment
+        return res.status(400).json({
+            success: false,
+            message: "Please initiate payment through Khalti. Use /api/payments/khalti/initiate endpoint.",
+            redirectTo: `/api/payments/khalti/initiate`
         });
     } catch (error) {
         console.error("Error completing payment:", error);
@@ -242,6 +229,113 @@ export const cancelBooking = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to cancel booking"
+        });
+    }
+};
+
+/**
+ * Check vehicle availability for a date range
+ * This endpoint doesn't require authentication for checking availability
+ */
+export const checkAvailability = async (req, res) => {
+    try {
+        const { vehicleId, startDate, endDate } = req.query;
+
+        if (!vehicleId || !startDate || !endDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Vehicle ID, start date, and end date are required"
+            });
+        }
+
+        // Validate dates
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (start < today) {
+            return res.status(400).json({
+                success: false,
+                message: "Start date cannot be in the past"
+            });
+        }
+
+        if (end <= start) {
+            return res.status(400).json({
+                success: false,
+                message: "End date must be after start date"
+            });
+        }
+
+        // Check if vehicle exists and is available
+        const vehicle = await Vehicle.findById(vehicleId);
+        if (!vehicle) {
+            return res.status(404).json({
+                success: false,
+                message: "Vehicle not found"
+            });
+        }
+
+        if (!vehicle.isAvailable) {
+            return res.json({
+                success: true,
+                available: false,
+                message: "Vehicle is not available for booking",
+                reason: "vehicle_unavailable"
+            });
+        }
+
+        // Check for overlapping bookings
+        const overlappingBookings = await Booking.find({
+            vehicleId,
+            bookingStatus: { $in: ["pending", "confirmed", "active"] },
+            $or: [
+                {
+                    startDate: { $lte: end },
+                    endDate: { $gte: start }
+                }
+            ]
+        });
+
+        if (overlappingBookings.length > 0) {
+            // Get all booked date ranges for display
+            const bookedRanges = overlappingBookings.map(booking => ({
+                startDate: booking.startDate,
+                endDate: booking.endDate
+            }));
+
+            return res.json({
+                success: true,
+                available: false,
+                message: "Vehicle is already booked for the selected dates",
+                reason: "date_conflict",
+                bookedRanges
+            });
+        }
+
+        // Get all existing bookings to show unavailable dates
+        const allBookings = await Booking.find({
+            vehicleId,
+            bookingStatus: { $in: ["pending", "confirmed", "active"] }
+        }).select("startDate endDate").sort({ startDate: 1 });
+
+        const bookedRanges = allBookings.map(booking => ({
+            startDate: booking.startDate,
+            endDate: booking.endDate
+        }));
+
+        res.json({
+            success: true,
+            available: true,
+            message: "Vehicle is available for the selected dates",
+            bookedRanges
+        });
+    } catch (error) {
+        console.error("Error checking availability:", error);
+        res.status(500).json({
+            success: false,
+            message: error.message || "Failed to check availability"
         });
     }
 };

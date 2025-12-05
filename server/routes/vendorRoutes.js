@@ -6,7 +6,8 @@ import {
     approveVendorApplication, 
     rejectVendorApplication,
     getVendorStats,
-    getVendorBookings
+    getVendorBookings,
+    getVendorPayments
 } from "../controllers/vendorController.js";
 import userAuth from "../middlewares/userAuth.js";
 const router = express.Router();
@@ -20,5 +21,6 @@ router.put("/reject/:appId", rejectVendorApplication);
 // Vendor dashboard routes (require authentication)
 router.get("/dashboard/stats", userAuth, getVendorStats);
 router.get("/dashboard/bookings", userAuth, getVendorBookings);
+router.get("/dashboard/payments", userAuth, getVendorPayments);
 
 export default router;

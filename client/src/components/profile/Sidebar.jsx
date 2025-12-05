@@ -1,6 +1,6 @@
 // src/components/profile/Sidebar.jsx
 import React, { useContext, useRef, useState } from "react";
-import { User, Settings, LogOut, Edit, ArrowRightCircle } from "lucide-react";
+import { User, Settings, LogOut, Edit, ArrowRightCircle, Calendar } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -121,6 +121,17 @@ const Sidebar = ({ activeTab, setActiveTab, userData }) => {
                 >
                     <User className="mr-3 h-5 w-5" />
                     Profile
+                </button>
+
+                <button
+                    onClick={() => setActiveTab("bookings")}
+                    className={`w-full flex items-center px-6 py-3 text-sm font-medium ${activeTab === "bookings"
+                        ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
+                        : "text-gray-600 hover:bg-gray-50"
+                        }`}
+                >
+                    <Calendar className="mr-3 h-5 w-5" />
+                    My Bookings
                 </button>
 
                 <button
