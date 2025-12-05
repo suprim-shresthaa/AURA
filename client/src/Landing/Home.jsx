@@ -14,15 +14,11 @@ import {
   Calendar,
   Car,
   CreditCard,
-  MapPin,
   Search,
-  Settings,
   Star,
-  ThumbsDown,
-  ThumbsUp,
-  Users,
 } from "lucide-react";
 import HeroSection from "./HeroSection";
+import VehicleCard from "@/components/VehicleCard";
 
 const stepIcons = {
   search: Search,
@@ -74,7 +70,7 @@ const Home = () => {
   return (
     <div className=" text-[#0d141b] min-h-screen">
       <div className="flex justify-center">
-        <div className="flex flex-col max-w-7xl py-6 gap-6 mx-auto">
+        <div className="flex flex-col gap-6 mx-auto">
           <HeroSection />
 
           <section className="max-w-7xl mx-auto space-y-6">
@@ -109,60 +105,15 @@ const Home = () => {
                     ) : items.length ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {items.map((vehicle) => (
-                          <Card
+                          <VehicleCard
                             key={vehicle._id}
-                            className="border border-[#e2e8f0] flex flex-col"
-                          >
-                            <CardHeader className="p-0">
-                              <div
-                                className="w-full aspect-video bg-center bg-cover rounded-t-xl"
-                                style={{
-                                  backgroundImage: `url(${vehicle.mainImage})`,
-                                }}
-                                role="img"
-                                aria-label={vehicle.name}
-                              />
-                            </CardHeader>
-                            <CardContent className="pt-4 space-y-3">
-                              <div>
-                                <CardTitle className="text-base font-semibold line-clamp-1">
-                                  {vehicle.name}
-                                </CardTitle>
-                                <CardDescription className="text-sm text-[#4c739a]">
-                                  {vehicle.modelYear} • {vehicle.condition}
-                                </CardDescription>
-                              </div>
-
-                              <div className="flex flex-wrap gap-4 text-sm text-[#0d141b]">
-                                <span className="flex items-center gap-1">
-                                  <Users className="w-4 h-4" />
-                                  {vehicle.seatingCapacity}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Settings className="w-4 h-4" />
-                                  {vehicle.transmission}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="w-4 h-4" />
-                                  {vehicle.pickupLocation?.city}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-lg font-bold text-[#1380ec]">
-                                    Rs. {vehicle.rentPerDay} 
-                                    <span className="text-xs text-[#4c739a]">/day</span>
-                                  </p>
-                                </div>
-                                <Button size="sm" asChild>
-                                  <Link to={`/vehicles/${vehicle._id}`}>
-                                    View
-                                  </Link>
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
+                            imageUrl={vehicle.mainImage}
+                            altText={vehicle.name}
+                            title={vehicle.name}
+                            location={vehicle.pickupLocation?.city || 'Location not specified'}
+                            price={`Rs. ${vehicle.rentPerDay}`}
+                            link={`/vehicles/${vehicle._id}`}
+                          />
                         ))}
                       </div>
                     ) : (

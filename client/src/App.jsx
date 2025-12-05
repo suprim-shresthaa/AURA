@@ -30,7 +30,7 @@ function AppContent() {
     <>
       {!isAdminRoute && <Navbar />}
 
-      <div className={`bg-slate-100 ${isAdminRoute ? "" : "pt-16"}`}>
+      <div className={`bg-slate-100 min-h-screen flex-1 ${isAdminRoute ? "" : "pt-16  pb-20"}`}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />

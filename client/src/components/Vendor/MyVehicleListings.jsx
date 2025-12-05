@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Car, DollarSign, Edit, Trash2, Plus, AlertCircle, Eye, Search
 } from 'lucide-react';
@@ -6,6 +7,7 @@ import { AppContent } from '../context/AppContext';
 import ConfirmationModal from '../ui/ConfirmationModal';
 
 export default function MyVehicleListings() {
+    const navigate = useNavigate();
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -118,9 +120,13 @@ export default function MyVehicleListings() {
                             <h1 className="text-4xl font-bold text-slate-900 mb-2">My Vehicle Listings</h1>
                             <p className="text-slate-600">Manage and monitor your vehicle inventory</p>
                         </div>
-                        <button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl flex items-center gap-2 shadow-lg hover:shadow-xl transition-all font-medium">
-                            <Plus size={20} /> Add New Vehicle
-                        </button>
+                          <button
+                        onClick={() => navigate('/vendor/vehicle-upload')}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                        <Car size={18} />
+                        Add Vehicle
+                    </button>
                     </div>
 
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
@@ -154,7 +160,10 @@ export default function MyVehicleListings() {
                             {vehicles.length === 0 ? 'Start by adding your first vehicle' : 'Try adjusting your search or filter'}
                         </p>
                         {vehicles.length === 0 && (
-                            <button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl inline-flex items-center gap-2 font-medium shadow-lg">
+                            <button 
+                                onClick={() => navigate('/vendor/vehicle-upload')}
+                                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl inline-flex items-center gap-2 font-medium shadow-lg"
+                            >
                                 <Plus size={20} /> Add Your First Vehicle
                             </button>
                         )}

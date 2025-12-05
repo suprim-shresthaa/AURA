@@ -224,16 +224,11 @@ const Signup = () => {
     /*                                 JSX Return                                 */
     /* -------------------------------------------------------------------------- */
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-orange-50 px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex  items-center justify-center pb-28">
             <div className="w-full max-w-md sm:max-w-lg bg-white rounded-2xl shadow-lg border border-blue-100 overflow-hidden">
                 <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-6 sm:pb-8">
                     {!showVerification ? (
                         <>
-                            <div className="flex justify-center mb-6 sm:mb-8">
-                                <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-3 sm:p-4 rounded-full shadow-md">
-                                    <Car size={24} className="text-white sm:h-8 sm:w-8" />
-                                </div>
-                            </div>
                             <div className="text-center mb-6 sm:mb-8">
                                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Welcome to AURA</h2>
                                 <p className="text-gray-500 mt-2 text-xs sm:text-sm">Create an account in seconds</p>
@@ -298,11 +293,14 @@ const Signup = () => {
                                 )}
 
                                 <Button
-                                    text={isLoading ? "Creating Account..." : "Create Account"}
+                                    text={isLoading ? "Creating your account..." : "Create Account"}
                                     type="submit"
+                                    size="lg"
+                                    className="w-full h-12"
                                     disabled={!isValidPassword || isLoading}
-                                    className="w-full h-10 sm:h-12 mt-3 sm:mt-4 text-sm sm:text-base"
-                                />
+                                >
+                                    {isLoading ? "Creating your account..." : "Create Account"}
+                                </Button>
                                 <div className="mt-4 sm:mt-6 relative">
                                     <div className="absolute inset-0 flex items-center">
                                         <div className="w-full border-t border-gray-100"></div>
@@ -360,6 +358,7 @@ const Signup = () => {
                             </p>
 
                             <Button
+                                text={isLoading ? "Verifying..." : "Verify Email"}
                                 onClick={handleVerify}
                                 disabled={isLoading || timeLeft <= 0}
                                 className="w-full h-10 sm:h-12 mb-3 sm:mb-4 text-sm sm:text-base"
@@ -372,12 +371,12 @@ const Signup = () => {
                                 {resendDisabled ? (
                                     <span className="text-blue-600">Resend available in {countdown}s</span>
                                 ) : (
-                                    <button
+                                    <Button
                                         onClick={handleResendOtp}
-                                        className="text-blue-600 font-medium hover:underline"
+                                        className="text-secondary-foreground hover:text-primary font-medium hover:underline"
                                     >
                                         Resend OTP
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                         </>

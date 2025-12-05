@@ -10,7 +10,7 @@ export const heroContent = {
   subtitle:
     "Explore a wide selection of cars, motorbikes, scooters, and spare parts for your needs. Book online, verify, and pay securely.",
   backgroundImage:
-    "https://img.freepik.com/free-vector/onsite-emergency-service-by-car-insurance-service-young-man-calls-auto-insurance-service-that-provides-services-when-car-is-inoperable-vector-illustration-business-character-flat-design_1150-59749.jpg?ga=GA1.1.774625591.1764256787&semt=ais_hybrid&w=740&q=80",
+    "/banner.png",
   actions: [
     { label: "Rent a Vehicle", variant: "primary", path: "/vehicles" },
     { label: "Rent Spare Parts", variant: "secondary", path: "/spare-parts" },

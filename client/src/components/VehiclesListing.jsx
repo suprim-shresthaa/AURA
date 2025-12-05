@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import axiosInstance from '@/lib/axiosInstance';
-import { Link } from 'react-router-dom';
-import { Search, Car, Users, Settings, MapPin, Fuel } from 'lucide-react';
+import { Search, Car, RotateCcw } from 'lucide-react';
+import VehicleCard from './VehicleCard';
+import { Button } from './ui/button';
 
 const VehicleListing = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -76,6 +77,15 @@ const VehicleListing = () => {
 
     const types = ['all', 'Car', 'Bike', 'Scooter', 'Jeep', 'Van'];
 
+    const resetFilters = () => {
+        setSearchTerm('');
+        setSelectedType('all');
+        setSelectedTransmission('all');
+        setPriceRange('all');
+        setFuelType('all');
+        setCity('all');
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -88,7 +98,7 @@ const VehicleListing = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen">
             <div className="max-w-7xl mx-auto px-4 py-6">
                 {/* Header */}
                 <div className="mb-6">
@@ -157,9 +167,9 @@ const VehicleListing = () => {
                         </select>
                     </div>
                     
-                    {/* City Filter */}
-                    {allCities.length > 0 && (
-                        <div className="mt-3">
+                    {/* City Filter and Reset Button */}
+                    <div className="mt-3 flex flex-wrap gap-3 items-center">
+                        {allCities.length > 0 && (
                             <select
                                 value={city}
                                 onChange={(e) => setCity(e.target.value)}
@@ -170,8 +180,17 @@ const VehicleListing = () => {
                                     <option key={cityName} value={cityName}>{cityName}</option>
                                 ))}
                             </select>
-                        </div>
-                    )}
+                        )}
+                        <Button
+                            onClick={resetFilters}
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-2"
+                        >
+                            <RotateCcw className="w-4 h-4" />
+                            Reset Filters
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Results Count */}
@@ -185,68 +204,17 @@ const VehicleListing = () => {
                 {vehicles.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {vehicles.map(vehicle => (
-                            <Link
+                            <VehicleCard
                                 key={vehicle._id}
-                                to={`/vehicles/${vehicle._id}`}
-                                className="group"
-                            >
-                                <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all duration-200">
-                                    {/* Image */}
-                                    <div className="relative h-40 overflow-hidden bg-gray-100">
-                                        <img
-                                            src={vehicle.mainImage}
-                                            alt={vehicle.name}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                        />
-                                        {vehicle.isAvailable && (
-                                            <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-medium">
-                                                Available
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="p-3">
-                                        <h3 className="font-semibold text-gray-900 mb-0.5 group-hover:text-blue-600 transition-colors line-clamp-1">
-                                            {vehicle.name}
-                                        </h3>
-                                        <p className="text-xs text-gray-500 mb-2">{vehicle.modelYear} • {vehicle.category}</p>
-
-                                        {/* Quick Info */}
-                                        <div className="flex items-center gap-3 mb-3 text-xs text-gray-600 flex-wrap">
-                                            <div className="flex items-center gap-1">
-                                                <Users className="w-3.5 h-3.5" />
-                                                <span>{vehicle.seatingCapacity}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Settings className="w-3.5 h-3.5" />
-                                                <span>{vehicle.transmission}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <Fuel className="w-3.5 h-3.5" />
-                                                <span>{vehicle.fuelType}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <MapPin className="w-3.5 h-3.5" />
-                                                <span>{vehicle.pickupLocation?.city}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Price */}
-                                        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                                            <div>
-                                                <span className="text-lg font-bold text-blue-600">
-                                                    Rs. {vehicle.rentPerDay}
-                                                </span>
-                                                <span className="text-xs text-gray-500">/day</span>
-                                            </div>
-                                            <span className="text-xs text-blue-600 font-medium group-hover:underline">
-                                                View →
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
+                                imageUrl={vehicle.mainImage}
+                                altText={vehicle.name}
+                                title={vehicle.name}
+                                location={vehicle.pickupLocation?.city || 'Location not specified'}
+                                price={`Rs. ${vehicle.rentPerDay}`}
+                                link={`/vehicles/${vehicle._id}`}
+                                isAvailable={vehicle.isAvailable}
+                                proposedFor={vehicle.category}
+                            />
                         ))}
                     </div>
                 ) : (
@@ -263,4 +231,4 @@ const VehicleListing = () => {
     );
 };
 
-export default VehicleListing;
+export default VehicleListing;      
