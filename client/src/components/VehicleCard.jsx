@@ -10,7 +10,7 @@ export default function VehicleCard(
     return (
         <Card className="w-full group pt-0 rounded-2xl overflow-hidden border border-gray-200/80 shadow-sm bg-white gap-0 transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/50  hover:border-gray-300">
             {/* Image Section */}
-            <div className="relative h-56 w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
+            <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
                 {/* Image with overlay gradient on hover */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0" />
                 <img

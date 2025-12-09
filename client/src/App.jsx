@@ -19,6 +19,7 @@ import VehicleDetailsPage from "./components/VehicleDetailsPage";
 import Footer from "./components/Footer";
 import SparePartsForm from "./components/Admin/SparePartsForm";
 import SparePartsListing from "./components/SparePartsListing";
+import SparePartDetailsPage from "./components/SparePartDetailsPage";
 import AdminLayout from "./components/Admin/AdminLayout";
 import "./App.css"; 
 
@@ -39,6 +40,7 @@ function AppContent() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/vehicles/:id" element={<VehicleDetailsPage />} />
           <Route path="/spare-parts" element={<SparePartsListing />} />
+          <Route path="/spare-parts/:id" element={<SparePartDetailsPage />} />
 
           <Route path="/vendor/apply" element={<VendorApplicationForm />} />
           <Route path="/vendor/vehicle-upload" element={<VehicleUploadForm />} />
