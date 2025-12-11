@@ -19,6 +19,7 @@ import VehicleDetailsPage from "./components/VehicleDetailsPage";
 import Footer from "./components/Footer";
 import SparePartsForm from "./components/Admin/SparePartsForm";
 import SparePartsListing from "./components/SparePartsListing";
+import SparePartDetailsPage from "./components/SparePartDetailsPage";
 import AdminLayout from "./components/Admin/AdminLayout";
 import PaymentTracking from "./components/Admin/PaymentTracking";
 import PaymentCallback from "./components/PaymentCallback";
@@ -33,7 +34,7 @@ function AppContent() {
     <>
       {!isAdminRoute && <Navbar />}
 
-      <div className={`bg-slate-100 ${isAdminRoute ? "" : "pt-16"}`}>
+      <div className={`bg-slate-100 min-h-screen flex-1 ${isAdminRoute ? "" : "pt-16  pb-20"}`}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -49,6 +50,7 @@ function AppContent() {
           <Route path="/payment/esewa/success" element={<PaymentCallback />} />
           <Route path="/payment/esewa/failure" element={<PaymentCallback />} />
           <Route path="/api/payments/esewa/callback" element={<EsewaCallbackHandler />} />
+          <Route path="/spare-parts/:id" element={<SparePartDetailsPage />} />
 
           <Route path="/vendor/apply" element={<VendorApplicationForm />} />
           <Route path="/vendor/vehicle-upload" element={<VehicleUploadForm />} />

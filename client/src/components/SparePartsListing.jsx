@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '@/lib/axiosInstance';
-import { Link } from 'react-router-dom';
-import { Search, Package, DollarSign, Box, Filter } from 'lucide-react';
+import { Search, Package } from 'lucide-react';
+import SparePartCard from './SparePartCard';
 
 const SparePartsListing = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -189,74 +189,7 @@ const SparePartsListing = () => {
                 {spareParts.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {spareParts.map(part => (
-                            <Link
-                                key={part._id}
-                                to={`/spare-parts/${part._id}`}
-                                className="group"
-                            >
-                                <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all duration-200">
-                                    {/* Image */}
-                                    <div className="relative h-40 overflow-hidden bg-gray-100">
-                                        {part.images && part.images.length > 0 ? (
-                                            <img
-                                                src={part.images[0]}
-                                                alt={part.name}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                                                <Package className="w-12 h-12 text-gray-400" />
-                                            </div>
-                                        )}
-                                        {part.isAvailable && part.stock > 0 ? (
-                                            <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-medium">
-                                                In Stock
-                                            </div>
-                                        ) : (
-                                            <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-0.5 rounded-full text-xs font-medium">
-                                                Out of Stock
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="p-3">
-                                        <div className="mb-2">
-                                            <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">
-                                                {part.category}
-                                            </span>
-                                        </div>
-                                        <h3 className="font-semibold text-gray-900 mb-0.5 group-hover:text-blue-600 transition-colors line-clamp-1">
-                                            {part.name}
-                                        </h3>
-                                        <p className="text-xs text-gray-500 mb-2">{part.brand}</p>
-
-                                        {part.compatibleVehicles && (
-                                            <p className="text-xs text-gray-600 mb-2 line-clamp-1">
-                                                Compatible: {part.compatibleVehicles}
-                                            </p>
-                                        )}
-
-                                        {/* Stock Info */}
-                                        <div className="flex items-center gap-2 mb-3 text-xs text-gray-600">
-                                            <Box className="w-3.5 h-3.5" />
-                                            <span>Stock: {part.stock}</span>
-                                        </div>
-
-                                        {/* Price */}
-                                        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                                            <div>
-                                                <span className="text-lg font-bold text-blue-600">
-                                                    Rs. {part.price}
-                                                </span>
-                                            </div>
-                                            <span className="text-xs text-blue-600 font-medium group-hover:underline">
-                                                View →
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
+                            <SparePartCard key={part._id} part={part} />
                         ))}
                     </div>
                 ) : (

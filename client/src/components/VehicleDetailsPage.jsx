@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import BookingModal from "./BookingModal";
 import { AppContent } from "./context/AppContext";
+import { Button } from "./ui/button";
 
 const API_URL = "http://localhost:5001/api/vehicles";
 
@@ -80,13 +81,13 @@ export default function VehicleDetailsPage() {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="mb-6">
                     <h1 className="text-3xl font-bold text-gray-900 mb-3">{vehicle.name}</h1>
                     <div className="flex flex-wrap items-center gap-3">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
                             {vehicle.category}
                         </span>
                         <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
@@ -119,7 +120,7 @@ export default function VehicleDetailsPage() {
                                     <button
                                         key={index}
                                         onClick={() => setSelectedImage(img)}
-                                        className={`relative bg-white rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md ${selectedImage === img ? 'ring-2 ring-blue-600' : ''
+                                        className={`relative bg-white rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md ${selectedImage === img ? 'ring-2 ring-primary' : ''
                                             }`}
                                     >
                                         <img
@@ -128,7 +129,7 @@ export default function VehicleDetailsPage() {
                                             className="w-full h-24 object-cover"
                                         />
                                         {selectedImage === img && (
-                                            <div className="absolute inset-0 bg-blue-600 bg-opacity-20"></div>
+                                            <div className="absolute inset-0"></div>
                                         )}
                                     </button>
                                 ))}
@@ -182,7 +183,7 @@ export default function VehicleDetailsPage() {
                     {/* Right Column - Details Sidebar */}
                     <div className="space-y-4">
                         {/* Pricing Card */}
-                        <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-sm p-5 text-white">
+                        <div className="bg-primary rounded-lg shadow-sm p-5 text-white">
                             <p className="text-sm opacity-90 mb-1">Rental Price</p>
                             <div className="flex items-baseline gap-1">
                                 <span className="text-3xl font-bold">Rs. {vehicle.rentPerDay}</span>
@@ -226,8 +227,8 @@ export default function VehicleDetailsPage() {
                         <div className="bg-white rounded-lg shadow-sm p-5">
                             <h2 className="text-lg font-semibold text-gray-900 mb-3">Pickup Location</h2>
                             <div className="flex items-start gap-3">
-                                <div className="p-2 bg-blue-50 rounded-lg">
-                                    <MapPin className="w-5 h-5 text-blue-600" />
+                                <div className="p-2 rounded-lg">
+                                    <MapPin className="w-5 h-5 text-primary" />
                                 </div>
                                 <div>
                                     <p className="text-gray-900 font-medium">{vehicle.pickupLocation.address}</p>
@@ -237,7 +238,7 @@ export default function VehicleDetailsPage() {
                         </div>
 
                         {/* Action Button */}
-                        <button 
+                        <Button
                             onClick={() => {
                                 if (!isLoggedin) {
                                     navigate("/login");
@@ -250,14 +251,11 @@ export default function VehicleDetailsPage() {
                                 setIsBookingModalOpen(true);
                             }}
                             disabled={!vehicle.isAvailable}
-                            className={`w-full font-semibold py-3 px-4 rounded-lg transition-colors shadow-sm ${
-                                vehicle.isAvailable
-                                    ? "bg-blue-600 hover:bg-blue-700 text-white"
-                                    : "bg-gray-400 text-gray-600 cursor-not-allowed"
-                            }`}
+                            size="lg"
+                            className="w-full h-12  cursor-pointer"
                         >
                             {vehicle.isAvailable ? "Book Now" : "Not Available"}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

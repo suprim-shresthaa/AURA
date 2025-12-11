@@ -9,7 +9,7 @@ const iconMap = {
 
 const Footer = () => {
   return (
-    <footer className="bg-white border-t border-[#e7edf3] flex justify-center">
+    <footer className="bg-white border-t mt-10 border-[#e7edf3] flex justify-center">
       <div className="flex max-w-[960px] flex-1 flex-col px-5 py-10 text-center gap-6">
         <div className="flex flex-wrap items-center justify-center gap-6 sm:flex-row sm:justify-around">
           {footerLinks.map((link) => (

@@ -57,15 +57,9 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center  p-4">
+        <div className="flex  items-center justify-center pb-28">
             <div className="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden border border-blue-100">
                 <div className="px-8 pt-10 pb-8">
-                    {/* Logo */}
-                    <div className="flex justify-center mb-8">
-                        <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-4 rounded-full shadow-md">
-                            <Car size={32} className="text-white" />
-                        </div>
-                    </div>
 
                     {/* Header */}
                     <div className="text-center mb-8">
@@ -122,7 +116,7 @@ const Login = () => {
                         <div className="flex justify-end">
                             <Link
                                 to="/reset-password"
-                                className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                                className="text-secondary-foreground hover:text-primary transition-colors"
                             >
                                 Forgot password?
                             </Link>
@@ -132,8 +126,8 @@ const Login = () => {
                         <Button
                             text={isLoading ? "Signing in..." : "Sign In"}
                             type="submit"
-                            variant="primary"
-                            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 mt-4 h-12 shadow-sm"
+                            size="lg"
+                            className="w-full h-12"
                             disabled={isLoading}
                         >
                             {isLoading ? "Signing in..." : "Sign In"}
@@ -153,7 +147,7 @@ const Login = () => {
                             Don’t have an account?{" "}
                             <Link
                                 to="/signup"
-                                className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                                className="font-semibold text-secondary-foreground hover:text-primary transition-colors"
                             >
                                 Sign up
                             </Link>
