@@ -175,20 +175,36 @@ export const getVendorStats = async (req, res) => {
         const completedBookings = bookings.filter(b => b.bookingStatus === "completed").length;
 
         // Calculate earnings
-        const totalEarnings = bookings
-            .filter(b => b.paymentStatus === "paid")
-            .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+        const paidBookings = bookings.filter(b => b.paymentStatus === "paid");
+        const totalEarnings = paidBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
         // Monthly earnings (current month)
         const currentMonth = new Date();
         currentMonth.setDate(1);
         currentMonth.setHours(0, 0, 0, 0);
-        const monthlyEarnings = bookings
-            .filter(b => 
-                b.paymentStatus === "paid" && 
-                new Date(b.createdAt) >= currentMonth
-            )
+        const monthlyEarnings = paidBookings
+            .filter(b => new Date(b.createdAt) >= currentMonth)
             .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+
+        // Today's earnings
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayEarnings = paidBookings
+            .filter(b => {
+                const bookingDate = new Date(b.createdAt);
+                bookingDate.setHours(0, 0, 0, 0);
+                return bookingDate.getTime() === today.getTime();
+            })
+            .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+
+        // Payment statistics
+        const pendingPayments = bookings.filter(b => b.paymentStatus === "pending").length;
+        const refundedPayments = bookings.filter(b => b.paymentStatus === "refunded").length;
+        
+        // Khalti payment statistics
+        const khaltiPayments = paidBookings.filter(b => b.paymentMethod === "khalti");
+        const khaltiRevenue = khaltiPayments.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+        const successfulKhaltiPayments = khaltiPayments.filter(b => b.khaltiTransactionId).length;
 
         // Unique customers
         const uniqueCustomers = new Set(
@@ -226,7 +242,15 @@ export const getVendorStats = async (req, res) => {
                 completedBookings,
                 totalEarnings,
                 monthlyEarnings,
+                todayEarnings,
                 uniqueCustomers,
+                // Payment details
+                paidBookings: paidBookings.length,
+                pendingPayments,
+                refundedPayments,
+                khaltiPayments: khaltiPayments.length,
+                khaltiRevenue,
+                successfulKhaltiPayments,
                 topVehicles: vehiclePerformance.slice(0, 5),
                 recentBookings: bookings.slice(0, 10)
             }
@@ -245,7 +269,7 @@ export const getVendorStats = async (req, res) => {
 export const getVendorBookings = async (req, res) => {
     try {
         const vendorId = req.userId;
-        const { status, limit } = req.query;
+        const { status, paymentStatus, limit } = req.query;
 
         // Get all vehicles for this vendor
         const vehicles = await Vehicle.find({ vendorId });
@@ -255,6 +279,9 @@ export const getVendorBookings = async (req, res) => {
         const query = { vehicleId: { $in: vehicleIds } };
         if (status && status !== "all") {
             query.bookingStatus = status;
+        }
+        if (paymentStatus && paymentStatus !== "all") {
+            query.paymentStatus = paymentStatus;
         }
 
         // Get bookings
@@ -278,6 +305,107 @@ export const getVendorBookings = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to fetch bookings",
+            error: error.message
+        });
+    }
+};
+
+// Get vendor payment details
+export const getVendorPayments = async (req, res) => {
+    try {
+        const vendorId = req.userId;
+        const { 
+            paymentStatus, 
+            startDate,
+            endDate,
+            page = 1,
+            limit = 20
+        } = req.query;
+
+        // Get all vehicles for this vendor
+        const vehicles = await Vehicle.find({ vendorId });
+        const vehicleIds = vehicles.map(v => v._id);
+
+        // Build query
+        const query = { vehicleId: { $in: vehicleIds } };
+        
+        if (paymentStatus && paymentStatus !== "all") {
+            query.paymentStatus = paymentStatus;
+        }
+        
+        if (startDate || endDate) {
+            query.createdAt = {};
+            if (startDate) {
+                query.createdAt.$gte = new Date(startDate);
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                query.createdAt.$lte = end;
+            }
+        }
+
+        // Calculate pagination
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        // Get bookings with payment details
+        const bookings = await Booking.find(query)
+            .populate("userId", "name email contact")
+            .populate("vehicleId", "name mainImage category")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        // Get total count
+        const total = await Booking.countDocuments(query);
+
+        // Format payment data
+        const payments = bookings.map(booking => ({
+            id: booking._id,
+            bookingId: booking._id,
+            customer: {
+                id: booking.userId?._id,
+                name: booking.userId?.name,
+                email: booking.userId?.email,
+                contact: booking.userId?.contact
+            },
+            vehicle: {
+                id: booking.vehicleId?._id,
+                name: booking.vehicleId?.name,
+                category: booking.vehicleId?.category,
+                image: booking.vehicleId?.mainImage
+            },
+            amount: booking.totalAmount,
+            rentPerDay: booking.rentPerDay,
+            totalDays: booking.totalDays,
+            paymentMethod: booking.paymentMethod,
+            paymentStatus: booking.paymentStatus,
+            bookingStatus: booking.bookingStatus,
+            khaltiPidx: booking.khaltiPidx,
+            khaltiTransactionId: booking.khaltiTransactionId,
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+            createdAt: booking.createdAt,
+            updatedAt: booking.updatedAt
+        }));
+
+        res.json({
+            success: true,
+            data: {
+                payments,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(total / parseInt(limit)),
+                    totalItems: total,
+                    itemsPerPage: parseInt(limit)
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching vendor payments:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch payments",
             error: error.message
         });
     }

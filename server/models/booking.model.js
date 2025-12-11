@@ -39,7 +39,29 @@ const bookingSchema = new mongoose.Schema(
         },
         paymentMethod: {
             type: String,
-            enum: ["card", "digital_wallet", "cash"],
+            enum: ["khalti", "esewa"],
+            default: null
+        },
+        // Khalti payment fields
+        khaltiPidx: {
+            type: String,
+            default: null
+        },
+        khaltiTransactionId: {
+            type: String,
+            default: null
+        },
+        // eSewa payment fields
+        esewaTransactionUuid: {
+            type: String,
+            default: null
+        },
+        esewaTransactionCode: {
+            type: String,
+            default: null
+        },
+        esewaRefId: {
+            type: String,
             default: null
         },
         bookingStatus: {

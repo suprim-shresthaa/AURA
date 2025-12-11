@@ -5,7 +5,14 @@ const userAuth = async (req, res, next) => {
     const { token } = req.cookies;
 
     if (!token) {
-        return res.json({ success: false, message: "Not Authorized. Login Again" });
+        return res.status(401).json({ 
+            success: false, 
+            message: "Not Authorized. Please login again.",
+            error: {
+                detail: "No token provided",
+                status_code: 401
+            }
+        });
     }
 
     try {
@@ -16,7 +23,14 @@ const userAuth = async (req, res, next) => {
         );
 
         if (!user) {
-            return res.json({ success: false, message: "User not found. Login Again" });
+            return res.status(401).json({ 
+                success: false, 
+                message: "User not found. Please login again.",
+                error: {
+                    detail: "User not found",
+                    status_code: 401
+                }
+            });
         }
 
         req.user = user; // ✅ Attach full user object for use in routes
@@ -29,7 +43,23 @@ const userAuth = async (req, res, next) => {
         next();
     } catch (error) {
         console.error("❌ Auth Middleware Error:", error.message);
-        return res.json({ success: false, message: error.message });
+        
+        // Handle specific JWT errors
+        let errorMessage = "Invalid token. Please login again.";
+        if (error.name === "TokenExpiredError") {
+            errorMessage = "Token expired. Please login again.";
+        } else if (error.name === "JsonWebTokenError") {
+            errorMessage = "Invalid token. Please login again.";
+        }
+        
+        return res.status(401).json({ 
+            success: false, 
+            message: errorMessage,
+            error: {
+                detail: errorMessage,
+                status_code: 401
+            }
+        });
     }
 };
 

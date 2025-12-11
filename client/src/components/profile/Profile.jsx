@@ -3,6 +3,7 @@ import React, { useContext, useState } from "react";
 import Sidebar from "./Sidebar";
 import ProfileInfo from "./ProfileInfo";
 import Settings from './Settings'
+import Bookings from './Bookings'
 import { AppContent } from "../context/AppContext";
 
 const Profile = () => {
@@ -21,6 +22,7 @@ const Profile = () => {
                     {/* Main Content */}
                     <main className="mt-8 lg:mt-0 lg:col-span-9">
                         {activeTab === "profile" && <ProfileInfo />}
+                        {activeTab === "bookings" && <Bookings />}
                         {activeTab === "settings" && <Settings />}
                     </main>
                 </div>

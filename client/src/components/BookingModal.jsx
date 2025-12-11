@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Calendar, DollarSign, CreditCard, Wallet, Clock, CheckCircle2 } from "lucide-react";
+import { X, Calendar, DollarSign, CreditCard, Clock, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,8 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
     const [step, setStep] = useState(1); // 1: dates, 2: payment option, 3: payment details
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [checkingAvailability, setCheckingAvailability] = useState(false);
+    const [availabilityStatus, setAvailabilityStatus] = useState(null); // { available: true/false, bookedRanges: [] }
     
     const [formData, setFormData] = useState({
         startDate: "",
@@ -34,6 +36,7 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                 notes: ""
             });
             setError("");
+            setAvailabilityStatus(null);
         }
     }, [isOpen]);
 
@@ -55,35 +58,125 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
         setError("");
+        
+        // Check availability when dates change
+        if ((name === "startDate" || name === "endDate") && vehicle?._id) {
+            const newStartDate = name === "startDate" ? value : formData.startDate;
+            const newEndDate = name === "endDate" ? value : formData.endDate;
+            
+            if (newStartDate && newEndDate) {
+                checkAvailability(newStartDate, newEndDate);
+            } else {
+                setAvailabilityStatus(null);
+            }
+        }
     };
 
-    const validateDates = () => {
-        if (!formData.startDate || !formData.endDate) {
-            setError("Please select both start and end dates");
-            return false;
+    const checkAvailability = async (startDate, endDate) => {
+        if (!startDate || !endDate || !vehicle?._id) return;
+        
+        setCheckingAvailability(true);
+        try {
+            const response = await axiosInstance.get("/bookings/check-availability", {
+                params: {
+                    vehicleId: vehicle._id,
+                    startDate,
+                    endDate
+                }
+            });
+
+            if (response.data.success) {
+                setAvailabilityStatus({
+                    available: response.data.available,
+                    bookedRanges: response.data.bookedRanges || [],
+                    message: response.data.message
+                });
+
+                if (!response.data.available) {
+                    setError(response.data.message || "Vehicle is not available for the selected dates");
+                } else {
+                    setError("");
+                }
+            }
+        } catch (err) {
+            console.error("Error checking availability:", err);
+            // Don't show error for availability check failures, just log it
+        } finally {
+            setCheckingAvailability(false);
         }
-
-        const start = new Date(formData.startDate);
-        const end = new Date(formData.endDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        if (start < today) {
-            setError("Start date cannot be in the past");
-            return false;
-        }
-
-        if (end <= start) {
-            setError("End date must be after start date");
-            return false;
-        }
-
-        return true;
     };
 
-    const handleNext = () => {
+
+    const handleNext = async () => {
         if (step === 1) {
-            if (validateDates()) {
+            // First validate basic date rules
+            if (!formData.startDate || !formData.endDate) {
+                setError("Please select both start and end dates");
+                return;
+            }
+
+            const start = new Date(formData.startDate);
+            const end = new Date(formData.endDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (start < today) {
+                setError("Start date cannot be in the past");
+                return;
+            }
+
+            if (end <= start) {
+                setError("End date must be after start date");
+                return;
+            }
+
+            // Check availability if not already checked or if dates changed
+            if (availabilityStatus === null || checkingAvailability) {
+                setCheckingAvailability(true);
+                try {
+                    const response = await axiosInstance.get("/bookings/check-availability", {
+                        params: {
+                            vehicleId: vehicle._id,
+                            startDate: formData.startDate,
+                            endDate: formData.endDate
+                        }
+                    });
+
+                    if (response.data.success) {
+                        const newStatus = {
+                            available: response.data.available,
+                            bookedRanges: response.data.bookedRanges || [],
+                            message: response.data.message
+                        };
+                        setAvailabilityStatus(newStatus);
+
+                        if (!response.data.available) {
+                            setError(response.data.message || "Vehicle is not available for the selected dates");
+                            setCheckingAvailability(false);
+                            return;
+                        } else {
+                            setError("");
+                            // If available, proceed to next step
+                            setStep(2);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error checking availability:", err);
+                    setError("Failed to check availability. Please try again.");
+                } finally {
+                    setCheckingAvailability(false);
+                }
+                return;
+            }
+
+            // If availability is checked and not available, show error
+            if (availabilityStatus && !availabilityStatus.available) {
+                setError(availabilityStatus.message || "Vehicle is not available for the selected dates");
+                return;
+            }
+
+            // If available, proceed to next step
+            if (availabilityStatus && availabilityStatus.available) {
                 setStep(2);
             }
         } else if (step === 2) {
@@ -109,32 +202,92 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
         setError("");
 
         try {
+            const days = calculateDays();
+            const total = calculateTotal();
+
+            // Prepare booking data
             const bookingData = {
                 vehicleId: vehicle._id,
                 startDate: formData.startDate,
                 endDate: formData.endDate,
-                isPaymentDeferred: formData.paymentOption === "todo",
-                paymentMethod: formData.paymentOption === "now" ? formData.paymentMethod : null,
-                notes: formData.notes
+                totalDays: days,
+                rentPerDay: vehicle.rentPerDay,
+                totalAmount: total,
+                notes: formData.notes || ""
             };
 
-            const response = await axiosInstance.post("/bookings/create", bookingData);
+            // If payment option is "now", initiate payment (booking will be created after payment succeeds)
+            if (formData.paymentOption === "now") {
+                try {
+                    if (formData.paymentMethod === "esewa") {
+                        // eSewa payment
+                        const paymentResponse = await axiosInstance.post("/payments/esewa/initiate", {
+                            bookingData: bookingData
+                        });
 
-            if (response.data.success) {
-                toast.success(response.data.message || "Booking created successfully!");
-                setTimeout(() => {
-                    onClose();
-                    if (formData.paymentOption === "todo") {
-                        // Navigate to profile or bookings page
-                        navigate("/profile");
-                    } else {
-                        // Refresh or show success
-                        window.location.reload();
+                        if (paymentResponse.data.success && paymentResponse.data.data.formData) {
+                            // Create and submit form to eSewa
+                            const form = document.createElement("form");
+                            form.method = "POST";
+                            form.action = paymentResponse.data.data.formUrl;
+
+                            Object.keys(paymentResponse.data.data.formData).forEach(key => {
+                                const input = document.createElement("input");
+                                input.type = "hidden";
+                                input.name = key;
+                                input.value = paymentResponse.data.data.formData[key];
+                                form.appendChild(input);
+                            });
+                            console.log(form)
+                            document.body.appendChild(form);
+                            form.submit();
+                            return; // Don't close modal yet, let eSewa handle the redirect
+                        } else {
+                            setError("Failed to initiate payment. Please try again.");
+                        }
                     }
-                }, 1500);
+                } catch (paymentErr) {
+                    console.error("Payment initiation error:", paymentErr);
+                    
+                    // Handle authentication errors specifically
+                    if (paymentErr.response?.status === 401) {
+                        const errorMessage = paymentErr.response?.data?.message || "Session expired. Please login again.";
+                        setError(errorMessage);
+                        toast.error(errorMessage);
+                        
+                        // Redirect to login after showing error
+                        setTimeout(() => {
+                            onClose();
+                            navigate("/login");
+                        }, 2000);
+                        return;
+                    }
+                    
+                    setError(
+                        paymentErr.response?.data?.message || 
+                        "Failed to initiate payment. Please try again."
+                    );
+                }
+            } else {
+                // Payment deferred - create booking immediately
+                const response = await axiosInstance.post("/bookings/create", {
+                    ...bookingData,
+                    isPaymentDeferred: true,
+                    paymentMethod: null
+                });
+
+                if (response.data.success) {
+                    toast.success(response.data.message || "Booking saved successfully!");
+                    setTimeout(() => {
+                        onClose();
+                        navigate("/profile");
+                    }, 1500);
+                } else {
+                    setError(response.data.message || "Failed to create booking. Please try again.");
+                }
             }
         } catch (err) {
-            setError(err.response?.data?.message || "Failed to create booking. Please try again.");
+            setError(err.response?.data?.message || "Failed to process booking. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -226,6 +379,7 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                                             value={formData.startDate}
                                             onChange={handleInputChange}
                                             min={new Date().toISOString().split("T")[0]}
+                                            className={availabilityStatus && !availabilityStatus.available ? "border-red-300" : ""}
                                         />
                                     </div>
                                     <div>
@@ -240,9 +394,41 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                                             value={formData.endDate}
                                             onChange={handleInputChange}
                                             min={formData.startDate || new Date().toISOString().split("T")[0]}
+                                            className={availabilityStatus && !availabilityStatus.available ? "border-red-300" : ""}
                                         />
                                     </div>
                                 </div>
+                                
+                                {/* Availability Status */}
+                                {checkingAvailability && (
+                                    <div className="mt-3 text-sm text-blue-600 flex items-center gap-2">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                                        Checking availability...
+                                    </div>
+                                )}
+                                
+                                {availabilityStatus && availabilityStatus.available && formData.startDate && formData.endDate && (
+                                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                        <div className="flex items-center gap-2 text-green-700 text-sm">
+                                            <CheckCircle2 size={16} />
+                                            <span>Vehicle is available for the selected dates</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Show Booked Dates */}
+                                {availabilityStatus && availabilityStatus.bookedRanges && availabilityStatus.bookedRanges.length > 0 && (
+                                    <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                                        <h4 className="text-sm font-semibold text-amber-900 mb-2">Booked Dates:</h4>
+                                        <div className="space-y-1">
+                                            {availabilityStatus.bookedRanges.map((range, index) => (
+                                                <div key={index} className="text-xs text-amber-700">
+                                                    {new Date(range.startDate).toLocaleDateString()} - {new Date(range.endDate).toLocaleDateString()}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {days > 0 && (
@@ -282,7 +468,11 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setFormData(prev => ({ ...prev, paymentOption: "now" }));
+                                            setFormData(prev => ({ 
+                                                ...prev, 
+                                                paymentOption: "now",
+                                                paymentMethod: prev.paymentMethod || "esewa" // Default to esewa if not set
+                                            }));
                                             setError("");
                                         }}
                                         className={`p-6 border-2 rounded-lg text-left transition-all ${
@@ -333,36 +523,31 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                                 {formData.paymentOption === "now" && (
                                     <div className="mt-6">
                                         <Label className="mb-3 block">Payment Method</Label>
-                                        <div className="grid grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 gap-4">
                                             <button
                                                 type="button"
                                                 onClick={() => {
-                                                    setFormData(prev => ({ ...prev, paymentMethod: "card" }));
+                                                    setFormData(prev => ({ ...prev, paymentMethod: "esewa" }));
+                                                    setError("");
                                                 }}
                                                 className={`p-4 border-2 rounded-lg text-left transition-all ${
-                                                    formData.paymentMethod === "card"
+                                                    formData.paymentMethod === "esewa"
                                                         ? "border-blue-600 bg-blue-50"
                                                         : "border-gray-200 hover:border-gray-300"
                                                 }`}
                                             >
-                                                <CreditCard className="inline w-5 h-5 mr-2" />
-                                                <span className="font-medium">Card</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setFormData(prev => ({ ...prev, paymentMethod: "digital_wallet" }));
-                                                }}
-                                                className={`p-4 border-2 rounded-lg text-left transition-all ${
-                                                    formData.paymentMethod === "digital_wallet"
-                                                        ? "border-blue-600 bg-blue-50"
-                                                        : "border-gray-200 hover:border-gray-300"
-                                                }`}
-                                            >
-                                                <Wallet className="inline w-5 h-5 mr-2" />
-                                                <span className="font-medium">Digital Wallet</span>
+                                                <div className="flex items-center gap-3">
+                                                    <CreditCard className="text-blue-600" size={20} />
+                                                    <div>
+                                                        <span className="font-semibold text-gray-900 block">eSewa</span>
+                                                        <span className="text-xs text-gray-600">Mobile wallet</span>
+                                                    </div>
+                                                </div>
                                             </button>
                                         </div>
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            You will be redirected to the secure payment page to complete your transaction.
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -435,7 +620,7 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                                         <span className="text-gray-600">Payment:</span>
                                         <span className="font-medium">
                                             {formData.paymentOption === "now" 
-                                                ? `Pay Now (${formData.paymentMethod === "card" ? "Card" : "Digital Wallet"})`
+                                                ? "Pay Now (eSewa)"
                                                 : "Save for Later"}
                                         </span>
                                     </div>
@@ -485,9 +670,16 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                     {step < 3 ? (
                         <Button
                             onClick={handleNext}
-                            disabled={loading}
+                            disabled={loading || checkingAvailability}
                         >
-                            Next
+                            {checkingAvailability ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                                    Checking...
+                                </>
+                            ) : (
+                                "Next"
+                            )}
                         </Button>
                     ) : (
                         <Button

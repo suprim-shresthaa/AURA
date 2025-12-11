@@ -4,13 +4,17 @@ import {
     getUserBookings, 
     getBookingById, 
     completePayment, 
-    cancelBooking 
+    cancelBooking,
+    checkAvailability
 } from "../controllers/bookingController.js";
 import userAuth from "../middlewares/userAuth.js";
 
 const router = express.Router();
 
-// All booking routes require authentication
+// Public route - doesn't require authentication
+router.get("/check-availability", checkAvailability);
+
+// All other booking routes require authentication
 router.use(userAuth);
 
 router.post("/create", createBooking);
