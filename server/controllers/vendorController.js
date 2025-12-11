@@ -201,10 +201,10 @@ export const getVendorStats = async (req, res) => {
         const pendingPayments = bookings.filter(b => b.paymentStatus === "pending").length;
         const refundedPayments = bookings.filter(b => b.paymentStatus === "refunded").length;
         
-        // Khalti payment statistics
-        const khaltiPayments = paidBookings.filter(b => b.paymentMethod === "khalti");
-        const khaltiRevenue = khaltiPayments.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
-        const successfulKhaltiPayments = khaltiPayments.filter(b => b.khaltiTransactionId).length;
+        // eSewa payment statistics
+        const esewaPayments = paidBookings.filter(b => b.paymentMethod === "esewa");
+        const esewaRevenue = esewaPayments.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+        const successfulEsewaPayments = esewaPayments.filter(b => b.esewaTransactionUuid).length;
 
         // Unique customers
         const uniqueCustomers = new Set(
@@ -248,9 +248,9 @@ export const getVendorStats = async (req, res) => {
                 paidBookings: paidBookings.length,
                 pendingPayments,
                 refundedPayments,
-                khaltiPayments: khaltiPayments.length,
-                khaltiRevenue,
-                successfulKhaltiPayments,
+                esewaPayments: esewaPayments.length,
+                esewaRevenue,
+                successfulEsewaPayments,
                 topVehicles: vehiclePerformance.slice(0, 5),
                 recentBookings: bookings.slice(0, 10)
             }
@@ -381,8 +381,9 @@ export const getVendorPayments = async (req, res) => {
             paymentMethod: booking.paymentMethod,
             paymentStatus: booking.paymentStatus,
             bookingStatus: booking.bookingStatus,
-            khaltiPidx: booking.khaltiPidx,
-            khaltiTransactionId: booking.khaltiTransactionId,
+            esewaTransactionUuid: booking.esewaTransactionUuid,
+            esewaTransactionCode: booking.esewaTransactionCode,
+            esewaRefId: booking.esewaRefId,
             startDate: booking.startDate,
             endDate: booking.endDate,
             createdAt: booking.createdAt,

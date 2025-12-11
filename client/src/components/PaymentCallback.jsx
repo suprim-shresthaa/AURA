@@ -81,10 +81,10 @@ const PaymentCallback = () => {
                                         <span className="text-gray-600">Duration:</span>
                                         <span className="font-medium">{bookingDetails.totalDays || 0} days</span>
                                     </div>
-                                    {bookingDetails.khaltiTransactionId && (
+                                    {bookingDetails.esewaTransactionUuid && (
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Transaction ID:</span>
-                                            <span className="font-medium text-xs">{bookingDetails.khaltiTransactionId}</span>
+                                            <span className="font-medium truncate text-xs">{bookingDetails.esewaTransactionUuid}</span>
                                         </div>
                                     )}
                                     {bookingDetails.esewaRefId && (

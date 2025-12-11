@@ -229,7 +229,6 @@ const PaymentTracking = () => {
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="all">All</option>
-                                    <option value="khalti">Khalti</option>
                                     <option value="esewa">eSewa</option>
                                 </select>
                             </div>
@@ -423,16 +422,10 @@ const PaymentTracking = () => {
                                     <p className="text-sm text-gray-600">End Date</p>
                                     <p className="font-medium">{formatDate(selectedPayment.endDate)}</p>
                                 </div>
-                                {selectedPayment.khaltiTransactionId && (
+                                {selectedPayment.esewaTransactionUuid && (
                                     <div>
-                                        <p className="text-sm text-gray-600">Khalti Transaction ID</p>
-                                        <p className="font-medium text-xs">{selectedPayment.khaltiTransactionId}</p>
-                                    </div>
-                                )}
-                                {selectedPayment.khaltiPidx && (
-                                    <div>
-                                        <p className="text-sm text-gray-600">Khalti Pidx</p>
-                                        <p className="font-medium text-xs">{selectedPayment.khaltiPidx}</p>
+                                        <p className="text-sm text-gray-600">eSewa Transaction ID</p>
+                                        <p className="font-medium text-xs">{selectedPayment.esewaTransactionUuid}</p>
                                     </div>
                                 )}
                                 {selectedPayment.esewaRefId && (

@@ -68,14 +68,14 @@ const Home = () => {
   }, [vehicles]);
 
   return (
-    <div className=" text-[#0d141b] min-h-screen">
+    <div className="w-full text-[#0d141b] min-h-screen">
+      <HeroSection />
       <div className="flex justify-center">
-        <div className="flex flex-col gap-6 mx-auto">
-          <HeroSection />
+        <div className="flex flex-col gap-6 mx-auto w-full">
 
           <section className="max-w-7xl mx-auto space-y-6">
 
-            <div className="flex flex-col gap-8 max-w-7xl mx-auto">
+            <div className="flex flex-col gap-8 max-w-7xl mx-auto py-10">
               {vehicleCategories.map((category) => {
                 const items = categorizedVehicles[category] ?? [];
 

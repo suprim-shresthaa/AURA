@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axiosInstance from '@/lib/axiosInstance';
 import { Search, Package } from 'lucide-react';
 import SparePartCard from './SparePartCard';
+import { PageHeader } from './ui/PageHeader';
 
 const SparePartsListing = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -107,12 +108,12 @@ const SparePartsListing = () => {
 
     return (
         <div className="min-h-screen">
-            <div className="max-w-7xl mx-auto px-4 py-6">
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-1">Spare Parts</h1>
-                    <p className="text-sm text-gray-600">Find the parts you need for your vehicle</p>
-                </div>
+                <PageHeader 
+                    title="Spare Parts" 
+                    description="Find the parts you need for your vehicle"
+                />
+            <div className="max-w-7xl mx-auto px-4 py-6">
 
                 {/* Search and Filters */}
                 <div className="bg-white rounded-lg shadow-sm p-4 mb-4">

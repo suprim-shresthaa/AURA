@@ -39,17 +39,8 @@ const bookingSchema = new mongoose.Schema(
         },
         paymentMethod: {
             type: String,
-            enum: ["khalti", "esewa"],
-            default: null
-        },
-        // Khalti payment fields
-        khaltiPidx: {
-            type: String,
-            default: null
-        },
-        khaltiTransactionId: {
-            type: String,
-            default: null
+            enum: ["esewa"],
+            default: "esewa"
         },
         // eSewa payment fields
         esewaTransactionUuid: {

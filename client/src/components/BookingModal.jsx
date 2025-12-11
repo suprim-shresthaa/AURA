@@ -494,7 +494,7 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                                         </p>
                                     </button>
 
-                                    <button
+                                    {/* <button
                                         type="button"
                                         onClick={() => {
                                             setFormData(prev => ({ ...prev, paymentOption: "todo" }));
@@ -517,7 +517,7 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                                         <p className="text-sm text-gray-600">
                                             Save booking to your todos and pay later
                                         </p>
-                                    </button>
+                                    </button> */}
                                 </div>
 
                                 {formData.paymentOption === "now" && (
@@ -616,14 +616,14 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                                         <span className="text-gray-600">Duration:</span>
                                         <span className="font-medium">{days} days</span>
                                     </div>
-                                    <div className="flex justify-between text-sm">
+                                    {/* <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">Payment:</span>
                                         <span className="font-medium">
                                             {formData.paymentOption === "now" 
                                                 ? "Pay Now (eSewa)"
                                                 : "Save for Later"}
                                         </span>
-                                    </div>
+                                    </div> */}
                                     <div className="border-t border-gray-200 pt-3 flex justify-between">
                                         <span className="font-semibold text-gray-900">Total Amount:</span>
                                         <span className="text-xl font-bold text-blue-600">Rs. {total}</span>

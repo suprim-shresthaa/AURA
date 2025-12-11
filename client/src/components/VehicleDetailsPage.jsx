@@ -13,7 +13,8 @@ import {
     Fuel,
     Users,
     Settings,
-    Package
+    Package,
+    ArrowLeft
 } from "lucide-react";
 import BookingModal from "./BookingModal";
 import { AppContent } from "./context/AppContext";
@@ -82,8 +83,17 @@ export default function VehicleDetailsPage() {
 
     return (
         <div className="min-h-screen">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-6xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
                 {/* Header */}
+                                 {/* Back Button */}
+                                 <Button
+                    variant="ghost"
+                    onClick={() => navigate("/vehicles")}
+                    className="mb-4"
+                >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Vehicles
+                </Button>
                 <div className="mb-6">
                     <h1 className="text-3xl font-bold text-gray-900 mb-3">{vehicle.name}</h1>
                     <div className="flex flex-wrap items-center gap-3">

@@ -1,4 +1,3 @@
-import { ArrowRight, Car, Wrench, Shield, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AppContent } from '../components/context/AppContext';
 import { useContext } from 'react';
@@ -15,30 +14,43 @@ export default function HeroSection() {
     // console.log(userData);
     
     return (
-            <div className="rounded-lg bg-cover bg-center bg-no-repeat p-4 sm:p-6 lg:p-8 flex min-h-[480px] flex-col gap-6 items-center justify-center text-center min-w-7xl mx-auto"
-              style={{
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%), url(${heroContent.backgroundImage})`,
-              }}>
-              <div className="flex flex-col gap-2">
-                <h1 className="text-white text-4xl font-black leading-tight tracking-[-0.033em] sm:text-5xl">
-                  {heroContent.title}
-                </h1>
-                <p className="text-gray-100 text-sm sm:text-base leading-normal max-w-3xl mx-auto">
-                  {heroContent.subtitle}
-                </p>
-              </div>
-              <div className="flex flex-wrap justify-center gap-3">
-                {heroContent.actions.map((action) => (
-                  <Button
-                    key={action.label}
-                    size="lg"
-                    onClick={() => action.path && navigate(action.path)}
-                    className={`min-w-[160px] h-12 px-6 font-bold tracking-[0.015em] ${heroButtonStyles[action.variant]}`}
-                  >
-                    {action.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
+      <section className="relative w-full h-[600px] flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src={heroContent.backgroundImage}
+            alt="City street with vehicles"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
+
+        {/* Content Container */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center gap-6 text-center">
+          {/* Title and Subtitle */}
+          <div className="flex flex-col gap-4 max-w-3xl">
+            <h1 className="text-white text-4xl font-black leading-tight tracking-[-0.033em] sm:text-5xl lg:text-6xl">
+              {heroContent.title}
+            </h1>
+            <p className="text-gray-100 text-sm sm:text-base lg:text-lg leading-normal">
+              {heroContent.subtitle}
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap justify-center gap-3">
+            {heroContent.actions.map((action) => (
+              <Button
+                key={action.label}
+                size="lg"
+                onClick={() => action.path && navigate(action.path)}
+                className={`min-w-[160px] h-12 px-6 font-bold tracking-[0.015em] ${heroButtonStyles[action.variant]}`}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </section>
     );
 }

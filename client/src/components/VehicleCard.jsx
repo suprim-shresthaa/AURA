@@ -40,7 +40,7 @@ export default function VehicleCard(
             </CardContent>
 
             {/* Card Footer */}
-            <CardFooter className="px-6 gap-3 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between">
+            <CardFooter className="px-6 gap-3 border-t border-gray-100  flex items-center justify-between">
                 <div className="flex flex-col">
                     <p className="text-xl font-bold text-gray-900">{price}<span className="text-sm text-gray-500">/day</span></p>
                 </div>

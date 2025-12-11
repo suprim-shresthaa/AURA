@@ -81,20 +81,17 @@ export const createBooking = async (req, res) => {
             totalDays,
             rentPerDay: vehicle.rentPerDay,
             totalAmount,
-            paymentMethod: "khalti",
-            paymentStatus: isPaymentDeferred ? "pending" : "pending", // Always pending until Khalti payment is completed
+            paymentMethod: "esewa",
+            paymentStatus: isPaymentDeferred ? "pending" : "pending",
             bookingStatus: isPaymentDeferred ? "pending" : "pending", // Always pending until payment is confirmed
             pickupLocation: vehicle.pickupLocation,
             notes: notes || "",
             isPaymentDeferred
         });
 
-        // Don't mark vehicle as unavailable until payment is confirmed
-        // Vehicle will be marked unavailable when payment is completed via Khalti callback
-
         res.status(201).json({
             success: true,
-            message: "Booking created. Please complete payment via Khalti to confirm your booking.",
+            message: "Booking created. Please complete payment via eSewa to confirm your booking.",
             data: booking
         });
     } catch (error) {
@@ -176,12 +173,12 @@ export const completePayment = async (req, res) => {
             });
         }
 
-        // Payment should be completed through Khalti payment flow
+        // Payment should be completed through eSewa payment flow
         // This endpoint is kept for backward compatibility but redirects to initiate payment
         return res.status(400).json({
             success: false,
-            message: "Please initiate payment through Khalti. Use /api/payments/khalti/initiate endpoint.",
-            redirectTo: `/api/payments/khalti/initiate`
+            message: "Please initiate payment through eSewa. Use /api/payments/esewa/initiate endpoint.",
+            redirectTo: `/api/payments/esewa/initiate`
         });
     } catch (error) {
         console.error("Error completing payment:", error);

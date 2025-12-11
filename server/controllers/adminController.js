@@ -54,10 +54,10 @@ export const getAdminStats = async (req, res) => {
             })
             .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
 
-        // Khalti payment statistics
-        const khaltiPayments = paidBookings.filter(b => b.paymentMethod === "khalti");
-        const khaltiRevenue = khaltiPayments.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
-        const successfulKhaltiPayments = khaltiPayments.filter(b => b.khaltiTransactionId).length;
+        // eSewa payment statistics
+        const esewaPayments = paidBookings.filter(b => b.paymentMethod === "esewa");
+        const esewaRevenue = esewaPayments.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+        const successfulEsewaPayments = esewaPayments.filter(b => b.esewaTransactionUuid).length;
 
         // Revenue by month (last 6 months)
         const monthlyBreakdown = [];
@@ -133,10 +133,10 @@ export const getAdminStats = async (req, res) => {
                 pendingPayments: pendingPayments.length,
                 refundedPayments: refundedPayments.length,
                 
-                // Khalti stats
-                khaltiPayments: khaltiPayments.length,
-                khaltiRevenue,
-                successfulKhaltiPayments,
+                // eSewa stats
+                esewaPayments: esewaPayments.length,
+                esewaRevenue,
+                successfulEsewaPayments,
                 
                 // System stats
                 totalVehicles: allVehicles.length,
@@ -242,8 +242,9 @@ export const getAllPayments = async (req, res) => {
             paymentMethod: booking.paymentMethod,
             paymentStatus: booking.paymentStatus,
             bookingStatus: booking.bookingStatus,
-            khaltiPidx: booking.khaltiPidx,
-            khaltiTransactionId: booking.khaltiTransactionId,
+            esewaTransactionUuid: booking.esewaTransactionUuid,
+            esewaTransactionCode: booking.esewaTransactionCode,
+            esewaRefId: booking.esewaRefId,
             startDate: booking.startDate,
             endDate: booking.endDate,
             totalDays: booking.totalDays,
@@ -320,8 +321,9 @@ export const getPaymentById = async (req, res) => {
                 paymentMethod: booking.paymentMethod,
                 paymentStatus: booking.paymentStatus,
                 bookingStatus: booking.bookingStatus,
-                khaltiPidx: booking.khaltiPidx,
-                khaltiTransactionId: booking.khaltiTransactionId,
+                esewaTransactionUuid: booking.esewaTransactionUuid,
+                esewaTransactionCode: booking.esewaTransactionCode,
+                esewaRefId: booking.esewaRefId,
                 startDate: booking.startDate,
                 endDate: booking.endDate,
                 pickupLocation: booking.pickupLocation,

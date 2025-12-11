@@ -4,6 +4,7 @@ import axiosInstance from '@/lib/axiosInstance';
 import { Search, Car, RotateCcw } from 'lucide-react';
 import VehicleCard from './VehicleCard';
 import { Button } from './ui/button';
+import { PageHeader } from './ui/PageHeader';
 
 const VehicleListing = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -126,12 +127,13 @@ const VehicleListing = () => {
 
     return (
         <div className="min-h-screen">
+              <PageHeader 
+                    title="Available Vehicles" 
+                    description="Find the perfect vehicle for your journey"
+                />
             <div className="max-w-7xl mx-auto px-4 py-6">
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-900 mb-1">Available Vehicles</h1>
-                    <p className="text-sm text-gray-600">Find the perfect vehicle for your journey</p>
-                </div>
+  
 
                 {/* Search and Filters */}
                 <div className="bg-white rounded-lg shadow-sm p-4 mb-4">

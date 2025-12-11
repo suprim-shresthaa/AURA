@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
     Sidebar as SidebarRoot,
     SidebarContent,
@@ -55,7 +55,7 @@ const AdminLayout = () => {
             <div className="flex min-h-screen justify-center items-start w-full">
                 <SidebarRoot collapsible="icon" className="border-r">
                     <SidebarHeader className="px-4 py-3">
-                        <p className="text-lg font-semibold">AURA Admin</p>
+                        <Link to="/" className="text-lg font-semibold">AURA</Link>
                         <p className="text-xs text-gray-500">Control Center</p>
                     </SidebarHeader>
 
