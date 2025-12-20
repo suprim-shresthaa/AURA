@@ -32,5 +32,55 @@ export const fetchPaymentById = async (id) => {
   return data?.data ?? null;
 };
 
+// Vehicle verification API functions
+export const fetchPendingVehicles = async () => {
+  const { data } = await axiosInstance.get("/admin/vehicles/pending");
+  return data?.data ?? [];
+};
+
+export const approveVehicle = async (vehicleId) => {
+  const { data } = await axiosInstance.post(`/admin/vehicles/${vehicleId}/approve`);
+  return data;
+};
+
+export const rejectVehicle = async (vehicleId, rejectionReason) => {
+  const { data } = await axiosInstance.post(`/admin/vehicles/${vehicleId}/reject`, {
+    rejectionReason
+  });
+  return data;
+};
+
+// License management API functions
+export const uploadLicense = async (formData) => {
+  const { data } = await axiosInstance.post("/user/license/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data"
+    }
+  });
+  return data;
+};
+
+export const fetchMyLicenses = async () => {
+  const { data } = await axiosInstance.get("/user/license/my-licenses");
+  return data?.data ?? [];
+};
+
+export const fetchPendingLicenses = async () => {
+  const { data } = await axiosInstance.get("/admin/licenses/pending");
+  return data?.data ?? [];
+};
+
+export const approveLicense = async (licenseId) => {
+  const { data } = await axiosInstance.post(`/admin/licenses/${licenseId}/approve`);
+  return data;
+};
+
+export const rejectLicense = async (licenseId, rejectionReason) => {
+  const { data } = await axiosInstance.post(`/admin/licenses/${licenseId}/reject`, {
+    rejectionReason
+  });
+  return data;
+};
+
 export default fetchAllVehicles;
 

@@ -96,7 +96,7 @@ const Dashboard = () => {
             trend: `${stats.totalVehicles || 0} total vehicles`
         },
         {
-            title: "Total Revenue",
+            title: "Total Transactions",
             value: formatCurrency(stats.totalRevenue || 0),
             icon: DollarSign,
             color: "from-orange-500 to-orange-600",
@@ -262,28 +262,13 @@ const Dashboard = () => {
                             </div>
                             <div className="mt-4 pt-4 border-t">
                                 <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                                    <span className="text-sm text-gray-600">Today's Revenue</span>
+                                    <span className="text-sm text-gray-600">Today's Transactions</span>
                                     <span className="font-bold text-blue-900">{formatCurrency(stats.todayRevenue || 0)}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                {stats.monthlyBreakdown && stats.monthlyBreakdown.length > 0 && (
-                    <div className="mt-8 bg-white rounded-2xl shadow-sm p-6">
-                        <h2 className="text-lg font-bold text-gray-900 mb-4">Monthly Revenue Breakdown</h2>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                            {stats.monthlyBreakdown.map((month, index) => (
-                                <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-xs text-gray-600 mb-1">{month.month}</p>
-                                    <p className="text-lg font-bold text-gray-900">{formatCurrency(month.revenue)}</p>
-                                    <p className="text-xs text-gray-500 mt-1">{month.bookings} bookings</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
                 {stats.topVendors && stats.topVendors.length > 0 && (
                     <div className="mt-8 bg-white rounded-2xl shadow-sm p-6">

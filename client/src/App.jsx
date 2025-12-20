@@ -9,6 +9,9 @@ import VendorApplicationForm from "./components/Vendor/VendorApplicationForm";
 import ManageApplications from "./components/Admin/ManageApplications";
 import ManageUsers from "./components/Admin/ManageUsers";
 import ManageReservations from "./components/Admin/ManageReservations";
+import ManageVehicles from "./components/Admin/ManageVehicles";
+import ManageLicenses from "./components/Admin/ManageLicenses";
+import AdminVehicleDetailsPage from "./components/Admin/AdminVehicleDetailsPage";
 import VehicleUploadForm from "./components/Vendor/VehicleUploadForm";
 import VehicleListing from "./components/VehiclesListing";
 import Profile from "./components/profile/Profile";
@@ -21,7 +24,6 @@ import SparePartsForm from "./components/Admin/SparePartsForm";
 import SparePartsListing from "./components/SparePartsListing";
 import SparePartDetailsPage from "./components/SparePartDetailsPage";
 import AdminLayout from "./components/Admin/AdminLayout";
-import PaymentTracking from "./components/Admin/PaymentTracking";
 import PaymentCallback from "./components/PaymentCallback";
 import EsewaCallbackHandler from "./components/EsewaCallbackHandler";
 import "./App.css"; 
@@ -54,6 +56,7 @@ function AppContent() {
 
           <Route path="/vendor/apply" element={<VendorApplicationForm />} />
           <Route path="/vendor/vehicle-upload" element={<VehicleUploadForm />} />
+          <Route path="/vendor/vehicle-upload/:id" element={<VehicleUploadForm />} />
           <Route path="/vendor/dashboard" element={<VendorDashboard />} />
           <Route path="/vendor/listings" element={<MyVehicleListings />} />
           <Route path="/vendor/reservations" element={<VendorReservations />} />
@@ -63,7 +66,9 @@ function AppContent() {
             <Route path="users" element={<ManageUsers />} />
             <Route path="reservations" element={<ManageReservations />} />
             <Route path="applications" element={<ManageApplications />} />
-            <Route path="payments" element={<PaymentTracking />} />
+            <Route path="vehicles" element={<ManageVehicles />} />
+            <Route path="vehicles/:id" element={<AdminVehicleDetailsPage />} />
+            <Route path="licenses" element={<ManageLicenses />} />
             <Route path="add-spare-parts" element={<SparePartsForm />} />
           </Route>
         </Routes>

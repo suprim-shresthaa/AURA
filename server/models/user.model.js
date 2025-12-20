@@ -70,6 +70,41 @@ const userSchema = new mongoose.Schema({
         default: "https://res.cloudinary.com/dxigipf0k/image/upload/v1741190518/wy6ytirqcswljhf3c13v.png"
     },
 
+    // License management
+    licenses: [{
+        vehicleType: {
+            type: String,
+            enum: ["Car", "Bike", "Scooter", "Jeep", "Van"],
+            required: true
+        },
+        licenseImage: {
+            type: String,
+            required: true
+        },
+        status: {
+            type: String,
+            enum: ["pending", "approved", "rejected"],
+            default: "pending"
+        },
+        rejectionReason: {
+            type: String,
+            default: ""
+        },
+        approvedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null
+        },
+        approvedAt: {
+            type: Date,
+            default: null
+        },
+        uploadedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
+
     // Ban related fields (nested approach)
     banInfo: {
         isBanned: {

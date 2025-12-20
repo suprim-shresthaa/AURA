@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { X, Calendar, DollarSign, CreditCard, Clock, CheckCircle2 } from "lucide-react";
+import React, { useState, useEffect, useContext } from "react";
+import { X, Calendar, DollarSign, CreditCard, Clock, CheckCircle2, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,9 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import axiosInstance from "@/lib/axiosInstance";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { AppContent } from "./context/AppContext";
 
 export default function BookingModal({ isOpen, onClose, vehicle }) {
     const navigate = useNavigate();
+    const { userData } = useContext(AppContent);
+    
+    const canBook = userData?.role === "user";
     const [step, setStep] = useState(1); // 1: dates, 2: payment option, 3: payment details
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -24,6 +28,8 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
         notes: ""
     });
 
+    const [hasLicense, setHasLicense] = useState(true);
+
     useEffect(() => {
         if (isOpen) {
             // Reset form when modal opens
@@ -37,8 +43,33 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
             });
             setError("");
             setAvailabilityStatus(null);
+            
+            // Check if user has license for this vehicle type
+            checkLicense();
         }
-    }, [isOpen]);
+    }, [isOpen, vehicle]);
+
+    const checkLicense = async () => {
+        if (!vehicle?.category || !userData?.userId) {
+            setHasLicense(false);
+            return;
+        }
+
+        try {
+            const response = await axiosInstance.get("/user/license/my-licenses");
+            if (response.data?.success) {
+                const approvedLicense = (response.data.data || []).find(
+                    license => license.vehicleType === vehicle.category && license.status === "approved"
+                );
+                setHasLicense(!!approvedLicense);
+            } else {
+                setHasLicense(false);
+            }
+        } catch (error) {
+            console.error("Error checking license:", error);
+            setHasLicense(false);
+        }
+    };
 
     const calculateDays = () => {
         if (!formData.startDate || !formData.endDate) return 0;
@@ -109,6 +140,11 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
 
     const handleNext = async () => {
         if (step === 1) {
+            // Check license before proceeding
+            if (!hasLicense) {
+                setError(`You need an approved ${vehicle?.category} license to book this vehicle.`);
+                return;
+            }
             // First validate basic date rules
             if (!formData.startDate || !formData.endDate) {
                 setError("Please select both start and end dates");
@@ -295,6 +331,26 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
 
     if (!isOpen) return null;
 
+    // Prevent vendors and admins from booking
+    if (!canBook) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+                    <div className="text-center">
+                        <X className="mx-auto text-red-600 mb-4" size={48} />
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Restricted</h2>
+                        <p className="text-gray-600 mb-6">
+                            Vendors and admins cannot book vehicles.
+                        </p>
+                        <Button onClick={onClose} className="w-full">
+                            Close
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     const days = calculateDays();
     const total = calculateTotal();
 
@@ -362,6 +418,33 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                     {/* Step 1: Select Dates */}
                     {step === 1 && (
                         <div className="space-y-6">
+                            {!hasLicense && (
+                                <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
+                                    <div className="flex items-start gap-3">
+                                        <AlertCircle className="text-yellow-600 flex-shrink-0 mt-0.5" size={20} />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-semibold text-yellow-900 mb-1">
+                                                License Required
+                                            </p>
+                                            <p className="text-sm text-yellow-700 mb-3">
+                                                You need an approved {vehicle?.category} license to book this vehicle.
+                                            </p>
+                                            <Button
+                                                onClick={() => {
+                                                    onClose();
+                                                    navigate("/profile?tab=licenses");
+                                                }}
+                                                variant="outline"
+                                                size="sm"
+                                                className="text-yellow-800 border-yellow-300 hover:bg-yellow-100"
+                                            >
+                                                <FileText className="mr-2 h-4 w-4" />
+                                                Upload License
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                                     Select Rental Dates

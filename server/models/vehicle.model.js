@@ -61,6 +61,24 @@ const vehicleSchema = new mongoose.Schema(
             enum: ["Active", "Inactive", "UnderMaintenance"],
             default: "Active"
         },
+        verificationStatus: {
+            type: String,
+            enum: ["pending", "approved", "rejected"],
+            default: "pending"
+        },
+        rejectionReason: {
+            type: String,
+            default: ""
+        },
+        verifiedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null
+        },
+        verifiedAt: {
+            type: Date,
+            default: null
+        },
         ratings: { type: Number, default: 0 },
     },
     { timestamps: true }

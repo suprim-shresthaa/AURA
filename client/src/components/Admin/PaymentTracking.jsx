@@ -178,7 +178,7 @@ const PaymentTracking = () => {
                     </Card>
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardDescription>Total Revenue</CardDescription>
+                            <CardDescription>Total Transactions</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-blue-600">{formatCurrency(stats.totalRevenue)}</div>

@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useContext } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '@/lib/axiosInstance';
 import { Search, Car, RotateCcw } from 'lucide-react';
 import VehicleCard from './VehicleCard';
 import { Button } from './ui/button';
 import { PageHeader } from './ui/PageHeader';
+import { AppContent } from './context/AppContext';
 
 const VehicleListing = () => {
+    const navigate = useNavigate();
+    const { userData, isLoggedin } = useContext(AppContent);
     const [searchParams, setSearchParams] = useSearchParams();
     const keywordFromUrl = searchParams.get('keyword') || '';
     
@@ -19,6 +22,7 @@ const VehicleListing = () => {
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [allCities, setAllCities] = useState([]);
+    const [userLicenses, setUserLicenses] = useState([]);
 
     // Sync searchTerm with URL when URL changes (e.g., browser back/forward)
     useEffect(() => {
@@ -53,6 +57,26 @@ const VehicleListing = () => {
         fetchVehicles();
     }, []);
 
+    // Fetch user licenses if logged in as regular user
+    useEffect(() => {
+        const fetchLicenses = async () => {
+            if (isLoggedin && userData?.role === "user") {
+                try {
+                    const response = await axiosInstance.get("/user/license/my-licenses");
+                    if (response.data?.success) {
+                        const approvedLicenses = (response.data.data || []).filter(
+                            license => license.status === "approved"
+                        );
+                        setUserLicenses(approvedLicenses.map(l => l.vehicleType));
+                    }
+                } catch (error) {
+                    console.error("Error fetching licenses:", error);
+                }
+            }
+        };
+        fetchLicenses();
+    }, [isLoggedin, userData]);
+
     // Update URL when search term changes (but avoid updating if it matches URL)
     useEffect(() => {
         const currentKeyword = searchParams.get('keyword') || '';
@@ -86,7 +110,8 @@ const VehicleListing = () => {
                 Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
 
                 const response = await axiosInstance.get('/vehicles/search', { params });
-                setVehicles(response.data.data || []);
+                let filteredVehicles = response.data.data || [];
+                setVehicles(filteredVehicles);
             } catch (error) {
                 console.error('Error searching vehicles:', error);
             } finally {
@@ -232,7 +257,16 @@ const VehicleListing = () => {
                 {/* Vehicle Grid */}
                 {vehicles.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {vehicles.map(vehicle => (
+                        {vehicles
+                            .filter(vehicle => {
+                                // Filter by user's approved licenses if logged in as regular user
+                                if (isLoggedin && userData?.role === "user" && userLicenses.length > 0) {
+                                    return userLicenses.includes(vehicle.category);
+                                }
+                                // Show all vehicles for non-users, vendors, admins, or users without licenses
+                                return true;
+                            })
+                            .map(vehicle => (
                             <VehicleCard
                                 key={vehicle._id}
                                 imageUrl={vehicle.mainImage}

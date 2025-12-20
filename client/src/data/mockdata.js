@@ -1,8 +1,9 @@
 export const navLinks = [
+  { label: "Home", path: "/" },
   { label: "Rent a Vehicle", path: "/vehicles" },
   { label: "Spare Parts", path: "/spare-parts" },
-  { label: "About Us", path: "/about" },
-  { label: "Contact", path: "/contact" },
+  // { label: "About Us", path: "/about" },
+  // { label: "Contact", path: "/contact" },
 ];
 
 export const heroContent = {

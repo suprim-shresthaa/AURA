@@ -25,11 +25,13 @@ const API_URL = "http://localhost:5001/api/vehicles";
 export default function VehicleDetailsPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { isLoggedin } = useContext(AppContent);
+    const { isLoggedin, userData } = useContext(AppContent);
     const [vehicle, setVehicle] = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState("");
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+
+    const canBook = userData?.role === "user";
 
     useEffect(() => {
         const fetchVehicle = async () => {
@@ -248,24 +250,36 @@ export default function VehicleDetailsPage() {
                         </div>
 
                         {/* Action Button */}
-                        <Button
-                            onClick={() => {
-                                if (!isLoggedin) {
-                                    navigate("/login");
-                                    return;
-                                }
-                                if (!vehicle.isAvailable) {
-                                    alert("This vehicle is not available for booking");
-                                    return;
-                                }
-                                setIsBookingModalOpen(true);
-                            }}
-                            disabled={!vehicle.isAvailable}
-                            size="lg"
-                            className="w-full h-12  cursor-pointer"
-                        >
-                            {vehicle.isAvailable ? "Book Now" : "Not Available"}
-                        </Button>
+                        {!isLoggedin ? (
+                            <Button
+                                onClick={() => navigate("/login")}
+                                size="lg"
+                                className="w-full h-12 cursor-pointer"
+                            >
+                                Login to Book
+                            </Button>
+                        ) : !canBook ? (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <p className="text-yellow-800 text-sm font-medium">
+                                    Vendors and admins cannot book vehicles.
+                                </p>
+                            </div>
+                        ) : (
+                            <Button
+                                onClick={() => {
+                                    if (!vehicle.isAvailable) {
+                                        alert("This vehicle is not available for booking");
+                                        return;
+                                    }
+                                    setIsBookingModalOpen(true);
+                                }}
+                                disabled={!vehicle.isAvailable}
+                                size="lg"
+                                className="w-full h-12 cursor-pointer"
+                            >
+                                {vehicle.isAvailable ? "Book Now" : "Not Available"}
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>

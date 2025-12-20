@@ -1,6 +1,7 @@
 import Booking from "../models/booking.model.js";
 import Vehicle from "../models/vehicle.model.js";
 import User from "../models/user.model.js";
+import mongoose from "mongoose";
 
 /**
  * Get admin dashboard statistics including payment tracking
@@ -338,6 +339,337 @@ export const getPaymentById = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to fetch payment details",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get all pending vehicles awaiting verification
+ */
+export const getPendingVehicles = async (req, res) => {
+    try {
+        const pendingVehicles = await Vehicle.find({ verificationStatus: "pending" })
+            .populate({
+                path: "vendorId",
+                model: "User",
+                select: "name email contact address image"
+            })
+            .sort({ createdAt: -1 });
+
+        res.json({
+            success: true,
+            data: pendingVehicles
+        });
+    } catch (error) {
+        console.error("Error fetching pending vehicles:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch pending vehicles",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get a single vehicle by ID for admin
+ */
+export const getVehicleById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const vehicle = await Vehicle.findById(id)
+            .populate({
+                path: "vendorId",
+                model: "User",
+                select: "name email contact address image"
+            });
+
+        if (!vehicle) {
+            return res.status(404).json({
+                success: false,
+                message: "Vehicle not found"
+            });
+        }
+
+        res.json({
+            success: true,
+            data: vehicle
+        });
+    } catch (error) {
+        console.error("Error fetching vehicle by ID:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch vehicle",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Approve a vehicle
+ */
+export const approveVehicle = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const adminId = req.userId;
+
+        const vehicle = await Vehicle.findById(id);
+        if (!vehicle) {
+            return res.status(404).json({
+                success: false,
+                message: "Vehicle not found"
+            });
+        }
+
+        if (vehicle.verificationStatus === "approved") {
+            return res.status(400).json({
+                success: false,
+                message: "Vehicle is already approved"
+            });
+        }
+
+        vehicle.verificationStatus = "approved";
+        vehicle.status = "Active";
+        vehicle.verifiedBy = adminId;
+        vehicle.verifiedAt = new Date();
+        vehicle.rejectionReason = ""; // Clear any previous rejection reason
+
+        await vehicle.save();
+
+        res.json({
+            success: true,
+            message: "Vehicle approved successfully",
+            data: vehicle
+        });
+    } catch (error) {
+        console.error("Error approving vehicle:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to approve vehicle",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Reject a vehicle with reason
+ */
+export const rejectVehicle = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { rejectionReason } = req.body;
+        const adminId = req.userId;
+
+        if (!rejectionReason || rejectionReason.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "Rejection reason is required"
+            });
+        }
+
+        const vehicle = await Vehicle.findById(id);
+        if (!vehicle) {
+            return res.status(404).json({
+                success: false,
+                message: "Vehicle not found"
+            });
+        }
+
+        if (vehicle.verificationStatus === "rejected") {
+            return res.status(400).json({
+                success: false,
+                message: "Vehicle is already rejected"
+            });
+        }
+
+        vehicle.verificationStatus = "rejected";
+        vehicle.status = "Inactive";
+        vehicle.rejectionReason = rejectionReason.trim();
+        vehicle.verifiedBy = adminId;
+        vehicle.verifiedAt = new Date();
+
+        await vehicle.save();
+
+        res.json({
+            success: true,
+            message: "Vehicle rejected successfully",
+            data: vehicle
+        });
+    } catch (error) {
+        console.error("Error rejecting vehicle:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to reject vehicle",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get all pending licenses awaiting approval
+ */
+export const getPendingLicenses = async (req, res) => {
+    try {
+        const users = await User.find({ "licenses.status": "pending" })
+            .select("name email licenses")
+            .lean();
+
+        const pendingLicenses = [];
+        users.forEach(user => {
+            user.licenses.forEach(license => {
+                if (license.status === "pending") {
+                    pendingLicenses.push({
+                        _id: license._id,
+                        userId: user._id,
+                        userName: user.name,
+                        userEmail: user.email,
+                        vehicleType: license.vehicleType,
+                        licenseImage: license.licenseImage,
+                        status: license.status,
+                        uploadedAt: license.uploadedAt
+                    });
+                }
+            });
+        });
+
+        res.json({
+            success: true,
+            data: pendingLicenses
+        });
+    } catch (error) {
+        console.error("Error fetching pending licenses:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch pending licenses",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Approve a license
+ */
+export const approveLicense = async (req, res) => {
+    try {
+        const { licenseId } = req.params;
+        const adminId = req.userId;
+
+        if (!mongoose.Types.ObjectId.isValid(licenseId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid license ID"
+            });
+        }
+
+        const user = await User.findOne({ "licenses._id": licenseId });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "License not found"
+            });
+        }
+
+        const license = user.licenses.id(licenseId);
+        if (!license) {
+            return res.status(404).json({
+                success: false,
+                message: "License not found"
+            });
+        }
+
+        if (license.status === "approved") {
+            return res.status(400).json({
+                success: false,
+                message: "License is already approved"
+            });
+        }
+
+        license.status = "approved";
+        license.approvedBy = adminId;
+        license.approvedAt = new Date();
+        license.rejectionReason = ""; // Clear any previous rejection reason
+
+        await user.save();
+
+        res.json({
+            success: true,
+            message: "License approved successfully",
+            data: license
+        });
+    } catch (error) {
+        console.error("Error approving license:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to approve license",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Reject a license with reason
+ */
+export const rejectLicense = async (req, res) => {
+    try {
+        const { licenseId } = req.params;
+        const { rejectionReason } = req.body;
+        const adminId = req.userId;
+
+        if (!rejectionReason || rejectionReason.trim() === "") {
+            return res.status(400).json({
+                success: false,
+                message: "Rejection reason is required"
+            });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(licenseId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid license ID"
+            });
+        }
+
+        const user = await User.findOne({ "licenses._id": licenseId });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "License not found"
+            });
+        }
+
+        const license = user.licenses.id(licenseId);
+        if (!license) {
+            return res.status(404).json({
+                success: false,
+                message: "License not found"
+            });
+        }
+
+        if (license.status === "rejected") {
+            return res.status(400).json({
+                success: false,
+                message: "License is already rejected"
+            });
+        }
+
+        license.status = "rejected";
+        license.rejectionReason = rejectionReason.trim();
+        license.approvedBy = adminId;
+        license.approvedAt = new Date();
+
+        await user.save();
+
+        res.json({
+            success: true,
+            message: "License rejected successfully",
+            data: license
+        });
+    } catch (error) {
+        console.error("Error rejecting license:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to reject license",
             error: error.message
         });
     }

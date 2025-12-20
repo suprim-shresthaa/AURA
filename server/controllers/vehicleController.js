@@ -70,7 +70,8 @@ export const createVehicle = async (req, res) => {
             bluebook,
             images,
             isAvailable: true,
-            status: "Active"
+            status: "Inactive",
+            verificationStatus: "pending"
         });
 
         await newVehicle.save();
@@ -94,7 +95,11 @@ export const createVehicle = async (req, res) => {
 
 export const getAllVehicles = async (req, res) => {
     try {
-        const vehicles = await Vehicle.find();
+        // Only return approved and active vehicles for public listings
+        const vehicles = await Vehicle.find({ 
+            status: "Active",
+            verificationStatus: "approved"
+        });
         res.status(200).json({ success: true, data: vehicles });
     } catch (error) {
         console.error("Error fetching vehicles:", error);
@@ -176,8 +181,9 @@ export const searchVehicles = async (req, res) => {
             query.isAvailable = isAvailable === "true" || isAvailable === true;
         }
 
-        // Only show active vehicles
+        // Only show active and approved vehicles
         query.status = "Active";
+        query.verificationStatus = "approved";
 
         const vehicles = await Vehicle.find(query)
             .populate({
@@ -254,6 +260,111 @@ export const getVehicleById = async (req, res) => {
     } catch (error) {
         console.error("Error fetching vehicle by ID:", error);
         res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
+// Update a vehicle (allows vendors to edit and resubmit rejected vehicles)
+export const updateVehicle = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            vendorId,
+            name,
+            category,
+            modelYear,
+            condition,
+            description,
+            fuelType,
+            transmission,
+            seatingCapacity,
+            mileage,
+            rentPerDay,
+            pickupLocation,
+        } = req.body;
+
+        const address = pickupLocation?.address;
+        const city = pickupLocation?.city;
+
+        // Find the vehicle
+        const vehicle = await Vehicle.findById(id);
+        if (!vehicle) {
+            return res.status(404).json({ success: false, message: "Vehicle not found." });
+        }
+
+        // Check if vendor owns this vehicle
+        if (vehicle.vendorId.toString() !== vendorId) {
+            return res.status(403).json({ success: false, message: "You don't have permission to update this vehicle." });
+        }
+
+        // Validation
+        const requiredFields = {
+            name, category, modelYear, condition,
+            fuelType, transmission, seatingCapacity, mileage, rentPerDay, address, city
+        };
+
+        for (const [key, value] of Object.entries(requiredFields)) {
+            if (!value || value === "") {
+                return res.status(400).json({ success: false, message: `${key} is required.` });
+            }
+        }
+
+        // Handle images - use existing if not provided, otherwise use new uploads
+        let mainImage = vehicle.mainImage;
+        let bluebook = vehicle.bluebook;
+        let images = vehicle.images || [];
+
+        if (req.files?.mainImage?.[0]) {
+            mainImage = req.files.mainImage[0].path;
+        }
+        if (req.files?.bluebook?.[0]) {
+            bluebook = req.files.bluebook[0].path;
+        }
+        if (req.files?.images && req.files.images.length > 0) {
+            images = req.files.images.map(f => f.path);
+        }
+
+        // Update vehicle fields
+        vehicle.name = name.trim();
+        vehicle.category = category;
+        vehicle.modelYear = parseInt(modelYear);
+        vehicle.condition = condition;
+        vehicle.description = description?.trim() || "";
+        vehicle.fuelType = fuelType;
+        vehicle.transmission = transmission;
+        vehicle.seatingCapacity = parseInt(seatingCapacity);
+        vehicle.mileage = parseInt(mileage);
+        vehicle.rentPerDay = parseFloat(rentPerDay);
+        vehicle.pickupLocation = {
+            address: address.trim(),
+            city: city.trim()
+        };
+        vehicle.mainImage = mainImage;
+        vehicle.bluebook = bluebook;
+        vehicle.images = images;
+
+        // If vehicle was rejected, reset to pending when updated
+        if (vehicle.verificationStatus === "rejected") {
+            vehicle.verificationStatus = "pending";
+            vehicle.rejectionReason = "";
+            vehicle.verifiedBy = null;
+            vehicle.verifiedAt = null;
+        }
+
+        await vehicle.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Vehicle updated successfully!",
+            data: vehicle
+        });
+
+    } catch (error) {
+        console.error("Error updating vehicle:", error);
+        return res.status(500).json({
             success: false,
             message: "Server error",
             error: error.message

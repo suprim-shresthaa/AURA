@@ -1,8 +1,14 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Upload, Car, FileImage, Calendar, FileText, Loader2 } from "lucide-react";
 import { AppContent } from "../context/AppContext";
+import axiosInstance from "@/lib/axiosInstance";
 
 export default function VehicleUploadForm() {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const isEditMode = !!id;
+    
     const [formData, setFormData] = useState({
         name: "",
         category: "",
@@ -26,8 +32,51 @@ export default function VehicleUploadForm() {
     const [mainPreview, setMainPreview] = useState(null);
     const [bluebookPreview, setBluebookPreview] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(false);
 
     const { userData } = useContext(AppContent);
+
+    // Fetch vehicle data if editing
+    useEffect(() => {
+        if (isEditMode && id) {
+            fetchVehicleData();
+        }
+    }, [id, isEditMode]);
+
+    const fetchVehicleData = async () => {
+        try {
+            setFetching(true);
+            const response = await axiosInstance.get(`/vehicles/${id}`);
+            if (response.data?.success && response.data.data) {
+                const vehicle = response.data.data;
+                setFormData({
+                    name: vehicle.name || "",
+                    category: vehicle.category || "",
+                    modelYear: vehicle.modelYear || "",
+                    condition: vehicle.condition || "",
+                    description: vehicle.description || "",
+                    fuelType: vehicle.fuelType || "",
+                    transmission: vehicle.transmission || "",
+                    seatingCapacity: vehicle.seatingCapacity || "",
+                    mileage: vehicle.mileage || "",
+                    rentPerDay: vehicle.rentPerDay || "",
+                    pickupLocation: {
+                        address: vehicle.pickupLocation?.address || "",
+                        city: vehicle.pickupLocation?.city || ""
+                    }
+                });
+                // Set preview images from existing URLs
+                if (vehicle.mainImage) setMainPreview(vehicle.mainImage);
+                if (vehicle.bluebook) setBluebookPreview(vehicle.bluebook);
+            }
+        } catch (err) {
+            console.error("Error fetching vehicle:", err);
+            alert("Failed to load vehicle data. Please try again.");
+            navigate("/vendor/listings");
+        } finally {
+            setFetching(false);
+        }
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -94,14 +143,19 @@ export default function VehicleUploadForm() {
         // Append vendorId (from user context)
         data.append("vendorId", userData.userId);
 
-        // Append images
+        // Append images (only if new files are selected)
         if (mainImage) data.append("mainImage", mainImage);
         if (bluebookImage) data.append("bluebook", bluebookImage);
         extraImages.forEach((img) => data.append("images", img));
 
         try {
-            const res = await fetch("http://localhost:5001/api/vehicles/create", {
-                method: "POST",
+            const url = isEditMode 
+                ? `http://localhost:5001/api/vehicles/${id}`
+                : "http://localhost:5001/api/vehicles/create";
+            const method = isEditMode ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method,
                 body: data,
                 credentials: "include"
             });
@@ -109,13 +163,17 @@ export default function VehicleUploadForm() {
             const result = res.ok ? await res.json() : { success: false, message: await res.text() };
 
             if (res.ok && result.success) {
-                alert("Vehicle uploaded successfully!");
-                resetForm();
+                alert(isEditMode ? "Vehicle updated successfully! Resubmitted for verification." : "Vehicle uploaded successfully!");
+                if (isEditMode) {
+                    navigate("/vendor/listings");
+                } else {
+                    resetForm();
+                }
             } else {
-                alert("Upload failed: " + (result.message || "Unknown error"));
+                alert((isEditMode ? "Update" : "Upload") + " failed: " + (result.message || "Unknown error"));
             }
         } catch (err) {
-            console.error("Upload error:", err);
+            console.error("Error:", err);
             alert("Network error. Please try again.");
         } finally {
             setLoading(false);
@@ -151,10 +209,22 @@ export default function VehicleUploadForm() {
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
                         <Car className="text-white" size={32} />
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Add New Vehicle</h1>
-                    <p className="text-gray-600">Fill in the details to list your vehicle for rent</p>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                        {isEditMode ? "Edit Vehicle" : "Add New Vehicle"}
+                    </h1>
+                    <p className="text-gray-600">
+                        {isEditMode 
+                            ? "Update your vehicle details and resubmit for verification" 
+                            : "Fill in the details to list your vehicle for rent"}
+                    </p>
                 </div>
 
+                {fetching ? (
+                    <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+                        <Loader2 className="animate-spin mx-auto mb-4 text-blue-600" size={32} />
+                        <p className="text-gray-600">Loading vehicle data...</p>
+                    </div>
+                ) : (
                 <div className="bg-white rounded-2xl shadow-xl p-8">
                     <form onSubmit={handleSubmit} className="space-y-8">
                         {/* Basic Info */}
@@ -349,14 +419,16 @@ export default function VehicleUploadForm() {
                         {/* Images */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-3">Main Vehicle Image *</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-3">
+                                    Main Vehicle Image {!isEditMode && "*"}
+                                </label>
                                 <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 transition cursor-pointer bg-gray-50">
                                     <input
                                         type="file"
                                         accept="image/*"
                                         onChange={handleMainImage}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                        required
+                                        required={!isEditMode}
                                         disabled={loading}
                                     />
                                     {mainPreview ? (
@@ -364,21 +436,25 @@ export default function VehicleUploadForm() {
                                     ) : (
                                         <div className="text-center">
                                             <FileImage className="mx-auto text-gray-400 mb-2" size={32} />
-                                            <p className="text-sm text-gray-600">Click to upload main image</p>
+                                            <p className="text-sm text-gray-600">
+                                                {isEditMode ? "Click to change main image (optional)" : "Click to upload main image"}
+                                            </p>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-3">Bluebook Photo *</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-3">
+                                    Bluebook Photo {!isEditMode && "*"}
+                                </label>
                                 <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 transition cursor-pointer bg-gray-50">
                                     <input
                                         type="file"
                                         accept="image/*"
                                         onChange={handleBluebookImage}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                        required
+                                        required={!isEditMode}
                                         disabled={loading}
                                     />
                                     {bluebookPreview ? (
@@ -386,7 +462,9 @@ export default function VehicleUploadForm() {
                                     ) : (
                                         <div className="text-center">
                                             <FileText className="mx-auto text-gray-400 mb-2" size={32} />
-                                            <p className="text-sm text-gray-600">Click to upload bluebook</p>
+                                            <p className="text-sm text-gray-600">
+                                                {isEditMode ? "Click to change bluebook (optional)" : "Click to upload bluebook"}
+                                            </p>
                                         </div>
                                     )}
                                 </div>
@@ -423,17 +501,18 @@ export default function VehicleUploadForm() {
                             {loading ? (
                                 <>
                                     <Loader2 className="animate-spin" size={20} />
-                                    Uploading...
+                                    {isEditMode ? "Updating..." : "Uploading..."}
                                 </>
                             ) : (
                                 <>
                                     <Upload size={20} />
-                                    Upload Vehicle
+                                    {isEditMode ? "Update & Resubmit Vehicle" : "Upload Vehicle"}
                                 </>
                             )}
                         </button>
                     </form>
                 </div>
+                )}
             </div>
         </div>
     );

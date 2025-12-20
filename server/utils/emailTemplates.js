@@ -4,7 +4,7 @@ const emailTemplates = {
     // Initial OTP verification
     verifyEmail: (otp) => `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #f59e0b;">Welcome to NayaSathi!</h2>
+      <h2 style="color: #f59e0b;">Welcome to AURA!</h2>
       <p>Please verify your email address to complete your registration.</p>
       <div style="background: #f8fafc; padding: 16px; border-radius: 8px; text-align: center; margin: 20px 0;">
         <h3 style="margin: 0; font-size: 24px; letter-spacing: 2px;">${otp}</h3>
@@ -18,7 +18,7 @@ const emailTemplates = {
     resendOtp: (otp) => `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #f59e0b;">Your New Verification Code</h2>
-      <p>Here's your new verification code for NayaSathi:</p>
+      <p>Here's your new verification code for AURA:</p>
       <div style="background: #f8fafc; padding: 16px; border-radius: 8px; text-align: center; margin: 20px 0;">
         <h3 style="margin: 0; font-size: 24px; letter-spacing: 2px;">${otp}</h3>
       </div>
@@ -31,7 +31,7 @@ const emailTemplates = {
     passwordResetOtp: (otp) => `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #f59e0b;">Password Reset Request</h2>
-      <p>We received a request to reset your NayaSathi account password. Use this code to verify it's you:</p>
+      <p>We received a request to reset your AURA account password. Use this code to verify it's you:</p>
       <div style="background: #f8fafc; padding: 16px; border-radius: 8px; text-align: center; margin: 20px 0;">
         <h3 style="margin: 0; font-size: 24px; letter-spacing: 2px;">${otp}</h3>
       </div>
@@ -44,7 +44,7 @@ const emailTemplates = {
     passwordResetSuccess: () => `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #10b981;">Password Changed Successfully</h2>
-      <p>Your NayaSathi account password has been successfully updated.</p>
+      <p>Your AURA account password has been successfully updated.</p>
       <p>If you made this change, no further action is needed.</p>
       <p style="color: #ef4444; font-size: 14px;">If you didn't make this change, please secure your account immediately.</p>
     </div>
@@ -55,7 +55,7 @@ const emailTemplates = {
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #ef4444;">Account Suspension Notice</h2>
       <p>Dear ${userName},</p>
-      <p>Your NayaSathi account has been temporarily suspended due to violation of our community guidelines.</p>
+      <p>Your AURA account has been temporarily suspended due to violation of our community guidelines.</p>
       <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
         <h3 style="margin: 0 0 10px 0; font-size: 18px;">Suspension Details:</h3>
         <p><strong>Reason:</strong> ${remarks || "Violation of terms of service"}</p>
@@ -73,7 +73,7 @@ const emailTemplates = {
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #10b981;">Account Access Restored</h2>
       <p>Dear ${userName},</p>
-      <p>Your NayaSathi account suspension has been lifted and full access has been restored.</p>
+      <p>Your AURA account suspension has been lifted and full access has been restored.</p>
       <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
         <p><strong>Action By:</strong> ${adminEmail}</p>
         <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>

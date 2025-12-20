@@ -63,7 +63,11 @@ export default function ConfirmationModal({
 
                         <div className="flex-1 min-w-0">
                             <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
-                            <p className="text-slate-600 leading-relaxed">{message}</p>
+                            {typeof message === 'string' ? (
+                                <p className="text-slate-600 leading-relaxed">{message}</p>
+                            ) : (
+                                <div className="text-slate-600 leading-relaxed">{message}</div>
+                            )}
                             {children}
                         </div>
 

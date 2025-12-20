@@ -1,5 +1,6 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 
 
 export const getUserData = async (req, res) => {
@@ -144,6 +145,107 @@ export const changePassword = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Server error"
+        });
+    }
+};
+
+/**
+ * Upload license for a specific vehicle type
+ */
+export const uploadLicense = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { vehicleType } = req.body;
+
+        if (!vehicleType || !["Car", "Bike", "Scooter", "Jeep", "Van"].includes(vehicleType)) {
+            return res.status(400).json({
+                success: false,
+                message: "Valid vehicle type is required (Car, Bike, Scooter, Jeep, Van)"
+            });
+        }
+
+        if (!req.files?.licenseImage?.[0]) {
+            return res.status(400).json({
+                success: false,
+                message: "License image is required"
+            });
+        }
+
+        const licenseImage = req.files.licenseImage[0].path;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        // Check if user already has a license (pending or approved) for this vehicle type
+        const existingLicense = user.licenses.find(
+            license => license.vehicleType === vehicleType && license.status !== "rejected"
+        );
+
+        if (existingLicense) {
+            return res.status(400).json({
+                success: false,
+                message: `You already have a ${existingLicense.status} license for ${vehicleType}. Please wait for admin approval or update the existing license.`
+            });
+        }
+
+        // Remove any rejected licenses for this vehicle type
+        user.licenses = user.licenses.filter(license => !(license.vehicleType === vehicleType && license.status === "rejected"));
+
+        // Add new license
+        user.licenses.push({
+            vehicleType,
+            licenseImage,
+            status: "pending",
+            uploadedAt: new Date()
+        });
+
+        await user.save();
+
+        res.status(201).json({
+            success: true,
+            message: "License uploaded successfully. It will be reviewed by an admin.",
+            data: user.licenses[user.licenses.length - 1]
+        });
+    } catch (error) {
+        console.error("Error uploading license:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to upload license",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get user's licenses
+ */
+export const getMyLicenses = async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        const user = await User.findById(userId).select("licenses");
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        res.json({
+            success: true,
+            data: user.licenses || []
+        });
+    } catch (error) {
+        console.error("Error fetching licenses:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch licenses",
+            error: error.message
         });
     }
 };

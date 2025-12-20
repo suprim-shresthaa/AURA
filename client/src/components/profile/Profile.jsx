@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar";
 import ProfileInfo from "./ProfileInfo";
 import Settings from './Settings'
 import Bookings from './Bookings'
+import Licenses from './Licenses'
 import { AppContent } from "../context/AppContext";
 
 const Profile = () => {
@@ -23,6 +24,7 @@ const Profile = () => {
                     <main className="mt-8 lg:mt-0 lg:col-span-9">
                         {activeTab === "profile" && <ProfileInfo />}
                         {activeTab === "bookings" && <Bookings />}
+                        {activeTab === "licenses" && <Licenses />}
                         {activeTab === "settings" && <Settings />}
                     </main>
                 </div>

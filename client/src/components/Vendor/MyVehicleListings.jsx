@@ -71,8 +71,12 @@ export default function MyVehicleListings() {
         setModalOpen(true);
     };
 
-    const handleEdit = (id) => console.log('Edit', id);
-    const handleView = (id) => console.log('View', id);
+    const handleEdit = (id) => {
+        navigate(`/vendor/vehicle-upload/${id}`);
+    };
+    const handleView = (id) => {
+        navigate(`/vehicles/${id}`);
+    };
 
     const filteredVehicles = vehicles.filter(v => {
         const matchesSearch = v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,6 +85,10 @@ export default function MyVehicleListings() {
             (filterStatus === 'available' && v.isAvailable) ||
             (filterStatus === 'rented' && !v.isAvailable);
         return matchesSearch && matchesFilter;
+    }).sort((a, b) => {
+        // Sort by verification status: pending first, then approved, then rejected
+        const statusOrder = { pending: 0, approved: 1, rejected: 2 };
+        return (statusOrder[a.verificationStatus] || 3) - (statusOrder[b.verificationStatus] || 3);
     });
 
     if (loading) {
@@ -183,6 +191,12 @@ export default function MyVehicleListings() {
                         <div className="divide-y divide-slate-200">
                             {filteredVehicles.map(vehicle => (
                                 <div key={vehicle._id} className="px-6 py-4 hover:bg-slate-50 transition-colors">
+                                    {vehicle.verificationStatus === 'rejected' && vehicle.rejectionReason && (
+                                        <div className="mb-3 p-3 bg-red-50 border-l-4 border-red-500 rounded">
+                                            <p className="text-sm font-semibold text-red-900 mb-1">Rejection Reason:</p>
+                                            <p className="text-sm text-red-700">{vehicle.rejectionReason}</p>
+                                        </div>
+                                    )}
                                     <div className="grid grid-cols-12 gap-4 items-center">
                                         <div className="col-span-4 flex items-center gap-4">
                                             <div className="w-20 h-20 rounded-lg overflow-hidden bg-slate-200 flex-shrink-0">
@@ -215,18 +229,42 @@ export default function MyVehicleListings() {
                                         </div>
 
                                         <div className="col-span-2">
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${vehicle.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                {vehicle.isAvailable ? 'Available' : 'Rented'}
-                                            </span>
+                                            <div className="space-y-1">
+                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${vehicle.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                    {vehicle.isAvailable ? 'Available' : 'Rented'}
+                                                </span>
+                                                {vehicle.verificationStatus && (
+                                                    <div>
+                                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                                            vehicle.verificationStatus === 'approved' ? 'bg-green-100 text-green-800' :
+                                                            vehicle.verificationStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                                                            'bg-yellow-100 text-yellow-800'
+                                                        }`}>
+                                                            {vehicle.verificationStatus === 'approved' ? '✓ Approved' :
+                                                             vehicle.verificationStatus === 'rejected' ? '✗ Rejected' :
+                                                             '⏳ Pending'}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div className="col-span-2 flex items-center justify-end gap-2">
-                                            <button onClick={() => handleView(vehicle._id)} className="p-2 text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors" title="View Details">
-                                                <Eye size={18} />
-                                            </button>
-                                            <button onClick={() => handleEdit(vehicle._id)} className="p-2 text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors" title="Edit Vehicle">
-                                                <Edit size={18} />
-                                            </button>
+                                            {vehicle.verificationStatus === 'approved' && (
+                                                <button onClick={() => handleView(vehicle._id)} className="p-2 text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors" title="View Details">
+                                                    <Eye size={18} />
+                                                </button>
+                                            )}
+                                            {(vehicle.verificationStatus === 'rejected' || vehicle.verificationStatus === 'pending') && (
+                                                <button onClick={() => handleEdit(vehicle._id)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium" title={vehicle.verificationStatus === 'rejected' ? "Edit & Resubmit" : "Edit Vehicle"}>
+                                                    <Edit size={18} />
+                                                </button>
+                                            )}
+                                            {vehicle.verificationStatus === 'approved' && (
+                                                <button onClick={() => handleEdit(vehicle._id)} className="p-2 text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors" title="Edit Vehicle">
+                                                    <Edit size={18} />
+                                                </button>
+                                            )}
                                             <button onClick={() => handleDelete(vehicle._id)} className="p-2 text-slate-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors" title="Delete Vehicle">
                                                 <Trash2 size={18} />
                                             </button>

@@ -1,10 +1,26 @@
 import Booking from "../models/booking.model.js";
 import Vehicle from "../models/vehicle.model.js";
+import User from "../models/user.model.js";
 
 export const createBooking = async (req, res) => {
     try {
         const { vehicleId, startDate, endDate, isPaymentDeferred, notes } = req.body;
         const userId = req.userId;
+
+        // Check if user is vendor or admin - they cannot book vehicles
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required"
+            });
+        }
+
+        if (req.user.role === "vendor" || req.user.role === "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Vendors and admins cannot book vehicles"
+            });
+        }
 
         if (!vehicleId || !startDate || !endDate) {
             return res.status(400).json({
@@ -46,6 +62,34 @@ export const createBooking = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Vehicle is not available for booking"
+            });
+        }
+
+        // Check if vehicle is approved
+        if (vehicle.verificationStatus !== "approved") {
+            return res.status(400).json({
+                success: false,
+                message: "Vehicle is not approved for booking"
+            });
+        }
+
+        // Check if user has approved license for this vehicle type
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const approvedLicense = user.licenses.find(
+            license => license.vehicleType === vehicle.category && license.status === "approved"
+        );
+
+        if (!approvedLicense) {
+            return res.status(403).json({
+                success: false,
+                message: `You need an approved ${vehicle.category} license to book this vehicle. Please upload your license and wait for admin approval.`
             });
         }
 

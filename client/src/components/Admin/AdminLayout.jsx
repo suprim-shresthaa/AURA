@@ -25,6 +25,8 @@ import {
     Wrench,
     Book,
     CreditCard,
+    Car,
+    FileText,
 } from "lucide-react";
 
 const adminNavItems = [
@@ -32,7 +34,8 @@ const adminNavItems = [
     { id: "users", label: "Manage Users", icon: Users, href: "/admin/users" },
     { id: "reservations", label: "Reservations", icon: Calendar, href: "/admin/reservations" },
     { id: "applications", label: "Applications", icon: Book, href: "/admin/applications" },
-    { id: "payments", label: "Payment Tracking", icon: CreditCard, href: "/admin/payments" },
+    { id: "vehicles", label: "Manage Vehicles", icon: Car, href: "/admin/vehicles" },
+    { id: "licenses", label: "Manage Licenses", icon: FileText, href: "/admin/licenses" },
     { id: "spare-parts", label: "Spare Parts", icon: Wrench, href: "/admin/add-spare-parts" },
 ];
 
@@ -41,7 +44,8 @@ const pageMeta = {
     "/admin/users": { title: "Manage Users", subtitle: "User Management" },
     "/admin/reservations": { title: "Reservations", subtitle: "Booking Management" },
     "/admin/applications": { title: "Applications", subtitle: "Vendor Onboarding" },
-    "/admin/payments": { title: "Payment Tracking", subtitle: "Payment Management" },
+    "/admin/vehicles": { title: "Manage Vehicles", subtitle: "Vehicle Verification" },
+    "/admin/licenses": { title: "Manage Licenses", subtitle: "License Approval" },
     "/admin/add-spare-parts": { title: "Spare Parts", subtitle: "Inventory" },
 };
 
