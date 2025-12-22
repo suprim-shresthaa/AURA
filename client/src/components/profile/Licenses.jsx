@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import { FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Car } from "lucide-react";
 import axiosInstance from "@/lib/axiosInstance";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppContent } from "../context/AppContext";
 import Loading from "@/components/ui/Loading";
+import { toast } from "react-toastify";
 
 const vehicleTypes = ["Car", "Bike", "Scooter", "Jeep", "Van"];
 
@@ -33,7 +34,7 @@ const Licenses = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [showUploadForm, setShowUploadForm] = useState(false);
-  const [selectedVehicleType, setSelectedVehicleType] = useState("");
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState([]);
   const [licenseImage, setLicenseImage] = useState(null);
   const [preview, setPreview] = useState(null);
 
@@ -67,17 +68,28 @@ const Licenses = () => {
     }
   };
 
+  const handleVehicleTypeToggle = (type) => {
+    setSelectedVehicleTypes((prev) =>
+      prev.includes(type)
+        ? prev.filter((t) => t !== type)
+        : [...prev, type]
+    );
+  };
+
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!selectedVehicleType || !licenseImage) {
-      alert("Please select a vehicle type and upload a license image.");
+    if (selectedVehicleTypes.length === 0 || !licenseImage) {
+      toast.error("Please select at least one vehicle type and upload a license image.");
       return;
     }
 
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append("vehicleType", selectedVehicleType);
+      // Append each vehicle type with the same key - backend will parse as array
+      selectedVehicleTypes.forEach((type) => {
+        formData.append("vehicleTypes", type);
+      });
       formData.append("licenseImage", licenseImage);
 
       const response = await axiosInstance.post("/user/license/upload", formData, {
@@ -87,18 +99,19 @@ const Licenses = () => {
       });
 
       if (response.data?.success) {
-        alert("License uploaded successfully! It will be reviewed by an admin.");
+        const message = response.data.message || "License uploaded successfully! It will be reviewed by an admin.";
+        toast.success(message);
         setShowUploadForm(false);
-        setSelectedVehicleType("");
+        setSelectedVehicleTypes([]);
         setLicenseImage(null);
         setPreview(null);
         fetchLicenses();
       } else {
-        alert(response.data?.message || "Failed to upload license.");
+        toast.error(response.data?.message || "Failed to upload license.");
       }
     } catch (err) {
       console.error("Error uploading license:", err);
-      alert(err.response?.data?.message || "Failed to upload license. Please try again.");
+      toast.error(err.response?.data?.message || "Failed to upload license. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -106,10 +119,53 @@ const Licenses = () => {
 
   const cancelUpload = () => {
     setShowUploadForm(false);
-    setSelectedVehicleType("");
+    setSelectedVehicleTypes([]);
     setLicenseImage(null);
     setPreview(null);
   };
+
+  // Group licenses by license ID (same ID = same license entry with multiple vehicle types)
+  const groupedLicenses = useMemo(() => {
+    const groups = new Map();
+    
+    licenses.forEach((license) => {
+      // Group by license ID since backend expands licenses with multiple vehicleTypes
+      const licenseId = license._id;
+      
+      if (!groups.has(licenseId)) {
+        groups.set(licenseId, {
+          key: licenseId,
+          _id: license._id,
+          licenseImage: license.licenseImage,
+          uploadedAt: license.uploadedAt,
+          status: license.status,
+          rejectionReason: license.rejectionReason,
+          approvedBy: license.approvedBy,
+          approvedAt: license.approvedAt,
+          vehicleTypes: [], // Collect all vehicle types for this license
+          licenses: [] // Array of expanded license objects (for reference)
+        });
+      }
+      
+      const group = groups.get(licenseId);
+      
+      // Add vehicle type if not already added
+      if (license.vehicleType && !group.vehicleTypes.includes(license.vehicleType)) {
+        group.vehicleTypes.push(license.vehicleType);
+      }
+      
+      // Add expanded license entry if not already added
+      const existingLicense = group.licenses.find(
+        l => l._id === license._id && l.vehicleType === license.vehicleType
+      );
+      
+      if (!existingLicense) {
+        group.licenses.push(license);
+      }
+    });
+    
+    return Array.from(groups.values());
+  }, [licenses]);
 
   // Get available vehicle types (those without pending/approved licenses)
   const availableVehicleTypes = vehicleTypes.filter(
@@ -155,21 +211,33 @@ const Licenses = () => {
             <form onSubmit={handleUpload} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Vehicle Type *
+                  Vehicle Types * (Select one or more)
                 </label>
-                <select
-                  value={selectedVehicleType}
-                  onChange={(e) => setSelectedVehicleType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select vehicle type</option>
-                  {availableVehicleTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
+                <div className="space-y-2 border border-gray-300 rounded-lg p-3 bg-gray-50">
+                  {availableVehicleTypes.length === 0 ? (
+                    <p className="text-sm text-gray-500">All vehicle types already have licenses.</p>
+                  ) : (
+                    availableVehicleTypes.map((type) => (
+                      <label
+                        key={type}
+                        className="flex items-center space-x-3 cursor-pointer hover:bg-gray-100 p-2 rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedVehicleTypes.includes(type)}
+                          onChange={() => handleVehicleTypeToggle(type)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-gray-700">{type}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
+                {selectedVehicleTypes.length > 0 && (
+                  <p className="mt-2 text-sm text-gray-600">
+                    Selected: {selectedVehicleTypes.join(", ")}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -205,7 +273,7 @@ const Licenses = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={uploading || !selectedVehicleType || !licenseImage}>
+                <Button type="submit" disabled={uploading || selectedVehicleTypes.length === 0 || !licenseImage}>
                   {uploading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
@@ -231,7 +299,7 @@ const Licenses = () => {
               <FileText className="mx-auto text-gray-400 mb-4" size={48} />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No Licenses Uploaded</h3>
               <p className="text-gray-600 mb-4">
-                Upload your driving licenses to rent vehicles. Each vehicle type requires a separate license.
+                Upload your driving license. You can use the same license image for multiple vehicle types.
               </p>
               {availableVehicleTypes.length > 0 && (
                 <Button onClick={() => setShowUploadForm(true)} className="bg-blue-600 hover:bg-blue-700">
@@ -244,12 +312,32 @@ const Licenses = () => {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {licenses.map((license) => {
-            const statusInfo = statusConfig[license.status] || statusConfig.pending;
+          {groupedLicenses.map((group) => {
+            const vehicleTypes = group.vehicleTypes || group.licenses.map((l) => l.vehicleType);
+            const isMultipleTypes = vehicleTypes.length > 1;
+            
+            // Get the most recent status (prioritize rejected > pending > approved)
+            const getStatusPriority = (status) => {
+              if (status === "rejected") return 3;
+              if (status === "pending") return 2;
+              if (status === "approved") return 1;
+              return 0;
+            };
+            
+            const primaryLicense = group.licenses.reduce((prev, curr) => {
+              return getStatusPriority(curr.status) > getStatusPriority(prev.status) ? curr : prev;
+            });
+            
+            const statusInfo = statusConfig[primaryLicense.status] || statusConfig.pending;
             const StatusIcon = statusInfo.icon;
+            
+            // Check if all licenses are rejected
+            const allRejected = group.licenses.every(l => l.status === "rejected");
+            const rejectedLicenses = group.licenses.filter(l => l.status === "rejected");
+            const rejectionReasons = [...new Set(rejectedLicenses.map(l => l.rejectionReason).filter(Boolean))];
 
             return (
-              <Card key={license._id} className="overflow-hidden">
+              <Card key={group.key} className="overflow-hidden">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -257,9 +345,24 @@ const Licenses = () => {
                         <Car className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg">{license.vehicleType} License</CardTitle>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Uploaded: {new Date(license.uploadedAt).toLocaleDateString()}
+                        <CardTitle className="text-lg">
+                          {isMultipleTypes 
+                            ? `License for ${vehicleTypes.length} Vehicle Types` 
+                            : `${vehicleTypes[0]} License`}
+                        </CardTitle>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {vehicleTypes.map((type) => (
+                            <span
+                              key={type}
+                              className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium flex items-center gap-1"
+                            >
+                              <Car className="h-3 w-3" />
+                              {type}
+                            </span>
+                          ))}
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2">
+                          Uploaded: {new Date(group.uploadedAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -274,29 +377,56 @@ const Licenses = () => {
                 <CardContent>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      {license.rejectionReason && (
+                      {rejectionReasons.length > 0 && (
                         <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                          <p className="text-sm font-semibold text-red-900 mb-1">Rejection Reason:</p>
-                          <p className="text-sm text-red-700">{license.rejectionReason}</p>
+                          <p className="text-sm font-semibold text-red-900 mb-1">Rejection Reason{rejectionReasons.length > 1 ? "s" : ""}:</p>
+                          {rejectionReasons.map((reason, idx) => (
+                            <p key={idx} className="text-sm text-red-700">{reason}</p>
+                          ))}
                         </div>
                       )}
-                      {license.approvedAt && (
+                      {group.licenses.some(l => l.approvedAt) && (
                         <div className="text-sm text-gray-600">
                           <p className="font-medium">Approved on:</p>
-                          <p>{new Date(license.approvedAt).toLocaleString()}</p>
+                          <p>{new Date(group.licenses.find(l => l.approvedAt)?.approvedAt).toLocaleString()}</p>
+                        </div>
+                      )}
+                      {isMultipleTypes && (
+                        <div className="text-sm text-gray-600">
+                          <p className="font-medium mb-2">Status by Vehicle Type:</p>
+                          <div className="space-y-1">
+                            {group.licenses.map((license) => {
+                              const licenseStatusInfo = statusConfig[license.status] || statusConfig.pending;
+                              const LicenseStatusIcon = licenseStatusInfo.icon;
+                              return (
+                                <div key={license._id} className="flex items-center justify-between py-1">
+                                  <span className="text-gray-700">{license.vehicleType}:</span>
+                                  <span className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${licenseStatusInfo.className}`}>
+                                    <LicenseStatusIcon className="h-3 w-3" />
+                                    {licenseStatusInfo.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-700 mb-2">License Document:</p>
+                      {isMultipleTypes && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          This license image is used for {vehicleTypes.length} vehicle type{vehicleTypes.length > 1 ? "s" : ""}: {vehicleTypes.join(", ")}
+                        </p>
+                      )}
                       <div className="relative">
                         <img
-                          src={license.licenseImage}
-                          alt={`${license.vehicleType} License`}
+                          src={group.licenseImage}
+                          alt={`License for ${vehicleTypes.join(", ")}`}
                           className="w-full h-48 object-contain bg-gray-50 rounded-lg border"
                         />
                         <a
-                          href={license.licenseImage}
+                          href={group.licenseImage}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="absolute top-2 right-2 p-2 bg-white rounded-lg shadow-md hover:bg-gray-50"
@@ -306,14 +436,14 @@ const Licenses = () => {
                       </div>
                     </div>
                   </div>
-                  {license.status === "rejected" && (
+                  {allRejected && (
                     <div className="mt-4 pt-4 border-t">
                       <p className="text-sm text-gray-600 mb-2">
-                        Your license was rejected. You can upload a new one for this vehicle type.
+                        Your license was rejected for {rejectedLicenses.length > 1 ? "these vehicle types" : "this vehicle type"}. You can upload a new one.
                       </p>
                       <Button
                         onClick={() => {
-                          setSelectedVehicleType(license.vehicleType);
+                          setSelectedVehicleTypes(vehicleTypes);
                           setShowUploadForm(true);
                         }}
                         variant="outline"

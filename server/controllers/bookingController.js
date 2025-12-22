@@ -83,7 +83,7 @@ export const createBooking = async (req, res) => {
         }
 
         const approvedLicense = user.licenses.find(
-            license => license.vehicleType === vehicle.category && license.status === "approved"
+            license => license.vehicleTypes?.includes(vehicle.category) && license.status === "approved"
         );
 
         if (!approvedLicense) {

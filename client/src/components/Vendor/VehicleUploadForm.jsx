@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Upload, Car, FileImage, Calendar, FileText, Loader2 } from "lucide-react";
 import { AppContent } from "../context/AppContext";
 import axiosInstance from "@/lib/axiosInstance";
+import { toast } from "react-toastify";
 
 export default function VehicleUploadForm() {
     const { id } = useParams();
@@ -71,7 +72,7 @@ export default function VehicleUploadForm() {
             }
         } catch (err) {
             console.error("Error fetching vehicle:", err);
-            alert("Failed to load vehicle data. Please try again.");
+            toast.error("Failed to load vehicle data. Please try again.");
             navigate("/vendor/listings");
         } finally {
             setFetching(false);
@@ -119,7 +120,7 @@ export default function VehicleUploadForm() {
         setLoading(true);
 
         if (!userData?.userId) {
-            alert("Error: You must be logged in to upload a vehicle.");
+            toast.error("Error: You must be logged in to upload a vehicle.");
             setLoading(false);
             return;
         }
@@ -163,18 +164,18 @@ export default function VehicleUploadForm() {
             const result = res.ok ? await res.json() : { success: false, message: await res.text() };
 
             if (res.ok && result.success) {
-                alert(isEditMode ? "Vehicle updated successfully! Resubmitted for verification." : "Vehicle uploaded successfully!");
+                toast.success(isEditMode ? "Vehicle updated successfully! Resubmitted for verification." : "Vehicle uploaded successfully! It will be reviewed by an admin.");
                 if (isEditMode) {
                     navigate("/vendor/listings");
                 } else {
                     resetForm();
                 }
             } else {
-                alert((isEditMode ? "Update" : "Upload") + " failed: " + (result.message || "Unknown error"));
+                toast.error((isEditMode ? "Update" : "Upload") + " failed: " + (result.message || "Unknown error"));
             }
         } catch (err) {
             console.error("Error:", err);
-            alert("Network error. Please try again.");
+            toast.error("Network error. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -271,7 +272,7 @@ export default function VehicleUploadForm() {
                                         value={formData.modelYear}
                                         onChange={handleChange}
                                         min="1900"
-                                        max={new Date().getFullYear() + 1}
+                                        max={new Date().getFullYear()}
                                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                         required
                                     />

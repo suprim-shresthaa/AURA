@@ -1,6 +1,6 @@
 // src/components/profile/Settings.jsx
 import React, { useContext, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Check, X } from "lucide-react";
 import axios from "axios";
 import { AppContent } from "../context/AppContext";
 import Cookies from "js-cookie";
@@ -14,6 +14,7 @@ const Settings = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
 
     // Delete Account Modal
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -26,13 +27,40 @@ const Settings = () => {
     const togglePassword = (field) =>
         setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
 
-    const handlePasswordChange = (e) =>
+    const handlePasswordChange = (e) => {
         setPasswords({ ...passwords, [e.target.name]: e.target.value });
+        if (e.target.name === "newPassword" && e.target.value.length === 0) {
+            setShowPasswordRequirements(false);
+        }
+    };
+
+    // Password validation
+    const passwordValidations = {
+        hasMinLength: passwords.newPassword.length >= 8,
+        hasUppercase: /[A-Z]/.test(passwords.newPassword),
+        hasLowercase: /[a-z]/.test(passwords.newPassword),
+        hasNumber: /[0-9]/.test(passwords.newPassword),
+        hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(passwords.newPassword),
+    };
+    const isValidNewPassword = Object.values(passwordValidations).every(Boolean);
+
+    const ValidationIcon = ({ isValid }) => (
+        <span className={isValid ? "text-green-500" : "text-red-500"}>
+            {isValid ? <Check size={14} /> : <X size={14} />}
+        </span>
+    );
 
     const handleSavePassword = async () => {
-        setLoading(true);
         setError("");
         setSuccess("");
+
+        // Validate password strength
+        if (!isValidNewPassword) {
+            setError("Password must be at least 8 characters long and include one uppercase letter, one lowercase letter, one number, and one special character.");
+            return;
+        }
+
+        setLoading(true);
 
         try {
             const payload = {
@@ -123,6 +151,8 @@ const Settings = () => {
                                     name="newPassword"
                                     value={passwords.newPassword}
                                     onChange={handlePasswordChange}
+                                    onFocus={() => setShowPasswordRequirements(true)}
+                                    onBlur={() => passwords.newPassword.length === 0 && setShowPasswordRequirements(false)}
                                     className="mt-1 block w-full px-3 py-2 border rounded-md pr-10"
                                 />
                                 <button
@@ -134,13 +164,31 @@ const Settings = () => {
                                 </button>
                             </div>
 
+                            {showPasswordRequirements && (
+                                <div className="mt-2 p-3 bg-gray-50 rounded-lg space-y-1 text-xs">
+                                    <p className="font-medium text-gray-500">Password must contain:</p>
+                                    {Object.entries({
+                                        "At least 8 characters": passwordValidations.hasMinLength,
+                                        "At least one uppercase letter": passwordValidations.hasUppercase,
+                                        "At least one lowercase letter": passwordValidations.hasLowercase,
+                                        "At least one number": passwordValidations.hasNumber,
+                                        "At least one special character": passwordValidations.hasSpecialChar,
+                                    }).map(([text, valid], idx) => (
+                                        <div key={idx} className="flex items-center gap-2">
+                                            <ValidationIcon isValid={valid} />
+                                            <span className={valid ? "text-green-500" : "text-gray-500"}>{text}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             {error && <p className="text-red-600 text-sm">{error}</p>}
                             {success && <p className="text-green-600 text-sm">{success}</p>}
 
                             <div className="flex space-x-3">
                                 <button
                                     onClick={handleSavePassword}
-                                    disabled={loading}
+                                    disabled={loading || !isValidNewPassword}
                                     className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
                                 >
                                     {loading ? "Saving..." : "Save"}

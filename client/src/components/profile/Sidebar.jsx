@@ -8,17 +8,10 @@ import Cookies from "js-cookie";
 import { AppContent } from "../context/AppContext";
 
 const Sidebar = ({ activeTab, setActiveTab, userData }) => {
-    const { setIsLoggedin, backendUrl } = useContext(AppContent);
+    const { setIsLoggedin, backendUrl, setUserData } = useContext(AppContent);
     const fileInputRef = useRef(null);
     const [isUploading, setIsUploading] = useState(false);
     const navigate = useNavigate();
-
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-
-    console.log(cloudName);
-    console.log(uploadPreset);
 
 
     //only show licenses if user is a regular user
@@ -45,36 +38,46 @@ const Sidebar = ({ activeTab, setActiveTab, userData }) => {
         const file = e.target.files[0];
         if (!file) return;
 
+        // Validate file type
+        if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+            toast.error("Please select a valid image file (JPEG or PNG)");
+            return;
+        }
+
+        // Validate file size (max 15MB)
+        if (file.size > 15 * 1024 * 1024) {
+            toast.error("Image size must be less than 15MB");
+            return;
+        }
+
         const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", uploadPreset);
-        formData.append("folder", "vendor_images");
+        formData.append("image", file);
 
         setIsUploading(true);
 
         try {
-            const uploadRes = await axios.post(
-                `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+            const response = await axios.put(
+                `${backendUrl}/api/user/update-profile-img`,
                 formData,
                 {
-                    withCredentials: false,   // 🔥 FIX
+                    withCredentials: true,
                     headers: { "Content-Type": "multipart/form-data" },
                 }
             );
 
-            const imageUrl = uploadRes.data.secure_url;
-
-            // Now your backend request can use credentials
-            await axios.put(
-                `${backendUrl}/api/user/update-profile-img`,
-                { email: userData?.email, image: imageUrl },
-                { withCredentials: true }
-            );
-
-            toast.success("Profile picture updated!");
+            if (response.data.success) {
+                // Update userData in context
+                setUserData((prev) => ({
+                    ...prev,
+                    image: response.data.image,
+                }));
+                toast.success("Profile picture updated!");
+            } else {
+                toast.error(response.data.message || "Failed to update image.");
+            }
         } catch (err) {
-            console.log(err);
-            toast.error("Failed to upload image.");
+            console.error("Image upload error:", err);
+            toast.error(err.response?.data?.message || "Failed to upload image.");
         } finally {
             setIsUploading(false);
         }
@@ -146,7 +149,7 @@ const Sidebar = ({ activeTab, setActiveTab, userData }) => {
                     <FileText className="mr-3 h-5 w-5" />
                     Licenses
                 </button>
-                )}r
+                )}
                 <button
                     onClick={() => setActiveTab("settings")}
                     className={`w-full flex items-center px-6 py-3 text-sm font-medium ${activeTab === "settings"

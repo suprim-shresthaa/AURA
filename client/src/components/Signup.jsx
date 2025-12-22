@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import { Car, User, Mail, Lock, Check, X } from "lucide-react";
+import { Car, User, Mail, Lock, Check, X, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import InputField from "./ui/InputField";
 import { AppContent } from "./context/AppContext";
@@ -18,6 +18,8 @@ const Signup = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [contact, setContact] = useState("");
+    const [address, setAddress] = useState("");
     const [isPasswordShown, setIsPasswordShown] = useState(false);
     const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
 
@@ -36,7 +38,8 @@ const Signup = () => {
     /* -------------------------------------------------------------------------- */
     const validations = {
         hasMinLength: password.length >= 8,
-        hasLetter: /[a-zA-Z]/.test(password),
+        hasUppercase: /[A-Z]/.test(password),
+        hasLowercase: /[a-z]/.test(password),
         hasNumber: /[0-9]/.test(password),
         hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
     };
@@ -69,7 +72,15 @@ const Signup = () => {
     const handleSignup = async (e) => {
         e.preventDefault();
         if (!isValidPassword) {
-            message.error("Password must include a letter, number, and special character.");
+            message.error("Password must be at least 8 characters long and include one uppercase letter, one lowercase letter, one number, and one special character.");
+            return;
+        }
+        if (!contact || contact.length !== 10) {
+            message.error("Please enter a valid 10-digit contact number.");
+            return;
+        }
+        if (!address || address.trim().length === 0) {
+            message.error("Please enter your address.");
             return;
         }
 
@@ -84,6 +95,8 @@ const Signup = () => {
                     name: name.trim(),
                     email: email.trim().toLowerCase(),
                     password,
+                    contact: contact.trim(),
+                    address: address.trim(),
                 }),
             });
 
@@ -224,7 +237,7 @@ const Signup = () => {
     /*                                 JSX Return                                 */
     /* -------------------------------------------------------------------------- */
     return (
-        <div className="flex  items-center justify-center pb-28">
+        <div className="flex  items-center justify-center pb-28 pt-[100px]">
             <div className="w-full max-w-md sm:max-w-lg bg-white rounded-2xl shadow-lg border border-blue-100 overflow-hidden">
                 <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-6 sm:pb-8">
                     {!showVerification ? (
@@ -259,6 +272,33 @@ const Signup = () => {
                                     className="text-sm sm:text-base"
                                 />
                                 <InputField
+                                    id="contact"
+                                    label="Contact"
+                                    type="tel"
+                                    placeholder="10-digit Contact Number"
+                                    value={contact}
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                        setContact(value);
+                                    }}
+                                    icon={<Phone className="w-5 h-5 text-gray-400" />}
+                                    required
+                                    autoComplete="tel"
+                                    className="text-sm sm:text-base"
+                                />
+                                <InputField
+                                    id="address"
+                                    label="Address"
+                                    type="text"
+                                    placeholder="Your Address"
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    icon={<MapPin className="w-5 h-5 text-gray-400" />}
+                                    required
+                                    autoComplete="street-address"
+                                    className="text-sm sm:text-base"
+                                />
+                                <InputField
                                     id="password"
                                     label="Password"
                                     type={isPasswordShown ? "text" : "password"}
@@ -280,7 +320,8 @@ const Signup = () => {
                                         <p className="font-medium text-gray-500">Password must contain:</p>
                                         {Object.entries({
                                             "At least 8 characters": validations.hasMinLength,
-                                            "At least one letter": validations.hasLetter,
+                                            "At least one uppercase letter": validations.hasUppercase,
+                                            "At least one lowercase letter": validations.hasLowercase,
                                             "At least one number": validations.hasNumber,
                                             "At least one special character": validations.hasSpecialChar,
                                         }).map(([text, valid], idx) => (
@@ -297,7 +338,7 @@ const Signup = () => {
                                     type="submit"
                                     size="lg"
                                     className="w-full h-12"
-                                    disabled={!isValidPassword || isLoading}
+                                    disabled={!isValidPassword || !contact || contact.length !== 10 || !address || address.trim().length === 0 || isLoading}
                                 >
                                     {isLoading ? "Creating your account..." : "Create Account"}
                                 </Button>

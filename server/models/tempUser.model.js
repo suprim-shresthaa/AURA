@@ -20,6 +20,16 @@ const tempUserSchema = new mongoose.Schema({
         required: [true, 'Password is required'],
         minlength: [8, 'Password must be at least 8 characters long']
     },
+    contact: {
+        type: String,
+        required:  false,
+        match: [/^[0-9]{10}$/, 'Please fill a valid contact number']
+    },
+    address: {
+        type: String,
+        required:  false,
+        maxlength: [200, 'Address cannot exceed 200 characters']
+    },
     verifyOtp: {
         type: String,
         default: '',

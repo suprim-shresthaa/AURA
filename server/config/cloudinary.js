@@ -18,6 +18,7 @@ export const storage = new CloudinaryStorage({
         let transformation = [];
 
         if (file.fieldname === 'image') {
+            folder = 'profile_images';
             transformation = [{ width: 500, height: 500, crop: 'limit' }];
         } else if (file.fieldname === 'fonepayQr') {
             transformation = [{ width: 300, height: 300, crop: 'limit' }];

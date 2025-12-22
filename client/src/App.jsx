@@ -1,9 +1,11 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
 import Navbar from "./components/Navbar";
 import Home from "./Landing/Home";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
+import ResetPassword from "./components/ResetPassword";
 import AdminDashboard from "./components/Admin/AdminDashboard";
 import VendorApplicationForm from "./components/Vendor/VendorApplicationForm";
 import ManageApplications from "./components/Admin/ManageApplications";
@@ -41,6 +43,7 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/vehicles" element={<VehicleListing />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/vehicles/:id" element={<VehicleDetailsPage />} />
@@ -75,6 +78,18 @@ function AppContent() {
       </div>
 
       {!isAdminRoute && <Footer />}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </>
   );
 }

@@ -11,7 +11,6 @@ const ProfileInfo = () => {
         name: "",
         contact: "",
         address: "",
-        description: "",
     });
 
     // Sync values into form when edit mode opens
@@ -21,7 +20,6 @@ const ProfileInfo = () => {
                 name: userData.name || "",
                 contact: userData.contact || "",
                 address: userData.address || "",
-                description: userData.description || "",
             });
         }
     }, [isEditing, userData]);
@@ -37,8 +35,9 @@ const ProfileInfo = () => {
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
                 body: JSON.stringify({
-                    userId: userData?.userId,
-                    ...formData
+                    name: formData.name,
+                    contact: formData.contact,
+                    address: formData.address,
                 }),
             });
 
@@ -49,7 +48,7 @@ const ProfileInfo = () => {
                 setIsEditing(false);
                 toast.success("Profile updated successfully!");
             } else {
-                toast.error(data.message || "Update failed.");
+                    toast.error(data.message || "Update failed.");
             }
         } catch (err) {
             toast.error("Failed to update profile.");
@@ -143,23 +142,6 @@ const ProfileInfo = () => {
                     </div>
                 </div>
 
-                {/* BIO */}
-                <div>
-                    <label className="text-sm font-medium text-gray-500">Bio</label>
-                    {isEditing ? (
-                        <textarea
-                            name="description"
-                            rows={3}
-                            value={formData.description}
-                            onChange={handleChange}
-                            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
-                        />
-                    ) : (
-                        <p className="mt-1 text-sm text-gray-900">
-                            {userData?.description || "No bio added."}
-                        </p>
-                    )}
-                </div>
 
                 {/* BUTTONS */}
                 {isEditing && (

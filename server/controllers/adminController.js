@@ -2,6 +2,7 @@ import Booking from "../models/booking.model.js";
 import Vehicle from "../models/vehicle.model.js";
 import User from "../models/user.model.js";
 import mongoose from "mongoose";
+import sendEmail from '../utils/emailTemplates.js';
 
 /**
  * Get admin dashboard statistics including payment tracking
@@ -437,6 +438,23 @@ export const approveVehicle = async (req, res) => {
 
         await vehicle.save();
 
+        // Send email notification to vendor
+        try {
+            const vendor = await User.findById(vehicle.vendorId).select('name email');
+            if (vendor) {
+                await sendEmail(vendor.email, 'vehicle-approved', {
+                    vendorName: vendor.name,
+                    vehicleName: vehicle.name,
+                    link: `${process.env.FRONTEND_URL}/vehicles/${vehicle._id}`
+                }).catch(err => {
+                    console.error('Failed to send vehicle approval email:', err);
+                });
+            }
+        } catch (emailError) {
+            console.error('Error sending vehicle approval notification:', emailError);
+            // Don't fail the request if email fails
+        }
+
         res.json({
             success: true,
             message: "Vehicle approved successfully",
@@ -491,6 +509,24 @@ export const rejectVehicle = async (req, res) => {
 
         await vehicle.save();
 
+        // Send email notification to vendor
+        try {
+            const vendor = await User.findById(vehicle.vendorId).select('name email');
+            if (vendor) {
+                await sendEmail(vendor.email, 'vehicle-rejected', {
+                    vendorName: vendor.name,
+                    vehicleName: vehicle.name,
+                    rejectionReason: rejectionReason.trim(),
+                    link: `${process.env.FRONTEND_URL}/vendor/listings`
+                }).catch(err => {
+                    console.error('Failed to send vehicle rejection email:', err);
+                });
+            }
+        } catch (emailError) {
+            console.error('Error sending vehicle rejection notification:', emailError);
+            // Don't fail the request if email fails
+        }
+
         res.json({
             success: true,
             message: "Vehicle rejected successfully",
@@ -516,18 +552,34 @@ export const getPendingLicenses = async (req, res) => {
             .lean();
 
         const pendingLicenses = [];
+        const seenLicenseIds = new Set(); // Track seen license IDs to prevent duplicates
+        
         users.forEach(user => {
             user.licenses.forEach(license => {
                 if (license.status === "pending") {
-                    pendingLicenses.push({
-                        _id: license._id,
-                        userId: user._id,
-                        userName: user.name,
-                        userEmail: user.email,
-                        vehicleType: license.vehicleType,
-                        licenseImage: license.licenseImage,
-                        status: license.status,
-                        uploadedAt: license.uploadedAt
+                    const licenseId = license._id?.toString();
+                    
+                    // Skip if we've already added this license (prevent duplicates)
+                    if (seenLicenseIds.has(licenseId)) {
+                        return;
+                    }
+                    
+                    seenLicenseIds.add(licenseId);
+                    
+                    // Expand license with multiple vehicleTypes into individual entries for frontend compatibility
+                    const vehicleTypes = license.vehicleTypes || [];
+                    vehicleTypes.forEach(vehicleType => {
+                        pendingLicenses.push({
+                            _id: licenseId,
+                            userId: user._id?.toString(), // Ensure userId is a string for consistent grouping
+                            userName: user.name,
+                            userEmail: user.email,
+                            vehicleType: vehicleType,
+                            vehicleTypes: vehicleTypes, // Include full array for reference
+                            licenseImage: license.licenseImage,
+                            status: license.status,
+                            uploadedAt: license.uploadedAt
+                        });
                     });
                 }
             });
@@ -585,12 +637,35 @@ export const approveLicense = async (req, res) => {
             });
         }
 
+        // Check if license is already approved
+        if (license.status === "approved") {
+            return res.status(400).json({
+                success: false,
+                message: "License is already approved"
+            });
+        }
+
+        // Approve the license
         license.status = "approved";
         license.approvedBy = adminId;
         license.approvedAt = new Date();
         license.rejectionReason = ""; // Clear any previous rejection reason
 
         await user.save();
+
+        // Send email notification to user
+        try {
+            const vehicleTypes = license.vehicleTypes || [];
+            await sendEmail(user.email, 'license-approved', {
+                userName: user.name,
+                vehicleTypes: vehicleTypes.join(", ")
+            }).catch(err => {
+                console.error('Failed to send license approval email:', err);
+            });
+        } catch (emailError) {
+            console.error('Error sending license approval notification:', emailError);
+            // Don't fail the request if email fails
+        }
 
         res.json({
             success: true,
@@ -653,12 +728,28 @@ export const rejectLicense = async (req, res) => {
             });
         }
 
+        // Reject the license
         license.status = "rejected";
         license.rejectionReason = rejectionReason.trim();
         license.approvedBy = adminId;
         license.approvedAt = new Date();
 
         await user.save();
+
+        // Send email notification to user
+        try {
+            const vehicleTypes = license.vehicleTypes || [];
+            await sendEmail(user.email, 'license-rejected', {
+                userName: user.name,
+                vehicleTypes: vehicleTypes.join(", "),
+                rejectionReason: rejectionReason.trim()
+            }).catch(err => {
+                console.error('Failed to send license rejection email:', err);
+            });
+        } catch (emailError) {
+            console.error('Error sending license rejection notification:', emailError);
+            // Don't fail the request if email fails
+        }
 
         res.json({
             success: true,

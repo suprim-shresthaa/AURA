@@ -258,14 +258,6 @@ const VehicleListing = () => {
                 {vehicles.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {vehicles
-                            .filter(vehicle => {
-                                // Filter by user's approved licenses if logged in as regular user
-                                if (isLoggedin && userData?.role === "user" && userLicenses.length > 0) {
-                                    return userLicenses.includes(vehicle.category);
-                                }
-                                // Show all vehicles for non-users, vendors, admins, or users without licenses
-                                return true;
-                            })
                             .map(vehicle => (
                             <VehicleCard
                                 key={vehicle._id}

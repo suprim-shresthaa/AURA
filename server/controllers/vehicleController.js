@@ -2,6 +2,7 @@ import Vehicle from "../models/vehicle.model.js";
 import mongoose from "mongoose";
 import User from "../models/user.model.js";
 import { upload } from "../config/cloudinary.js";
+import sendEmail from '../utils/emailTemplates.js';
 
 // Create a new vehicle
 export const createVehicle = async (req, res) => {
@@ -75,6 +76,24 @@ export const createVehicle = async (req, res) => {
         });
 
         await newVehicle.save();
+
+        // Send email notification to admin
+        try {
+            const vendor = await User.findById(vendorId).select('name email');
+            const adminEmail = process.env.SENDER_EMAIL;
+            
+            if (adminEmail && vendor) {
+                await sendEmail(adminEmail, 'vehicle-uploaded', {
+                    vendorName: vendor.name,
+                    vehicleName: name,
+                    link: `${process.env.FRONTEND_URL}/admin/vehicles/${newVehicle._id}`
+                });
+            }
+            console.log("Email sent to admin:", adminEmail);
+        } catch (emailError) {
+            console.error('Error sending vehicle upload notification to admins:', emailError);
+            // Don't fail the request if email fails
+        }
 
         return res.status(201).json({
             success: true,

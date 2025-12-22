@@ -1,6 +1,8 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
+import { validatePassword } from '../utils/passwordValidator.js';
+import sendEmail from '../utils/emailTemplates.js';
 
 
 export const getUserData = async (req, res) => {
@@ -55,34 +57,106 @@ export const getAllUsers = async (req, res) => {
     }
 };
 
-// Update Profile Image Controller
-export const updateProfileImage = async (req, res) => {
+// Update Profile Controller
+export const updateProfile = async (req, res) => {
     try {
-        const { email, image } = req.body;
+        const userId = req.userId;
+        const { name, contact, address } = req.body;
 
-        if (!email || !image) {
-            return res
-                .status(400)
-                .json({ success: false, message: "Email and image URL are required." });
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "User not authenticated."
+            });
         }
 
-        // Find the user by email
-        const user = await User.findOne({ email });
+        const user = await User.findById(userId);
         if (!user) {
-            return res
-                .status(404)
-                .json({ success: false, message: "User not found." });
+            return res.status(404).json({
+                success: false,
+                message: "User not found."
+            });
         }
 
-        // Update user's profile image
-        user.image = image;
+        // Update fields if provided
+        if (name !== undefined) {
+            user.name = name.trim();
+        }
+        if (contact !== undefined) {
+            // Validate contact number format (10 digits)
+            if (!/^[0-9]{10}$/.test(contact)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Contact must be a valid 10-digit number'
+                });
+            }
+            user.contact = contact;
+        }
+        if (address !== undefined) {
+            user.address = address.trim();
+        }
+
         await user.save();
+
+        // Return updated user data
+        const userData = {
+            userId: user._id,
+            name: user.name,
+            email: user.email,
+            isAccountVerified: user.isAccountVerified,
+            role: user.role,
+            image: user.image,
+            contact: user.contact,
+            address: user.address,
+            banInfo: user.banInfo,
+        };
 
         res.status(200).json({
             success: true,
-            message: "Profile image updated successfully.",
-            image: user.image,
+            message: "Profile updated successfully.",
+            user: userData,
         });
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error. Please try again later.",
+        });
+    }
+};
+
+
+export const updateProfileImage = async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        // Check if file was uploaded
+        if (req.file) {
+            // File upload via multer
+            const imageUrl = req.file.path;
+
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: "User not found."
+                });
+            }
+            
+            user.image = imageUrl;
+            await user.save();
+
+            return res.status(200).json({
+                success: true,
+                message: "Profile image updated successfully.",
+                image: user.image,
+            });
+        }  else {
+            return res.status(400).json({
+                success: false,
+                message: "Image file is required."
+            });
+        }
     } catch (error) {
         console.error("Error updating profile image:", error);
         res.status(500).json({
@@ -100,6 +174,15 @@ export const changePassword = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Missing required fields."
+            });
+        }
+
+        // Validate password strength
+        const passwordValidation = validatePassword(newPassword);
+        if (!passwordValidation.isValid) {
+            return res.status(400).json({
+                success: false,
+                message: passwordValidation.errors.join(', ')
             });
         }
 
@@ -150,19 +233,55 @@ export const changePassword = async (req, res) => {
 };
 
 /**
- * Upload license for a specific vehicle type
+ * Upload license for one or more vehicle types
  */
 export const uploadLicense = async (req, res) => {
     try {
         const userId = req.userId;
-        const { vehicleType } = req.body;
+        let vehicleTypes = req.body.vehicleTypes;
 
-        if (!vehicleType || !["Car", "Bike", "Scooter", "Jeep", "Van"].includes(vehicleType)) {
+        // Handle FormData arrays - multer/express may parse multiple values with same key as array or string
+        if (!vehicleTypes) {
+            // Check for array notation (vehicleTypes[])
+            if (req.body['vehicleTypes[]']) {
+                vehicleTypes = req.body['vehicleTypes[]'];
+            } else if (req.body.vehicleType) {
+                // Backward compatibility: single vehicleType
+                vehicleTypes = [req.body.vehicleType];
+            } else {
+                vehicleTypes = [];
+            }
+        }
+
+        // Ensure it's an array
+        // When multiple values are sent with same key, Express may return array or string
+        if (typeof vehicleTypes === 'string') {
+            vehicleTypes = [vehicleTypes];
+        } else if (!Array.isArray(vehicleTypes)) {
+            vehicleTypes = [];
+        }
+
+        const validVehicleTypes = ["Car", "Bike", "Scooter", "Jeep", "Van"];
+
+        // Validate vehicle types
+        if (vehicleTypes.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: "Valid vehicle type is required (Car, Bike, Scooter, Jeep, Van)"
+                message: "At least one vehicle type is required"
             });
         }
+
+        // Check if all vehicle types are valid
+        const invalidTypes = vehicleTypes.filter(type => !validVehicleTypes.includes(type));
+        if (invalidTypes.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid vehicle type(s): ${invalidTypes.join(", ")}. Valid types are: ${validVehicleTypes.join(", ")}`
+            });
+        }
+
+        // Remove duplicates
+        vehicleTypes = [...new Set(vehicleTypes)];
 
         if (!req.files?.licenseImage?.[0]) {
             return res.status(400).json({
@@ -181,35 +300,127 @@ export const uploadLicense = async (req, res) => {
             });
         }
 
-        // Check if user already has a license (pending or approved) for this vehicle type
-        const existingLicense = user.licenses.find(
-            license => license.vehicleType === vehicleType && license.status !== "rejected"
-        );
+        // Check for existing licenses (pending or approved) for each vehicle type
+        const existingLicenses = [];
+        const typesToAdd = [];
 
-        if (existingLicense) {
+        for (const vehicleType of vehicleTypes) {
+            // Check if any license (pending or approved) includes this vehicle type
+            const existingLicense = user.licenses.find(
+                license => license.vehicleTypes.includes(vehicleType) && license.status !== "rejected"
+            );
+
+            if (existingLicense) {
+                existingLicenses.push({
+                    type: vehicleType,
+                    status: existingLicense.status
+                });
+            } else {
+                typesToAdd.push(vehicleType);
+            }
+        }
+
+        // If all types already have licenses, return error
+        if (typesToAdd.length === 0) {
+            const existingMessages = existingLicenses.map(
+                lic => `${lic.type} (${lic.status})`
+            ).join(", ");
             return res.status(400).json({
                 success: false,
-                message: `You already have a ${existingLicense.status} license for ${vehicleType}. Please wait for admin approval or update the existing license.`
+                message: `You already have licenses for all selected vehicle types: ${existingMessages}. Please wait for admin approval or update the existing licenses.`
             });
         }
 
-        // Remove any rejected licenses for this vehicle type
-        user.licenses = user.licenses.filter(license => !(license.vehicleType === vehicleType && license.status === "rejected"));
+        // Check if there's a rejected license with the same vehicle types (for re-upload scenario)
+        const rejectedLicenseIndex = user.licenses.findIndex(
+            license => license.status === "rejected" && 
+                      JSON.stringify([...license.vehicleTypes].sort()) === JSON.stringify([...typesToAdd].sort())
+        );
 
-        // Add new license
-        user.licenses.push({
-            vehicleType,
-            licenseImage,
-            status: "pending",
-            uploadedAt: new Date()
-        });
+        let updatedLicense = null;
+
+        if (rejectedLicenseIndex !== -1) {
+            // Update existing rejected license instead of creating new one
+            const rejectedLicense = user.licenses[rejectedLicenseIndex];
+            rejectedLicense.vehicleTypes = typesToAdd;
+            rejectedLicense.licenseImage = licenseImage;
+            rejectedLicense.status = "pending";
+            rejectedLicense.rejectionReason = "";
+            rejectedLicense.approvedBy = null;
+            rejectedLicense.approvedAt = null;
+            rejectedLicense.uploadedAt = new Date();
+            updatedLicense = rejectedLicense;
+        } else {
+            // Check if there's a rejected license with the same image and overlapping vehicle types
+            // If yes, update it; otherwise create new
+            const rejectedLicenseWithSameImage = user.licenses.find(
+                license => license.status === "rejected" && 
+                          license.licenseImage === licenseImage &&
+                          typesToAdd.some(type => license.vehicleTypes.includes(type))
+            );
+
+            if (rejectedLicenseWithSameImage) {
+                // Update existing rejected license - merge vehicle types
+                const existingRejectedTypes = rejectedLicenseWithSameImage.vehicleTypes || [];
+                const mergedTypes = [...new Set([...existingRejectedTypes, ...typesToAdd])];
+                
+                rejectedLicenseWithSameImage.vehicleTypes = mergedTypes;
+                rejectedLicenseWithSameImage.licenseImage = licenseImage;
+                rejectedLicenseWithSameImage.status = "pending";
+                rejectedLicenseWithSameImage.rejectionReason = "";
+                rejectedLicenseWithSameImage.approvedBy = null;
+                rejectedLicenseWithSameImage.approvedAt = null;
+                rejectedLicenseWithSameImage.uploadedAt = new Date();
+                updatedLicense = rejectedLicenseWithSameImage;
+            } else {
+                // Create a new license entry with all vehicle types
+                const newLicense = {
+                    vehicleTypes: typesToAdd,
+                    licenseImage,
+                    status: "pending",
+                    uploadedAt: new Date()
+                };
+                user.licenses.push(newLicense);
+                updatedLicense = newLicense;
+            }
+        }
 
         await user.save();
 
+        // Send email notification to all admins
+        try {
+            const adminEmail = process.env.SENDER_EMAIL;
+            
+            if (adminEmail) {
+                const vehicleTypesStr = typesToAdd.join(", ");
+                await sendEmail(adminEmail, 'license-uploaded', {
+                    userName: user.name,
+                    vehicleTypes: vehicleTypesStr
+                });
+            }
+        } catch (emailError) {
+            console.error('Error sending license upload notification to admins:', emailError);
+            // Don't fail the request if email fails
+        }
+
+        const successMessage = typesToAdd.length === 1
+            ? `License uploaded successfully for ${typesToAdd[0]}. It will be reviewed by an admin.`
+            : `License uploaded successfully for ${typesToAdd.length} vehicle types (${typesToAdd.join(", ")}). It will be reviewed by an admin.`;
+
+        if (existingLicenses.length > 0) {
+            const existingMessage = ` Note: Some vehicle types already have licenses and were skipped.`;
+            return res.status(201).json({
+                success: true,
+                message: successMessage + existingMessage,
+                data: updatedLicense,
+                skipped: existingLicenses
+            });
+        }
+
         res.status(201).json({
             success: true,
-            message: "License uploaded successfully. It will be reviewed by an admin.",
-            data: user.licenses[user.licenses.length - 1]
+            message: successMessage,
+            data: updatedLicense
         });
     } catch (error) {
         console.error("Error uploading license:", error);
@@ -236,9 +447,22 @@ export const getMyLicenses = async (req, res) => {
             });
         }
 
+        // Expand licenses with multiple vehicleTypes into individual entries for frontend compatibility
+        const expandedLicenses = [];
+        user.licenses.forEach(license => {
+            const vehicleTypes = license.vehicleTypes || [];
+            vehicleTypes.forEach(vehicleType => {
+                expandedLicenses.push({
+                    ...license.toObject(),
+                    vehicleType: vehicleType, // Add singular for backward compatibility
+                    vehicleTypes: vehicleTypes // Keep array for reference
+                });
+            });
+        });
+
         res.json({
             success: true,
-            data: user.licenses || []
+            data: expandedLicenses
         });
     } catch (error) {
         console.error("Error fetching licenses:", error);

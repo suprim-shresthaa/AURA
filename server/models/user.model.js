@@ -56,13 +56,13 @@ const userSchema = new mongoose.Schema({
     },
     contact: {
         type: String,
-        default: "",
+        required:  false,
         match: [/^[0-9]{10}$/, 'Please fill a valid contact number']
     },
 
     address: {
         type: String,
-        default: "",
+        required:  false,
         maxlength: [200, 'Address cannot exceed 200 characters']
     },
     image: {
@@ -72,10 +72,16 @@ const userSchema = new mongoose.Schema({
 
     // License management
     licenses: [{
-        vehicleType: {
-            type: String,
+        vehicleTypes: {
+            type: [String],
             enum: ["Car", "Bike", "Scooter", "Jeep", "Van"],
-            required: true
+            required: true,
+            validate: {
+                validator: function(v) {
+                    return v && v.length > 0;
+                },
+                message: 'At least one vehicle type is required'
+            }
         },
         licenseImage: {
             type: String,

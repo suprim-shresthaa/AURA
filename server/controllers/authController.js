@@ -5,17 +5,35 @@ import transporter from '../config/nodemailer.js';
 import TempUser from '../models/tempUser.model.js';
 
 import sendEmail from '../utils/emailTemplates.js';
+import { validatePassword } from '../utils/passwordValidator.js';
 
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
 
 export const register = async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password, contact, address } = req.body;
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !contact || !address) {
         return res.status(400).json({
             success: false,
-            message: 'Name, email, and password are required'
+            message: 'Name, email, password, contact, and address are required'
+        });
+    }
+
+    // Validate contact number format (10 digits)
+    if (!/^[0-9]{10}$/.test(contact)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Contact must be a valid 10-digit number'
+        });
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+        return res.status(400).json({
+            success: false,
+            message: passwordValidation.errors.join(', ')
         });
     }
 
@@ -40,6 +58,8 @@ export const register = async (req, res) => {
             name,
             email,
             password: hashedPassword,
+            contact,
+            address,
             verifyOtp: otp,
             verifyOtpExpireAt: Date.now() + 5 * 60 * 1000 // 5 minutes
         });
@@ -116,6 +136,8 @@ export const verifyEmail = async (req, res) => {
             name: tempUser.name,
             email: tempUser.email,
             password: tempUser.password,
+            contact: tempUser.contact,
+            address: tempUser.address,
             isAccountVerified: true,
         });
 
@@ -360,6 +382,15 @@ export const resetPassword = async (req, res) => {
         return res.json({
             success: false,
             message: "Email, OTP, and new password are required",
+        });
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+        return res.status(400).json({
+            success: false,
+            message: passwordValidation.errors.join(', ')
         });
     }
 
