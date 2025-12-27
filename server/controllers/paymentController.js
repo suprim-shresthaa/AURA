@@ -2,6 +2,8 @@ import axios from "axios";
 import crypto from "crypto";
 import Booking from "../models/booking.model.js";
 import Vehicle from "../models/vehicle.model.js";
+import User from "../models/user.model.js";
+import sendEmail from "../utils/emailTemplates.js";
 
 // eSewa API configuration
 const ESEWA_BASE_URL = process.env.ESEWA_BASE_URL || "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
@@ -92,7 +94,7 @@ const createBookingFromPaymentData = async (bookingData, userId) => {
     });
 
     // Mark vehicle as unavailable
-    await Vehicle.findByIdAndUpdate(vehicleId, { isAvailable: false });
+    // await Vehicle.findByIdAndUpdate(vehicleId, { isAvailable: false });
 
     return booking;
 };
@@ -452,6 +454,64 @@ export const esewaPaymentCallback = async (req, res) => {
                     booking.esewaTransactionCode = transaction_code || null;
                     booking.esewaRefId = transaction_code || null;
                     await booking.save();
+                    
+                    // Send confirmation emails to both user and vendor
+                    try {
+                        // Populate booking to get user and vehicle details
+                        await booking.populate('userId vehicleId');
+                        
+                        // Get vendor details
+                        const vendor = await User.findById(booking.vehicleId.vendorId);
+                        
+                        // Format dates for email
+                        const formatDate = (date) => {
+                            return new Date(date).toLocaleDateString('en-US', { 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                            });
+                        };
+                        
+                        // Format pickup location
+                        const pickupLocationStr = booking.pickupLocation 
+                            ? `${booking.pickupLocation.street}, ${booking.pickupLocation.city}, ${booking.pickupLocation.state}`
+                            : 'N/A';
+                        
+                        // Send email to user
+                        await sendEmail(booking.userId.email, 'booking-confirmation-user', {
+                            userName: booking.userId.name,
+                            vehicleName: booking.vehicleId.name,
+                            startDate: formatDate(booking.startDate),
+                            endDate: formatDate(booking.endDate),
+                            totalAmount: booking.totalAmount,
+                            totalDays: booking.totalDays,
+                            pickupLocation: pickupLocationStr,
+                            bookingId: booking._id.toString(),
+                            vendorContact: vendor?.contact || 'N/A'
+                        });
+                        
+                        // Send email to vendor
+                        if (vendor && vendor.email) {
+                            await sendEmail(vendor.email, 'booking-confirmation-vendor', {
+                                vendorName: vendor.name,
+                                vehicleName: booking.vehicleId.name,
+                                userName: booking.userId.name,
+                                userContact: booking.userId.contact || 'N/A',
+                                startDate: formatDate(booking.startDate),
+                                endDate: formatDate(booking.endDate),
+                                totalAmount: booking.totalAmount,
+                                totalDays: booking.totalDays,
+                                pickupLocation: pickupLocationStr,
+                                bookingId: booking._id.toString()
+                            });
+                        }
+                        
+                        console.log('✅ Booking confirmation emails sent successfully');
+                    } catch (emailError) {
+                        // Log error but don't fail the booking
+                        console.error('❌ Error sending booking confirmation emails:', emailError);
+                        // Booking is still successful even if email fails
+                    }
                     
                     // Remove from temporary storage
                     pendingBookingData.delete(actualTransactionUuid);

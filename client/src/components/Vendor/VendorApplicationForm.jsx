@@ -62,6 +62,7 @@ const VendorApplicationForm = () => {
             const result = await res.json();
             if(result.success){
                 toast.success("Vendor Application Submitted Successfully!");
+                navigate("/profile");
             } else {
                 toast.error(result.message || "Something went wrong");
             }

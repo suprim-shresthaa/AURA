@@ -1,5 +1,5 @@
 // src/pages/Profile.jsx
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import ProfileInfo from "./ProfileInfo";
 import Settings from './Settings'
