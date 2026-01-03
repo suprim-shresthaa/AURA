@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "@/lib/axiosInstance";
+import { AppContent } from "./context/AppContext";
+import { toast } from "react-toastify";
 import {
     Package,
     Box,
@@ -10,16 +12,21 @@ import {
     ArrowLeft,
     ShoppingCart,
     Phone,
-    Mail
+    Mail,
+    Plus,
+    Minus
 } from "lucide-react";
 import { Button } from "./ui/button";
 
 export default function SparePartDetailsPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { addItemToCart, isLoggedin } = useContext(AppContent);
     const [sparePart, setSparePart] = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState("");
+    const [quantity, setQuantity] = useState(1);
+    const [addingToCart, setAddingToCart] = useState(false);
 
     useEffect(() => {
         const fetchSparePart = async () => {
@@ -63,6 +70,35 @@ export default function SparePartDetailsPage() {
             </div>
         );
     }
+
+    const handleAddToCart = async () => {
+        if (!isLoggedin) {
+            toast.error("Please login to add items to cart");
+            navigate("/login");
+            return;
+        }
+
+        if (quantity < 1) {
+            toast.error("Please enter a valid quantity");
+            return;
+        }
+
+        try {
+            setAddingToCart(true);
+            await addItemToCart(id, quantity);
+            toast.success(`${sparePart.name} added to cart!`);
+            setQuantity(1);
+            // Optionally navigate to cart
+            // navigate("/cart");
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || 
+                                error.message ||
+                                "Error adding item to cart";
+            toast.error(errorMessage);
+        } finally {
+            setAddingToCart(false);
+        }
+    };
 
     const allImages = sparePart.images && sparePart.images.length > 0 ? sparePart.images : [];
     const isInStock = sparePart.isAvailable && sparePart.stock > 0;
@@ -216,34 +252,57 @@ export default function SparePartDetailsPage() {
 
                         {/* Action Buttons */}
                         <div className="space-y-3">
+                            {/* Quantity Selector */}
+                            <div className="bg-white rounded-lg shadow-sm p-4">
+                                <p className="text-sm font-medium text-gray-700 mb-3">Quantity</p>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                        disabled={quantity <= 1 || addingToCart}
+                                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                    >
+                                        <Minus className="w-4 h-4" />
+                                    </button>
+                                    <input
+                                        type="number"
+                                        value={quantity}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value) || 1;
+                                            setQuantity(Math.max(1, Math.min(val, sparePart.stock)));
+                                        }}
+                                        min="1"
+                                        max={sparePart.stock}
+                                        className="flex-1 text-center px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                    <button
+                                        onClick={() => setQuantity(Math.min(sparePart.stock, quantity + 1))}
+                                        disabled={quantity >= sparePart.stock || addingToCart}
+                                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">{sparePart.stock} available</p>
+                            </div>
+
                             <Button
-                                onClick={() => {
-                                    if (!isInStock) {
-                                        alert("This spare part is currently out of stock.");
-                                        return;
-                                    }
-                                    // TODO: Implement order/add to cart functionality
-                                    alert("Order functionality coming soon!");
-                                }}
-                                disabled={!isInStock}
+                                onClick={handleAddToCart}
+                                disabled={!isInStock || addingToCart}
                                 size="lg"
-                                className="w-full h-12 cursor-pointer"
+                                className="w-full h-12 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <ShoppingCart className="w-4 h-4 mr-2" />
-                                {isInStock ? "Add to Cart" : "Out of Stock"}
+                                {addingToCart ? "Adding..." : isInStock ? "Add to Cart" : "Out of Stock"}
                             </Button>
 
                             <Button
                                 variant="outline"
                                 size="lg"
                                 className="w-full h-12 cursor-pointer"
-                                onClick={() => {
-                                    // TODO: Implement contact functionality
-                                    alert("Contact functionality coming soon!");
-                                }}
+                                onClick={() => navigate("/cart")}
                             >
-                                <Phone className="w-4 h-4 mr-2" />
-                                Contact Seller
+                                <ShoppingCart className="w-4 h-4 mr-2" />
+                                View Cart
                             </Button>
                         </div>
 

@@ -82,5 +82,50 @@ export const rejectLicense = async (licenseId, rejectionReason) => {
   return data;
 };
 
+// Cart and Spare Parts Payment API functions
+export const addToCart = async (sparePartId, quantity) => {
+  const { data } = await axiosInstance.post("/cart/add", {
+    sparePartId,
+    quantity
+  });
+  return data;
+};
+
+export const removeFromCart = async (sparePartId) => {
+  const { data } = await axiosInstance.post("/cart/remove", {
+    sparePartId
+  });
+  return data;
+};
+
+export const getCart = async () => {
+  const { data } = await axiosInstance.get("/cart/");
+  return data?.cart ?? null;
+};
+
+export const initiateCartPayment = async (deliveryAddress) => {
+  const { data } = await axiosInstance.post("/payments/cart/initiate", {
+    deliveryAddress
+  });
+  return data;
+};
+
+export const checkCartPaymentStatus = async (transactionUuid) => {
+  const { data } = await axiosInstance.post("/payments/cart/status", {
+    transactionUuid
+  });
+  return data;
+};
+
+export const getUserOrders = async () => {
+  const { data } = await axiosInstance.get("/cart/orders/all");
+  return data?.orders ?? [];
+};
+
+export const getOrderById = async (orderId) => {
+  const { data } = await axiosInstance.get(`/cart/orders/${orderId}`);
+  return data?.order ?? null;
+};
+
 export default fetchAllVehicles;
 

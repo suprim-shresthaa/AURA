@@ -1,0 +1,395 @@
+import Cart from "../models/cart.model.js";
+import SparePart from "../models/sparePart.model.js";
+import User from "../models/user.model.js";
+import Order from "../models/order.model.js";
+
+const CART_LOCK_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
+/**
+ * Check if a spare part is locked by another user
+ */
+const isSparePartLocked = async (sparePartId, currentUserId) => {
+    const sparePart = await SparePart.findById(sparePartId);
+    
+    if (!sparePart || !sparePart.cartLock.isLocked) {
+        return false;
+    }
+    
+    // Check if lock has expired
+    if (sparePart.cartLock.lockExpiresAt < new Date()) {
+        await SparePart.findByIdAndUpdate(sparePartId, {
+            "cartLock.isLocked": false,
+            "cartLock.lockedBy": null,
+            "cartLock.lockedAt": null,
+            "cartLock.lockExpiresAt": null
+        });
+        return false;
+    }
+    
+    // Check if locked by current user (not locked for them)
+    if (sparePart.cartLock.lockedBy.toString() === currentUserId.toString()) {
+        return false;
+    }
+    
+    return true;
+};
+
+/**
+ * Add item to cart (NO locking at this stage)
+ * Locking only happens during checkout when initiateCartPayment is called
+ */
+export const addToCart = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { sparePartId, quantity } = req.body;
+        
+        if (!sparePartId || !quantity) {
+            return res.status(400).json({ message: "Missing sparePartId or quantity" });
+        }
+        
+        if (quantity < 1) {
+            return res.status(400).json({ message: "Quantity must be at least 1" });
+        }
+        
+        // Check if spare part exists
+        const sparePart = await SparePart.findById(sparePartId);
+        if (!sparePart) {
+            return res.status(404).json({ message: "Spare part not found" });
+        }
+        
+        // Check stock availability
+        if (sparePart.stock < quantity) {
+            return res.status(400).json({ 
+                message: `Only ${sparePart.stock} items available in stock` 
+            });
+        }
+        
+        // Get or create cart for user
+        let cart = await Cart.findOne({ userId });
+        
+        if (!cart) {
+            cart = await Cart.create({
+                userId,
+                items: [],
+                cartStatus: "active"
+            });
+        }
+        
+        // Check if item already in cart
+        const existingItemIndex = cart.items.findIndex(
+            item => item.sparePartId.toString() === sparePartId.toString()
+        );
+        
+        if (existingItemIndex > -1) {
+            // Update quantity
+            const newQuantity = cart.items[existingItemIndex].quantity + quantity;
+            
+            if (newQuantity > sparePart.stock) {
+                return res.status(400).json({ 
+                    message: `Only ${sparePart.stock} items available in stock` 
+                });
+            }
+            
+            cart.items[existingItemIndex].quantity = newQuantity;
+        } else {
+            // Add new item (without locking - locking happens at checkout)
+            cart.items.push({
+                sparePartId,
+                quantity,
+                price: sparePart.price,
+                isLocked: false
+            });
+        }
+        
+        // Save cart (totalAmount is calculated in pre-save hook)
+        await cart.save();
+        
+        res.status(200).json({
+            message: "Item added to cart",
+            cart
+        });
+    } catch (error) {
+        console.error("Error adding to cart:", error);
+        res.status(500).json({ message: "Error adding to cart", error: error.message });
+    }
+};
+
+/**
+ * Remove item from cart
+ * No lock unlocking needed here since items are only locked at checkout
+ */
+export const removeFromCart = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { sparePartId } = req.body;
+        
+        if (!sparePartId) {
+            return res.status(400).json({ message: "Missing sparePartId" });
+        }
+        
+        const cart = await Cart.findOne({ userId });
+        
+        if (!cart) {
+            return res.status(404).json({ message: "Cart not found" });
+        }
+        
+        // Remove item from cart
+        cart.items = cart.items.filter(
+            item => item.sparePartId.toString() !== sparePartId.toString()
+        );
+        
+        await cart.save();
+        
+        res.status(200).json({
+            message: "Item removed from cart",
+            cart
+        });
+    } catch (error) {
+        console.error("Error removing from cart:", error);
+        res.status(500).json({ message: "Error removing from cart", error: error.message });
+    }
+};
+
+/**
+ * Get user's cart
+ */
+export const getCart = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        let cart = await Cart.findOne({ userId }).populate("items.sparePartId");
+        
+        if (!cart) {
+            cart = await Cart.create({
+                userId,
+                items: [],
+                cartStatus: "active"
+            });
+        }
+        
+        res.status(200).json({
+            cart
+        });
+    } catch (error) {
+        console.error("Error fetching cart:", error);
+        res.status(500).json({ message: "Error fetching cart", error: error.message });
+    }
+};
+
+/**
+ * Clear cart (used after successful payment)
+ */
+export const clearCart = async (userId) => {
+    try {
+        const cart = await Cart.findOne({ userId });
+        
+        if (cart && cart.items.length > 0) {
+            // Unlock all items
+            for (const item of cart.items) {
+                await SparePart.findByIdAndUpdate(item.sparePartId, {
+                    "cartLock.isLocked": false,
+                    "cartLock.lockedBy": null,
+                    "cartLock.lockedAt": null,
+                    "cartLock.lockExpiresAt": null
+                });
+            }
+            
+            // Clear cart
+            cart.items = [];
+            cart.cartStatus = "active";
+            await cart.save();
+        }
+        
+        return true;
+    } catch (error) {
+        console.error("Error clearing cart:", error);
+        return false;
+    }
+};
+
+/**
+ * Update spare part quantity after successful purchase
+ */
+const updateSparePartStock = async (sparePartId, quantityPurchased) => {
+    try {
+        const sparePart = await SparePart.findById(sparePartId);
+        
+        if (!sparePart) {
+            throw new Error("Spare part not found");
+        }
+        
+        sparePart.stock -= quantityPurchased;
+        
+        // Update status
+        if (sparePart.stock === 0) {
+            sparePart.status = "OutOfStock";
+            sparePart.isAvailable = false;
+        } else if (sparePart.stock > 0 && sparePart.status === "OutOfStock") {
+            sparePart.status = "Active";
+            sparePart.isAvailable = true;
+        }
+        
+        await sparePart.save();
+        return sparePart;
+    } catch (error) {
+        console.error("Error updating spare part stock:", error);
+        throw error;
+    }
+};
+
+/**
+ * Initiate eSewa payment for cart items
+ * This will be called by a separate payment controller
+ */
+export const createOrderFromCart = async (userId, deliveryAddress) => {
+    try {
+        const cart = await Cart.findOne({ userId }).populate("items.sparePartId");
+        
+        if (!cart || cart.items.length === 0) {
+            throw new Error("Cart is empty");
+        }
+        
+        // Create order items from cart
+        const orderItems = cart.items.map(item => ({
+            sparePartId: item.sparePartId._id,
+            partName: item.sparePartId.name,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            totalPrice: item.price * item.quantity
+        }));
+        
+        const order = await Order.create({
+            userId,
+            items: orderItems,
+            totalAmount: cart.totalAmount,
+            paymentStatus: "pending",
+            orderStatus: "pending",
+            paymentMethod: "esewa",
+            deliveryAddress
+        });
+        
+        return order;
+    } catch (error) {
+        console.error("Error creating order from cart:", error);
+        throw error;
+    }
+};
+
+/**
+ * Complete order after successful payment
+ */
+export const completeOrderPayment = async (orderId, esewaTransactionUuid, esewaRefId) => {
+    try {
+        const order = await Order.findByIdAndUpdate(
+            orderId,
+            {
+                paymentStatus: "completed",
+                orderStatus: "confirmed",
+                esewaTransactionUuid,
+                esewaRefId,
+                paidAt: new Date()
+            },
+            { new: true }
+        );
+        
+        if (!order) {
+            throw new Error("Order not found");
+        }
+        
+        // Update stock for all items in order
+        for (const item of order.items) {
+            await updateSparePartStock(item.sparePartId, item.quantity);
+        }
+        
+        // Clear the user's cart
+        await clearCart(order.userId);
+        
+        return order;
+    } catch (error) {
+        console.error("Error completing order payment:", error);
+        throw error;
+    }
+};
+
+/**
+ * Fail order payment
+ */
+export const failOrderPayment = async (orderId) => {
+    try {
+        const order = await Order.findByIdAndUpdate(
+            orderId,
+            {
+                paymentStatus: "failed",
+                orderStatus: "pending"
+            },
+            { new: true }
+        );
+        
+        if (!order) {
+            throw new Error("Order not found");
+        }
+        
+        // Unlock items in the failed order so they can be added to cart again
+        for (const item of order.items) {
+            await SparePart.findByIdAndUpdate(item.sparePartId, {
+                "cartLock.isLocked": false,
+                "cartLock.lockedBy": null,
+                "cartLock.lockedAt": null,
+                "cartLock.lockExpiresAt": null
+            });
+        }
+        
+        return order;
+    } catch (error) {
+        console.error("Error failing order payment:", error);
+        throw error;
+    }
+};
+
+/**
+ * Get user's orders
+ */
+export const getUserOrders = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        const orders = await Order.find({ userId })
+            .populate("items.sparePartId")
+            .sort({ createdAt: -1 });
+        
+        res.status(200).json({
+            orders
+        });
+    } catch (error) {
+        console.error("Error fetching orders:", error);
+        res.status(500).json({ message: "Error fetching orders", error: error.message });
+    }
+};
+
+/**
+ * Get order by ID
+ */
+export const getOrderById = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const userId = req.user.id;
+        
+        const order = await Order.findById(orderId).populate("items.sparePartId");
+        
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+        
+        // Ensure user can only see their own orders
+        if (order.userId.toString() !== userId.toString()) {
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+        
+        res.status(200).json({
+            order
+        });
+    } catch (error) {
+        console.error("Error fetching order:", error);
+        res.status(500).json({ message: "Error fetching order", error: error.message });
+    }
+};

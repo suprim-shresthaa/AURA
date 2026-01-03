@@ -49,6 +49,16 @@ const sparePartSchema = new mongoose.Schema(
             type: String,
             enum: ["Active", "Inactive", "OutOfStock"],
             default: "Active"
+        },
+        // Track if item is locked in someone's cart
+        cartLock: {
+            isLocked: {
+                type: Boolean,
+                default: false
+            },
+            lockedBy: mongoose.Schema.Types.ObjectId, // userId who locked it
+            lockedAt: Date,
+            lockExpiresAt: Date // Auto-unlock after timeout (e.g., 30 mins)
         }
     },
     { timestamps: true }

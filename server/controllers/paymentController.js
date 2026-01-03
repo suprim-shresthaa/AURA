@@ -3,7 +3,11 @@ import crypto from "crypto";
 import Booking from "../models/booking.model.js";
 import Vehicle from "../models/vehicle.model.js";
 import User from "../models/user.model.js";
+import SparePart from "../models/sparePart.model.js";
+import Order from "../models/order.model.js";
+import Cart from "../models/cart.model.js";
 import sendEmail from "../utils/emailTemplates.js";
+import { completeOrderPayment, failOrderPayment } from "./cartController.js";
 
 // eSewa API configuration
 const ESEWA_BASE_URL = process.env.ESEWA_BASE_URL || "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
@@ -719,6 +723,387 @@ export const verifyEsewaPayment = async (req, res) => {
         res.status(500).json({
             success: false,
             message: error.message || "Failed to verify payment"
+        });
+    }
+};
+
+/**
+ * Initiate eSewa payment for cart items (spare parts)
+ */
+export const initiateCartPayment = async (req, res) => {
+    try {
+        if (!ESEWA_SECRET_KEY) {
+            return res.status(500).json({
+                success: false,
+                message: "Payment service is not configured. Please contact support."
+            });
+        }
+
+        const userId = req.user.id;
+        const { deliveryAddress } = req.body;
+
+        if (!deliveryAddress || !deliveryAddress.street || !deliveryAddress.city) {
+            return res.status(400).json({
+                success: false,
+                message: "Delivery address is required"
+            });
+        }
+
+        // Get user's cart
+        const cart = await Cart.findOne({ userId }).populate("items.sparePartId");
+
+        if (!cart || cart.items.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Cart is empty"
+            });
+        }
+
+        // Validate all items are still available
+        // Then lock them for this user during checkout
+        const lockExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
+        
+        for (const item of cart.items) {
+            const sparePart = await SparePart.findById(item.sparePartId);
+            
+            if (!sparePart) {
+                return res.status(404).json({
+                    success: false,
+                    message: `Spare part ${item.sparePartId} not found`
+                });
+            }
+
+            if (sparePart.stock < item.quantity) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Only ${sparePart.stock} units of ${sparePart.name} available`
+                });
+            }
+
+            // Check if already locked by another user
+            if (sparePart.cartLock.isLocked && 
+                sparePart.cartLock.lockedBy.toString() !== userId.toString()) {
+                return res.status(409).json({
+                    success: false,
+                    message: `${sparePart.name} is being purchased by another user. Please try again later.`
+                });
+            }
+        }
+
+        // Lock all items for this user (atomic - all or nothing)
+        try {
+            for (const item of cart.items) {
+                await SparePart.findByIdAndUpdate(item.sparePartId, {
+                    "cartLock.isLocked": true,
+                    "cartLock.lockedBy": userId,
+                    "cartLock.lockedAt": new Date(),
+                    "cartLock.lockExpiresAt": lockExpiresAt
+                });
+            }
+        } catch (lockError) {
+            console.error("Error locking spare parts:", lockError);
+            return res.status(409).json({
+                success: false,
+                message: "Unable to lock items. Another user may have purchased them. Please refresh your cart.",
+                error: lockError.message
+            });
+        }
+
+        // Create order from cart
+        const order = await Order.create({
+            userId,
+            items: cart.items.map(item => ({
+                sparePartId: item.sparePartId._id,
+                partName: item.sparePartId.name,
+                quantity: item.quantity,
+                unitPrice: item.price,
+                totalPrice: item.price * item.quantity
+            })),
+            totalAmount: cart.totalAmount,
+            paymentStatus: "initiated",
+            orderStatus: "pending",
+            paymentMethod: "esewa",
+            deliveryAddress
+        });
+
+        // Generate unique transaction UUID
+        const transactionUuid = `order_${Date.now()}_${userId}_${order._id}`;
+
+        // Format total amount
+        const totalAmountFormatted = order.totalAmount.toFixed(2);
+
+        // Generate signature
+        const signature = createEsewaSignature({
+            total_amount: totalAmountFormatted,
+            transaction_uuid: transactionUuid,
+            product_code: ESEWA_PRODUCT_CODE
+        });
+
+        // Update order with transaction UUID
+        order.esewaTransactionUuid = transactionUuid;
+        await order.save();
+
+        const signedFieldNames = "total_amount,transaction_uuid,product_code";
+
+        let serverUrl = process.env.SERVER_URL || process.env.BACKEND_URL;
+        if (!serverUrl) {
+            const backendPort = process.env.PORT || 5001;
+            serverUrl = `http://localhost:${backendPort}`;
+        }
+
+        if (!serverUrl.startsWith('http://') && !serverUrl.startsWith('https://')) {
+            if (serverUrl.includes('localhost') || serverUrl.includes('127.0.0.1')) {
+                serverUrl = `http://${serverUrl}`;
+            } else {
+                serverUrl = `https://${serverUrl}`;
+            }
+        }
+
+        serverUrl = serverUrl.replace(/\/$/, '');
+
+        const successUrl = `${serverUrl}/api/payments/cart/callback`;
+        const failureUrl = `${serverUrl}/api/payments/cart/callback`;
+
+        res.json({
+            success: true,
+            message: "Cart payment initiated successfully",
+            data: {
+                orderId: order._id,
+                transactionUuid,
+                formData: {
+                    amount: order.totalAmount.toFixed(2),
+                    tax_amount: "0",
+                    total_amount: totalAmountFormatted,
+                    transaction_uuid: transactionUuid,
+                    product_code: ESEWA_PRODUCT_CODE,
+                    product_service_charge: "0",
+                    product_delivery_charge: "0",
+                    success_url: successUrl,
+                    failure_url: failureUrl,
+                    signed_field_names: signedFieldNames,
+                    signature: signature
+                },
+                formUrl: ESEWA_BASE_URL
+            }
+        });
+    } catch (error) {
+        console.error("Error initiating cart payment:", error);
+        
+        res.status(500).json({
+            success: false,
+            message: error.message || "Failed to initiate payment"
+        });
+    }
+};
+
+/**
+ * Handle eSewa payment callback for cart/orders
+ */
+export const cartPaymentCallback = async (req, res) => {
+    try {
+        console.log("=== Cart eSewa Callback Received ===");
+        console.log("Query params:", JSON.stringify(req.query, null, 2));
+        console.log("Body:", JSON.stringify(req.body, null, 2));
+
+        const queryData = req.query || {};
+        const bodyData = req.body || {};
+        
+        const callbackData = {
+            ...queryData,
+            ...bodyData
+        };
+
+        // Decode base64 data if present
+        if (callbackData.data) {
+            try {
+                const decodedJson = Buffer.from(callbackData.data, "base64").toString("utf-8");
+                let decodedObject = null;
+
+                try {
+                    decodedObject = JSON.parse(decodedJson);
+                } catch {
+                    const params = new URLSearchParams(decodedJson);
+                    decodedObject = Object.fromEntries(params.entries());
+                }
+
+                if (decodedObject) {
+                    Object.assign(callbackData, decodedObject);
+                    delete callbackData.data;
+                }
+            } catch (decodeErr) {
+                console.error("Failed to decode base64 callback data:", decodeErr);
+            }
+        }
+
+        const transaction_code = callbackData.transaction_code || callbackData.ref_id;
+        const status = callbackData.status || callbackData.Status;
+        const total_amount = callbackData.total_amount;
+        const transaction_uuid = callbackData.transaction_uuid || callbackData.transactionUuid;
+        const product_code = callbackData.product_code;
+        const signature = callbackData.signature;
+
+        // Find order by transaction UUID
+        const order = await Order.findOne({ esewaTransactionUuid: transaction_uuid });
+
+        if (!order) {
+            return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/failed?error=order_not_found`);
+        }
+
+        // Verify signature
+        let signatureValid = true;
+        if (signature) {
+            const signed_field_names = callbackData.signed_field_names;
+            const signatureData = signed_field_names ? signed_field_names.split(",")
+                .map(field => {
+                    const fieldName = field.trim();
+                    let fieldValue = "";
+                    switch (fieldName) {
+                        case "transaction_code": fieldValue = transaction_code || ""; break;
+                        case "status": fieldValue = status || ""; break;
+                        case "total_amount": fieldValue = total_amount || ""; break;
+                        case "transaction_uuid": fieldValue = transaction_uuid || ""; break;
+                        case "product_code": fieldValue = product_code || ""; break;
+                        default: fieldValue = "";
+                    }
+                    return `${fieldName}=${fieldValue}`;
+                })
+                .join(",") : "";
+
+            const expectedSignature = generateEsewaSignature(signatureData, ESEWA_SECRET_KEY);
+            signatureValid = signature === expectedSignature;
+        }
+
+        if (status === "COMPLETE" && signatureValid) {
+            try {
+                // Complete the order payment
+                const completedOrder = await completeOrderPayment(
+                    order._id, 
+                    transaction_uuid, 
+                    transaction_code
+                );
+
+                // Send confirmation email to user
+                const user = await User.findById(order.userId);
+                if (user) {
+                    // Send order confirmation email
+                    // You can implement this in your email templates
+                    console.log("Order confirmed, email would be sent to:", user.email);
+                }
+
+                // Redirect to success page with order ID
+                return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/orders/${order._id}?status=success`);
+            } catch (error) {
+                console.error("Error completing order:", error);
+                return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/failed?error=order_completion_failed`);
+            }
+        } else {
+            // Payment failed or signature invalid
+            try {
+                await failOrderPayment(order._id);
+            } catch (error) {
+                console.error("Error failing order:", error);
+            }
+
+            return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/failed?error=payment_failed`);
+        }
+    } catch (error) {
+        console.error("Error handling cart payment callback:", error);
+        return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/failed?error=callback_error`);
+    }
+};
+
+/**
+ * Check cart payment status
+ */
+export const checkCartPaymentStatus = async (req, res) => {
+    try {
+        const { transactionUuid, orderId } = req.body;
+
+        if (!transactionUuid && !orderId) {
+            return res.status(400).json({
+                success: false,
+                message: "Transaction UUID or Order ID is required"
+            });
+        }
+
+        let order = null;
+
+        if (orderId) {
+            order = await Order.findById(orderId);
+        } else if (transactionUuid) {
+            order = await Order.findOne({ esewaTransactionUuid: transactionUuid });
+        }
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found"
+            });
+        }
+
+        // Check payment status with eSewa
+        try {
+            const statusResponse = await axios.post(ESEWA_STATUS_URL, {
+                product_code: ESEWA_PRODUCT_CODE,
+                total_amount: order.totalAmount,
+                transaction_uuid: order.esewaTransactionUuid
+            });
+
+            const statusData = statusResponse.data;
+
+            if (statusData.status === "COMPLETE" && order.paymentStatus !== "completed") {
+                const completedOrder = await completeOrderPayment(
+                    order._id, 
+                    order.esewaTransactionUuid, 
+                    statusData.ref_id
+                );
+
+                return res.json({
+                    success: true,
+                    message: "Payment completed",
+                    data: {
+                        status: statusData.status,
+                        orderId: completedOrder._id,
+                        paymentStatus: completedOrder.paymentStatus,
+                        orderStatus: completedOrder.orderStatus
+                    }
+                });
+            } else if (statusData.status === "CANCELED" || statusData.status === "FAILED") {
+                await failOrderPayment(order._id);
+                
+                return res.json({
+                    success: false,
+                    message: "Payment failed or cancelled",
+                    data: {
+                        status: statusData.status,
+                        orderId: order._id
+                    }
+                });
+            } else {
+                return res.json({
+                    success: true,
+                    message: "Payment pending",
+                    data: {
+                        status: statusData.status,
+                        orderId: order._id,
+                        paymentStatus: order.paymentStatus
+                    }
+                });
+            }
+        } catch (apiError) {
+            console.error("Error checking eSewa status:", apiError);
+            
+            return res.status(500).json({
+                success: false,
+                message: "Failed to check payment status"
+            });
+        }
+    } catch (error) {
+        console.error("Error checking cart payment status:", error);
+        
+        res.status(500).json({
+            success: false,
+            message: error.message || "Failed to check payment status"
         });
     }
 };
