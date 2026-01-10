@@ -2,6 +2,8 @@ import express from "express";
 import {
     getAdminStats,
     getAllPayments,
+    getAllOrders,
+    updateOrderStatus,
     getPaymentById,
     getPendingVehicles,
     getVehicleById,
@@ -21,6 +23,10 @@ router.get("/dashboard/stats", requireAdmin, getAdminStats);
 // Payment tracking endpoints
 router.get("/payments", requireAdmin, getAllPayments);
 router.get("/payments/:id", requireAdmin, getPaymentById);
+
+// Orders management endpoints
+router.get("/orders", requireAdmin, getAllOrders);
+router.put("/orders/:orderId/status", requireAdmin, updateOrderStatus);
 
 // Vehicle verification endpoints
 router.get("/vehicles/pending", requireAdmin, getPendingVehicles);

@@ -1,21 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Home, Users, Calendar, Wrench, LogOut, Book } from 'lucide-react';
+import { X, Home, Users, Calendar, Wrench, LogOut, Book, Package } from 'lucide-react';
 import useLogout from '../../hooks/useLogout';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
     const location = useLocation();
-    const navigate = useNavigate();
     const logout = useLogout();
 
     const handleLogout = async () => {
-        setIsLoggingOut(true);
         try {
           logout();
-          setIsMobileMenuOpen(false);
+          setIsOpen(false);
         } catch (error) {
           console.error("Logout failed:", error);
-        } finally {
-          setIsLoggingOut(false);
         }
       };
 
@@ -23,6 +19,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/admin/dashboard' },
         { id: 'users', label: 'Manage Users', icon: Users, path: '/admin/users' },
         { id: 'reservations', label: 'Reservations', icon: Calendar, path: '/admin/reservations' },
+        { id: 'orders', label: 'Orders', icon: Package, path: '/admin/orders' },
         { id: 'applications', label: 'Manage Applications', icon: Book, path: '/admin/applications' },
         { id: 'spare-parts', label: 'Spare Parts', icon: Wrench, path: '/admin/spare-parts' },
     ];

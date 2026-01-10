@@ -731,6 +731,7 @@ export const verifyEsewaPayment = async (req, res) => {
  * Initiate eSewa payment for cart items (spare parts)
  */
 export const initiateCartPayment = async (req, res) => {
+    console.log("Initiating cart payment");
     try {
         if (!ESEWA_SECRET_KEY) {
             return res.status(500).json({
@@ -739,7 +740,7 @@ export const initiateCartPayment = async (req, res) => {
             });
         }
 
-        const userId = req.user.id;
+        const userId = req.userId; // Use req.userId from middleware
         const { deliveryAddress } = req.body;
 
         if (!deliveryAddress || !deliveryAddress.street || !deliveryAddress.city) {
@@ -845,26 +846,46 @@ export const initiateCartPayment = async (req, res) => {
 
         const signedFieldNames = "total_amount,transaction_uuid,product_code";
 
-        let serverUrl = process.env.SERVER_URL || process.env.BACKEND_URL;
-        if (!serverUrl) {
+        // Get server URL with proper formatting
+        let serverUrl = process.env.SERVER_URL || process.env.BACKEND_URL || process.env.VITE_API_BASE_URL;
+        
+        // If SERVER_URL is not set, try to construct it
+        if (!serverUrl) {   
+            // Always use backend server URL, not frontend
+            // In development, use localhost with backend port
             const backendPort = process.env.PORT || 5001;
             serverUrl = `http://localhost:${backendPort}`;
+            
+            // In production, you should set SERVER_URL or BACKEND_URL environment variable
+            if (process.env.NODE_ENV === 'production') {
+                console.warn("WARNING: SERVER_URL or BACKEND_URL not set in production!");
+                console.warn("   Please set SERVER_URL or BACKEND_URL environment variable.");
+            }
         }
-
+        
+        // Ensure URL has protocol (http:// or https://)
         if (!serverUrl.startsWith('http://') && !serverUrl.startsWith('https://')) {
+            // If no protocol, assume http for localhost, https otherwise
             if (serverUrl.includes('localhost') || serverUrl.includes('127.0.0.1')) {
                 serverUrl = `http://${serverUrl}`;
             } else {
                 serverUrl = `https://${serverUrl}`;
             }
         }
-
+        
+        // Remove trailing slash if present
         serverUrl = serverUrl.replace(/\/$/, '');
 
         const successUrl = `${serverUrl}/api/payments/cart/callback`;
         const failureUrl = `${serverUrl}/api/payments/cart/callback`;
+        
+        console.log("=== Cart Payment Callback URLs ===");
+        console.log("Server URL:", serverUrl);
+        console.log("Success URL:", successUrl);
+        console.log("Failure URL:", failureUrl);
+        console.log("==================================");
 
-        res.json({
+        const responseData = {
             success: true,
             message: "Cart payment initiated successfully",
             data: {
@@ -885,13 +906,32 @@ export const initiateCartPayment = async (req, res) => {
                 },
                 formUrl: ESEWA_BASE_URL
             }
-        });
+        };
+
+        console.log("=== Cart Payment Response ===");
+        console.log("formUrl:", ESEWA_BASE_URL);
+        console.log("orderId:", order._id);
+        console.log("transactionUuid:", transactionUuid);
+        console.log("totalAmount:", order.totalAmount);
+        console.log("signature:", signature);
+        console.log("Form will be submitted to eSewa with:");
+        console.log("- success_url:", successUrl);
+        console.log("- failure_url:", failureUrl);
+        console.log("============================");
+
+        res.json(responseData);
     } catch (error) {
         console.error("Error initiating cart payment:", error);
+        console.error("Error details:", {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
         
         res.status(500).json({
             success: false,
-            message: error.message || "Failed to initiate payment"
+            message: error.message || "Failed to initiate payment",
+            error: error.message
         });
     }
 };
@@ -942,17 +982,33 @@ export const cartPaymentCallback = async (req, res) => {
         const product_code = callbackData.product_code;
         const signature = callbackData.signature;
 
+        console.log("Extracted callback data:", {
+            transaction_code,
+            status,
+            total_amount,
+            transaction_uuid,
+            product_code,
+            signature: signature ? signature.substring(0, 20) + "..." : null
+        });
+
         // Find order by transaction UUID
+        console.log("Looking for order with transaction UUID:", transaction_uuid);
         const order = await Order.findOne({ esewaTransactionUuid: transaction_uuid });
 
         if (!order) {
+            console.error("Order not found for transaction UUID:", transaction_uuid);
             return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/failed?error=order_not_found`);
         }
+
+        console.log("Order found:", order._id);
 
         // Verify signature
         let signatureValid = true;
         if (signature) {
             const signed_field_names = callbackData.signed_field_names;
+            console.log("Verifying signature...");
+            console.log("Signed field names:", signed_field_names);
+            
             const signatureData = signed_field_names ? signed_field_names.split(",")
                 .map(field => {
                     const fieldName = field.trim();
@@ -963,43 +1019,50 @@ export const cartPaymentCallback = async (req, res) => {
                         case "total_amount": fieldValue = total_amount || ""; break;
                         case "transaction_uuid": fieldValue = transaction_uuid || ""; break;
                         case "product_code": fieldValue = product_code || ""; break;
+                        case "signed_field_names": fieldValue = signed_field_names || ""; break;
                         default: fieldValue = "";
                     }
                     return `${fieldName}=${fieldValue}`;
                 })
                 .join(",") : "";
 
+            console.log("Signature data string:", signatureData);
+            
             const expectedSignature = generateEsewaSignature(signatureData, ESEWA_SECRET_KEY);
             signatureValid = signature === expectedSignature;
+            
+            console.log("Expected signature:", expectedSignature);
+            console.log("Received signature:", signature);
+            console.log("Signature valid:", signatureValid);
         }
 
         if (status === "COMPLETE" && signatureValid) {
+            console.log("Payment COMPLETE and signature valid, completing order...");
             try {
-                // Complete the order payment
+                // Complete the order payment (emails are sent automatically in completeOrderPayment)
                 const completedOrder = await completeOrderPayment(
                     order._id, 
                     transaction_uuid, 
                     transaction_code
                 );
 
-                // Send confirmation email to user
-                const user = await User.findById(order.userId);
-                if (user) {
-                    // Send order confirmation email
-                    // You can implement this in your email templates
-                    console.log("Order confirmed, email would be sent to:", user.email);
-                }
-
                 // Redirect to success page with order ID
-                return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/orders/${order._id}?status=success`);
+                return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/success`);
             } catch (error) {
-                console.error("Error completing order:", error);
+                console.error(" Error completing order:", error);
+                console.error("Error details:", error.message);
+                console.error("Stack:", error.stack);
                 return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/failed?error=order_completion_failed`);
             }
         } else {
             // Payment failed or signature invalid
+            console.error(" Payment validation failed!");
+            console.error("Status:", status, "Expected: COMPLETE");
+            console.error("Signature valid:", signatureValid);
+            
             try {
                 await failOrderPayment(order._id);
+                console.log("Order marked as failed");
             } catch (error) {
                 console.error("Error failing order:", error);
             }
@@ -1008,6 +1071,8 @@ export const cartPaymentCallback = async (req, res) => {
         }
     } catch (error) {
         console.error("Error handling cart payment callback:", error);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
         return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/failed?error=callback_error`);
     }
 };

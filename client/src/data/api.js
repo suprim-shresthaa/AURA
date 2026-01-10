@@ -27,6 +27,29 @@ export const fetchAllPayments = async (filters = {}) => {
   return data?.data ?? null;
 };
 
+export const fetchAllOrders = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.status) params.append("status", filters.status);
+  if (filters.paymentStatus) params.append("paymentStatus", filters.paymentStatus);
+  if (filters.paymentMethod) params.append("paymentMethod", filters.paymentMethod);
+  if (filters.startDate) params.append("startDate", filters.startDate);
+  if (filters.endDate) params.append("endDate", filters.endDate);
+  if (filters.page) params.append("page", filters.page);
+  if (filters.limit) params.append("limit", filters.limit);
+  if (filters.sortBy) params.append("sortBy", filters.sortBy);
+  if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
+
+  const { data } = await axiosInstance.get(`/admin/orders?${params.toString()}`);
+  return data?.data ?? null;
+};
+
+export const updateOrderStatus = async (orderId, orderStatus) => {
+  const { data } = await axiosInstance.put(`/admin/orders/${orderId}/status`, {
+    orderStatus
+  });
+  return data;
+};
+
 export const fetchPaymentById = async (id) => {
   const { data } = await axiosInstance.get(`/admin/payments/${id}`);
   return data?.data ?? null;

@@ -27,12 +27,14 @@ import {
     CreditCard,
     Car,
     FileText,
+    Package,
 } from "lucide-react";
 
 const adminNavItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
     { id: "users", label: "Manage Users", icon: Users, href: "/admin/users" },
     { id: "reservations", label: "Reservations", icon: Calendar, href: "/admin/reservations" },
+    { id: "orders", label: "Orders", icon: Package, href: "/admin/orders" },
     { id: "applications", label: "Applications", icon: Book, href: "/admin/applications" },
     { id: "vehicles", label: "Manage Vehicles", icon: Car, href: "/admin/vehicles" },
     { id: "licenses", label: "Manage Licenses", icon: FileText, href: "/admin/licenses" },
@@ -43,6 +45,7 @@ const pageMeta = {
     "/admin/dashboard": { title: "Dashboard", subtitle: "Admin" },
     "/admin/users": { title: "Manage Users", subtitle: "User Management" },
     "/admin/reservations": { title: "Reservations", subtitle: "Booking Management" },
+    "/admin/orders": { title: "Orders", subtitle: "Spare Parts Orders" },
     "/admin/applications": { title: "Applications", subtitle: "Vendor Onboarding" },
     "/admin/vehicles": { title: "Manage Vehicles", subtitle: "Vehicle Verification" },
     "/admin/licenses": { title: "Manage Licenses", subtitle: "License Approval" },

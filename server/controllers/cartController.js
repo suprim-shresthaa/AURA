@@ -2,6 +2,7 @@ import Cart from "../models/cart.model.js";
 import SparePart from "../models/sparePart.model.js";
 import User from "../models/user.model.js";
 import Order from "../models/order.model.js";
+import sendEmail from "../utils/emailTemplates.js";
 
 const CART_LOCK_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
@@ -127,22 +128,50 @@ export const removeFromCart = async (req, res) => {
             return res.status(400).json({ message: "Missing sparePartId" });
         }
         
-        const cart = await Cart.findOne({ userId });
-        
-        if (!cart) {
+        // Check if cart exists and item is in cart
+        const existingCart = await Cart.findOne({ userId });
+        if (!existingCart) {
             return res.status(404).json({ message: "Cart not found" });
         }
         
-        // Remove item from cart
-        cart.items = cart.items.filter(
-            item => item.sparePartId.toString() !== sparePartId.toString()
+        const itemExists = existingCart.items.some(
+            item => item.sparePartId.toString() === sparePartId.toString()
         );
         
+        if (!itemExists) {
+            return res.status(404).json({ message: "Item not found in cart" });
+        }
+        
+        // Use findOneAndUpdate with $pull to reliably remove the item
+        // This is the recommended MongoDB way to remove items from arrays
+        const cart = await Cart.findOneAndUpdate(
+            { userId },
+            { 
+                $pull: { 
+                    items: { sparePartId: sparePartId } 
+                } 
+            },
+            { new: true, runValidators: true }
+        );
+        
+        if (!cart) {
+            return res.status(404).json({ message: "Cart not found after update" });
+        }
+        
+        // Recalculate totalAmount manually since findOneAndUpdate doesn't trigger pre-save hooks
+        cart.totalAmount = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
         await cart.save();
+        
+        // Fetch the cart fresh from database with populate to ensure we have the latest data
+        const updatedCart = await Cart.findById(cart._id).populate("items.sparePartId");
+        
+        if (!updatedCart) {
+            return res.status(404).json({ message: "Cart not found when populating" });
+        }
         
         res.status(200).json({
             message: "Item removed from cart",
-            cart
+            cart: updatedCart
         });
     } catch (error) {
         console.error("Error removing from cart:", error);
@@ -290,7 +319,8 @@ export const completeOrderPayment = async (orderId, esewaTransactionUuid, esewaR
                 paidAt: new Date()
             },
             { new: true }
-        );
+        ).populate("userId", "name email contact")
+         .populate("items.sparePartId", "name");
         
         if (!order) {
             throw new Error("Order not found");
@@ -303,6 +333,82 @@ export const completeOrderPayment = async (orderId, esewaTransactionUuid, esewaR
         
         // Clear the user's cart
         await clearCart(order.userId);
+        
+        // Send confirmation emails
+        try {
+            // Send email to user
+            if (order.userId && order.userId.email) {
+                const orderItems = order.items.map(item => ({
+                    partName: item.partName || item.sparePartId?.name || 'Unknown Part',
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    totalPrice: item.totalPrice
+                }));
+
+                await sendEmail(order.userId.email, 'order-confirmation-user', {
+                    userName: order.userId.name,
+                    orderId: order._id.toString().slice(-8).toUpperCase(),
+                    items: orderItems,
+                    totalAmount: order.totalAmount,
+                    deliveryAddress: order.deliveryAddress,
+                    paymentMethod: order.paymentMethod,
+                    transactionId: order.esewaRefId
+                });
+            }
+
+            // Send email to admin
+            // Get admin email from environment or find admin user
+            const adminEmail = process.env.ADMIN_EMAIL;
+            if (adminEmail) {
+                const orderItems = order.items.map(item => ({
+                    partName: item.partName || item.sparePartId?.name || 'Unknown Part',
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    totalPrice: item.totalPrice
+                }));
+
+                await sendEmail(adminEmail, 'order-confirmation-admin', {
+                    orderId: order._id.toString().slice(-8).toUpperCase(),
+                    userName: order.userId?.name || 'Unknown',
+                    userEmail: order.userId?.email || 'N/A',
+                    userContact: order.userId?.contact || 'N/A',
+                    items: orderItems,
+                    totalAmount: order.totalAmount,
+                    deliveryAddress: order.deliveryAddress,
+                    paymentMethod: order.paymentMethod,
+                    transactionId: order.esewaRefId
+                });
+            } else {
+                // Fallback: find admin user
+                const adminUser = await User.findOne({ role: 'admin' });
+                if (adminUser && adminUser.email) {
+                    const orderItems = order.items.map(item => ({
+                        partName: item.partName || item.sparePartId?.name || 'Unknown Part',
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        totalPrice: item.totalPrice
+                    }));
+
+                    await sendEmail(adminUser.email, 'order-confirmation-admin', {
+                        orderId: order._id.toString().slice(-8).toUpperCase(),
+                        userName: order.userId?.name || 'Unknown',
+                        userEmail: order.userId?.email || 'N/A',
+                        userContact: order.userId?.contact || 'N/A',
+                        items: orderItems,
+                        totalAmount: order.totalAmount,
+                        deliveryAddress: order.deliveryAddress,
+                        paymentMethod: order.paymentMethod,
+                        transactionId: order.esewaRefId
+                    });
+                }
+            }
+
+            console.log('✅ Order confirmation emails sent successfully');
+        } catch (emailError) {
+            // Log error but don't fail the order completion
+            console.error('❌ Error sending order confirmation emails:', emailError);
+            // Order is still successful even if email fails
+        }
         
         return order;
     } catch (error) {

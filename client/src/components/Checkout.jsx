@@ -78,31 +78,19 @@ export default function Checkout() {
                     }
                 }
             );
+            console.log(response.data);
 
             if (response.data.success && response.data.data) {
-                // Get eSewa form data
-                const esewaData = response.data.data;
+                // Get eSewa form data from backend response
+                const { formUrl, formData } = response.data.data;
 
                 // Create and submit eSewa form
                 const form = document.createElement("form");
                 form.method = "POST";
-                form.action = esewaData.esewaUrl;
+                form.action = formUrl;
 
-                const fields = {
-                    amount: esewaData.amount,
-                    failure_url: esewaData.failureUrl,
-                    product_code: esewaData.productCode,
-                    product_service_charge: esewaData.productServiceCharge,
-                    product_delivery_charge: esewaData.productDeliveryCharge,
-                    success_url: esewaData.successUrl,
-                    tax_amount: esewaData.taxAmount,
-                    total_amount: esewaData.totalAmount,
-                    transaction_uuid: esewaData.transactionUuid,
-                    signature: esewaData.signature,
-                    signed_field_names: esewaData.signedFieldNames
-                };
-
-                for (const [key, value] of Object.entries(fields)) {
+                // Add all form fields from formData
+                for (const [key, value] of Object.entries(formData)) {
                     const input = document.createElement("input");
                     input.type = "hidden";
                     input.name = key;

@@ -11,20 +11,24 @@ export default function Cart() {
     const [loading, setLoading] = React.useState(false);
 
     useEffect(() => {
-        if (!isLoggedin) {
-            navigate("/login");
-            return;
-        }
+       
         fetchCart();
     }, [isLoggedin]);
 
     const handleRemoveItem = async (sparePartId) => {
         try {
             setLoading(true);
-            await removeItemFromCart(sparePartId);
-            toast.success("Item removed from cart");
+            const response = await removeItemFromCart(sparePartId);
+            // removeItemFromCart already updates the state, so no need to fetchCart again
+            // The state will be updated with the response from the API
+            if (response && response.cart) {
+                toast.success("Item removed from cart");
+            }
         } catch (error) {
+            console.error("Error removing item:", error);
             toast.error(error.response?.data?.message || "Error removing item");
+            // If removal fails, refresh cart to get current state
+            await fetchCart();
         } finally {
             setLoading(false);
         }

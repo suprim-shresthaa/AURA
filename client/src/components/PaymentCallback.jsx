@@ -16,6 +16,7 @@ const PaymentCallback = () => {
     useEffect(() => {
         const path = window.location.pathname;
         const bookingIdParam = searchParams.get("bookingId");
+        console.log(bookingIdParam);
         const errorParam = searchParams.get("error");
         const statusParam = searchParams.get("status");
 
@@ -103,9 +104,11 @@ const PaymentCallback = () => {
                             </Card>
                         )}
                         <div className="flex gap-4 justify-center">
-                            <Button onClick={() => navigate("/profile")}>
+                            {bookingId ? <Button onClick={() => navigate("/profile/bookings")}>
                                 View My Bookings
-                            </Button>
+                            </Button> : <Button onClick={() => navigate("/profile/orders")}>
+                                View My Orders
+                            </Button>}
                             <Button variant="outline" onClick={() => navigate("/vehicles")}>
                                 Browse More Vehicles
                             </Button>
@@ -195,14 +198,7 @@ const PaymentCallback = () => {
                                 </CardContent>
                             </Card>
                         )}
-                        <div className="flex gap-4 justify-center">
-                            <Button onClick={() => navigate("/profile")}>
-                                View My Bookings
-                            </Button>
-                            <Button variant="outline" onClick={() => navigate("/vehicles")}>
-                                Browse Vehicles
-                            </Button>
-                        </div>
+                       
                     </div>
                 );
 

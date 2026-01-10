@@ -305,28 +305,6 @@ export default function SparePartDetailsPage() {
                                 View Cart
                             </Button>
                         </div>
-
-                        {/* Additional Info */}
-                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                            <h3 className="text-sm font-semibold text-blue-900 mb-2">
-                                Need Help?
-                            </h3>
-                            <p className="text-xs text-blue-700 mb-3">
-                                Have questions about this spare part? Contact our support team for assistance.
-                            </p>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full border-blue-200 text-blue-700 hover:bg-blue-100"
-                                onClick={() => {
-                                    // TODO: Implement support contact
-                                    alert("Support contact coming soon!");
-                                }}
-                            >
-                                <Mail className="w-3.5 h-3.5 mr-2" />
-                                Contact Support
-                            </Button>
-                        </div>
                     </div>
                 </div>
             </div>

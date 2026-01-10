@@ -11,12 +11,18 @@ import VendorApplicationForm from "./components/Vendor/VendorApplicationForm";
 import ManageApplications from "./components/Admin/ManageApplications";
 import ManageUsers from "./components/Admin/ManageUsers";
 import ManageReservations from "./components/Admin/ManageReservations";
+import ManageOrders from "./components/Admin/ManageOrders";
 import ManageVehicles from "./components/Admin/ManageVehicles";
 import ManageLicenses from "./components/Admin/ManageLicenses";
 import AdminVehicleDetailsPage from "./components/Admin/AdminVehicleDetailsPage";
 import VehicleUploadForm from "./components/Vendor/VehicleUploadForm";
 import VehicleListing from "./components/VehiclesListing";
 import Profile from "./components/profile/Profile";
+import ProfileInfo from "./components/profile/ProfileInfo";
+import Bookings from "./components/profile/Bookings";
+import Orders from "./components/profile/Orders";
+import Licenses from "./components/profile/Licenses";
+import Settings from "./components/profile/Settings";
 import VendorDashboard from "./components/Vendor/VendorDashboard";
 import MyVehicleListings from "./components/Vendor/MyVehicleListings";
 import VendorReservations from "./components/Vendor/VendorReservations";
@@ -48,7 +54,13 @@ function AppContent() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/vehicles" element={<VehicleListing />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<Profile />}>
+            <Route index element={<ProfileInfo />} />
+            <Route path="bookings" element={<Bookings />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="licenses" element={<Licenses />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
           <Route path="/vehicles/:id" element={<VehicleDetailsPage />} />
           <Route path="/spare-parts" element={<SparePartsListing />} />
           <Route path="/spare-parts/:id" element={<SparePartDetailsPage />} />
@@ -74,6 +86,7 @@ function AppContent() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<ManageUsers />} />
             <Route path="reservations" element={<ManageReservations />} />
+            <Route path="orders" element={<ManageOrders />} />
             <Route path="applications" element={<ManageApplications />} />
             <Route path="vehicles" element={<ManageVehicles />} />
             <Route path="vehicles/:id" element={<AdminVehicleDetailsPage />} />

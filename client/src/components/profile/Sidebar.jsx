@@ -1,13 +1,13 @@
 // src/components/profile/Sidebar.jsx
 import React, { useContext, useRef, useState } from "react";
-import { User, Settings, LogOut, Edit, ArrowRightCircle, Calendar, FileText } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { User, Settings, LogOut, Edit, ArrowRightCircle, Calendar, FileText, ShoppingBag } from "lucide-react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { AppContent } from "../context/AppContext";
 
-const Sidebar = ({ activeTab, setActiveTab, userData }) => {
+const Sidebar = ({ userData }) => {
     const { setIsLoggedin, backendUrl, setUserData } = useContext(AppContent);
     const fileInputRef = useRef(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -116,50 +116,77 @@ const Sidebar = ({ activeTab, setActiveTab, userData }) => {
 
             {/* Navigation */}
             <nav className="border-border-t border-gray-200">
-                <button
-                    onClick={() => setActiveTab("profile")}
-                    className={`w-full flex items-center px-6 py-3 text-sm font-medium ${activeTab === "profile"
-                        ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                        }`}
+                <NavLink
+                    to="/profile"
+                    end
+                    className={({ isActive }) =>
+                        `w-full flex items-center px-6 py-3 text-sm font-medium ${
+                            isActive
+                                ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
+                                : "text-gray-600 hover:bg-gray-50"
+                        }`
+                    }
                 >
                     <User className="mr-3 h-5 w-5" />
                     Profile
-                </button>
+                </NavLink>
 
-                <button
-                    onClick={() => setActiveTab("bookings")}
-                    className={`w-full flex items-center px-6 py-3 text-sm font-medium ${activeTab === "bookings"
-                        ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                        }`}
+                <NavLink
+                    to="/profile/bookings"
+                    className={({ isActive }) =>
+                        `w-full flex items-center px-6 py-3 text-sm font-medium ${
+                            isActive
+                                ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
+                                : "text-gray-600 hover:bg-gray-50"
+                        }`
+                    }
                 >
                     <Calendar className="mr-3 h-5 w-5" />
                     My Bookings
-                </button>
+                </NavLink>
+
+                <NavLink
+                    to="/profile/orders"
+                    className={({ isActive }) =>
+                        `w-full flex items-center px-6 py-3 text-sm font-medium ${
+                            isActive
+                                ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
+                                : "text-gray-600 hover:bg-gray-50"
+                        }`
+                    }
+                >
+                    <ShoppingBag className="mr-3 h-5 w-5" />
+                    My Orders
+                </NavLink>
 
                 {showLicenses && (
-                    <button
-                    onClick={() => setActiveTab("licenses")}
-                    className={`w-full flex items-center px-6 py-3 text-sm font-medium ${activeTab === "licenses"
-                        ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                        }`}
-                >
-                    <FileText className="mr-3 h-5 w-5" />
-                    Licenses
-                </button>
+                    <NavLink
+                        to="/profile/licenses"
+                        className={({ isActive }) =>
+                            `w-full flex items-center px-6 py-3 text-sm font-medium ${
+                                isActive
+                                    ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
+                                    : "text-gray-600 hover:bg-gray-50"
+                            }`
+                        }
+                    >
+                        <FileText className="mr-3 h-5 w-5" />
+                        Licenses
+                    </NavLink>
                 )}
-                <button
-                    onClick={() => setActiveTab("settings")}
-                    className={`w-full flex items-center px-6 py-3 text-sm font-medium ${activeTab === "settings"
-                        ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                        }`}
+                <NavLink
+                    to="/profile/settings"
+                    className={({ isActive }) =>
+                        `w-full flex items-center px-6 py-3 text-sm font-medium ${
+                            isActive
+                                ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
+                                : "text-gray-600 hover:bg-gray-50"
+                        }`
+                    }
                 >
                     <Settings className="mr-3 h-5 w-5" />
                     Settings
-                </button>
+                </NavLink>
 
                 {/* Role-based Links */}
                 {userData?.role === "admin" && (

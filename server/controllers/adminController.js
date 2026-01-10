@@ -1,6 +1,7 @@
 import Booking from "../models/booking.model.js";
 import Vehicle from "../models/vehicle.model.js";
 import User from "../models/user.model.js";
+import Order from "../models/order.model.js";
 import mongoose from "mongoose";
 import sendEmail from '../utils/emailTemplates.js';
 
@@ -271,6 +272,229 @@ export const getAllPayments = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to fetch payments",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get all orders (spare parts orders) with filtering and pagination
+ */
+export const getAllOrders = async (req, res) => {
+    try {
+        const { 
+            status, 
+            paymentStatus, 
+            paymentMethod,
+            startDate,
+            endDate,
+            page = 1,
+            limit = 20,
+            sortBy = "createdAt",
+            sortOrder = "desc"
+        } = req.query;
+
+        // Build query
+        const query = {};
+        
+        if (status && status !== "all") {
+            query.orderStatus = status;
+        }
+        
+        if (paymentStatus && paymentStatus !== "all") {
+            query.paymentStatus = paymentStatus;
+        }
+        
+        if (paymentMethod && paymentMethod !== "all") {
+            query.paymentMethod = paymentMethod;
+        }
+        
+        if (startDate || endDate) {
+            query.createdAt = {};
+            if (startDate) {
+                query.createdAt.$gte = new Date(startDate);
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                query.createdAt.$lte = end;
+            }
+        }
+
+        // Calculate pagination
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const sortOptions = {};
+        sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+        // Get orders with pagination
+        const orders = await Order.find(query)
+            .populate("userId", "name email contact")
+            .populate("items.sparePartId", "name category images price")
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        // Get total count for pagination
+        const total = await Order.countDocuments(query);
+
+        // Format response
+        const formattedOrders = orders.map(order => ({
+            id: order._id,
+            orderId: order._id,
+            customer: {
+                id: order.userId?._id,
+                name: order.userId?.name,
+                email: order.userId?.email,
+                contact: order.userId?.contact
+            },
+            items: order.items.map(item => ({
+                id: item._id,
+                sparePartId: item.sparePartId?._id,
+                partName: item.partName || item.sparePartId?.name,
+                category: item.sparePartId?.category,
+                image: item.sparePartId?.images?.[0],
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                totalPrice: item.totalPrice
+            })),
+            totalAmount: order.totalAmount,
+            paymentMethod: order.paymentMethod,
+            paymentStatus: order.paymentStatus,
+            orderStatus: order.orderStatus,
+            esewaTransactionUuid: order.esewaTransactionUuid,
+            esewaRefId: order.esewaRefId,
+            deliveryAddress: order.deliveryAddress,
+            notes: order.notes,
+            createdAt: order.createdAt,
+            paidAt: order.paidAt,
+            shippedAt: order.shippedAt,
+            deliveredAt: order.deliveredAt,
+            updatedAt: order.updatedAt
+        }));
+
+        res.json({
+            success: true,
+            data: {
+                orders: formattedOrders,
+                pagination: {
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(total / parseInt(limit)),
+                    totalItems: total,
+                    itemsPerPage: parseInt(limit)
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching orders:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch orders",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Update order status (admin only)
+ */
+export const updateOrderStatus = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { orderStatus } = req.body;
+
+        // Validate orderStatus
+        const validStatuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
+        if (!validStatuses.includes(orderStatus)) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid order status. Must be one of: ${validStatuses.join(", ")}`
+            });
+        }
+
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found"
+            });
+        }
+
+        // Prepare update object
+        const updateData = {
+            orderStatus: orderStatus
+        };
+
+        // Update timestamps based on status
+        if (orderStatus === "shipped" && !order.shippedAt) {
+            updateData.shippedAt = new Date();
+        } else if (orderStatus === "delivered" && !order.deliveredAt) {
+            updateData.deliveredAt = new Date();
+            // Also set shippedAt if not already set
+            if (!order.shippedAt) {
+                updateData.shippedAt = new Date();
+            }
+        }
+
+        // Update the order
+        const updatedOrder = await Order.findByIdAndUpdate(
+            orderId,
+            updateData,
+            { new: true }
+        ).populate("userId", "name email contact")
+         .populate("items.sparePartId", "name category images price");
+
+        if (!updatedOrder) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found after update"
+            });
+        }
+
+        // Format response similar to getAllOrders
+        const formattedOrder = {
+            id: updatedOrder._id,
+            orderId: updatedOrder._id,
+            customer: {
+                id: updatedOrder.userId?._id,
+                name: updatedOrder.userId?.name,
+                email: updatedOrder.userId?.email,
+                contact: updatedOrder.userId?.contact
+            },
+            items: updatedOrder.items.map(item => ({
+                id: item._id,
+                sparePartId: item.sparePartId?._id,
+                partName: item.partName || item.sparePartId?.name,
+                category: item.sparePartId?.category,
+                image: item.sparePartId?.images?.[0],
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                totalPrice: item.totalPrice
+            })),
+            totalAmount: updatedOrder.totalAmount,
+            paymentMethod: updatedOrder.paymentMethod,
+            paymentStatus: updatedOrder.paymentStatus,
+            orderStatus: updatedOrder.orderStatus,
+            esewaTransactionUuid: updatedOrder.esewaTransactionUuid,
+            esewaRefId: updatedOrder.esewaRefId,
+            deliveryAddress: updatedOrder.deliveryAddress,
+            notes: updatedOrder.notes,
+            createdAt: updatedOrder.createdAt,
+            paidAt: updatedOrder.paidAt,
+            shippedAt: updatedOrder.shippedAt,
+            deliveredAt: updatedOrder.deliveredAt,
+            updatedAt: updatedOrder.updatedAt
+        };
+
+        res.json({
+            success: true,
+            message: `Order status updated to ${orderStatus}`,
+            data: formattedOrder
+        });
+    } catch (error) {
+        console.error("Error updating order status:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to update order status",
             error: error.message
         });
     }
