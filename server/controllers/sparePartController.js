@@ -3,26 +3,51 @@ import { upload } from "../config/cloudinary.js";
 
 export const createSparePart = async (req, res) => {
     try {
-        const { name, category, brand, price, stock, compatibleVehicles, description } = req.body;
+        const { name, category, brand, price, rentPrice, sellPrice, stock, compatibleVehicles, description } = req.body;
 
         if (!req.files?.images || req.files.images.length === 0) {
             return res.status(400).json({ success: false, message: "At least one image is required." });
         }
 
+        // Validate that at least one price type is provided
+        const hasRentPrice = rentPrice !== undefined && rentPrice !== null && rentPrice !== "";
+        const hasSellPrice = sellPrice !== undefined && sellPrice !== null && sellPrice !== "";
+        const hasOldPrice = price !== undefined && price !== null && price !== "";
+
+        if (!hasRentPrice && !hasSellPrice && !hasOldPrice) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "At least one price (rentPrice or sellPrice) must be provided." 
+            });
+        }
+
         const images = req.files.images.map(file => file.path);
 
-        const sparePart = new SparePart({
+        const sparePartData = {
             name: name.trim(),
             category,
             brand: brand.trim(),
-            price: parseFloat(price),
             stock: parseInt(stock),
             compatibleVehicles: compatibleVehicles?.trim() || "",
             description: description?.trim() || "",
             images,
             isAvailable: parseInt(stock) > 0,
             status: parseInt(stock) > 0 ? "Active" : "OutOfStock"
-        });
+        };
+
+        // Add prices if provided
+        if (hasRentPrice) {
+            sparePartData.rentPrice = parseFloat(rentPrice);
+        }
+        if (hasSellPrice) {
+            sparePartData.sellPrice = parseFloat(sellPrice);
+        }
+        // Keep old price for backward compatibility
+        if (hasOldPrice) {
+            sparePartData.price = parseFloat(price);
+        }
+
+        const sparePart = new SparePart(sparePartData);
 
         await sparePart.save();
 
@@ -85,11 +110,13 @@ export const searchSpareParts = async (req, res) => {
             query.brand = { $regex: brand, $options: "i" };
         }
 
-        // Price range filter
+        // Price range filter - check both sellPrice and rentPrice
         if (minPrice || maxPrice) {
-            query.price = {};
-            if (minPrice) query.price.$gte = parseFloat(minPrice);
-            if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+            query.$or = [
+                { sellPrice: { $gte: parseFloat(minPrice || 0), $lte: parseFloat(maxPrice || Infinity) } },
+                { rentPrice: { $gte: parseFloat(minPrice || 0), $lte: parseFloat(maxPrice || Infinity) } },
+                { price: { $gte: parseFloat(minPrice || 0), $lte: parseFloat(maxPrice || Infinity) } } // backward compatibility
+            ];
         }
 
         // Stock filter
@@ -144,15 +171,46 @@ export const updateSparePart = async (req, res) => {
             updateData.images = req.files.images.map(file => file.path);
         }
 
+        // Handle price fields
+        if (updateData.rentPrice !== undefined) {
+            updateData.rentPrice = updateData.rentPrice ? parseFloat(updateData.rentPrice) : null;
+        }
+        if (updateData.sellPrice !== undefined) {
+            updateData.sellPrice = updateData.sellPrice ? parseFloat(updateData.sellPrice) : null;
+        }
+        if (updateData.price !== undefined) {
+            updateData.price = updateData.price ? parseFloat(updateData.price) : null;
+        }
+
+        // Validate that at least one price exists after update
+        const sparePart = await SparePart.findById(id);
+        if (!sparePart) {
+            return res.status(404).json({
+                success: false,
+                message: "Spare part not found."
+            });
+        }
+
+        const finalRentPrice = updateData.rentPrice !== undefined ? updateData.rentPrice : sparePart.rentPrice;
+        const finalSellPrice = updateData.sellPrice !== undefined ? updateData.sellPrice : sparePart.sellPrice;
+        const finalPrice = updateData.price !== undefined ? updateData.price : sparePart.price;
+
+        if (!finalRentPrice && !finalSellPrice && !finalPrice) {
+            return res.status(400).json({
+                success: false,
+                message: "At least one price (rentPrice or sellPrice) must be provided."
+            });
+        }
+
         if (updateData.stock !== undefined) {
             updateData.stock = parseInt(updateData.stock);
             updateData.isAvailable = updateData.stock > 0;
             updateData.status = updateData.stock > 0 ? "Active" : "OutOfStock";
         }
 
-        const sparePart = await SparePart.findByIdAndUpdate(id, updateData, { new: true });
+        const updatedSparePart = await SparePart.findByIdAndUpdate(id, updateData, { new: true });
 
-        if (!sparePart) {
+        if (!updatedSparePart) {
             return res.status(404).json({
                 success: false,
                 message: "Spare part not found."
@@ -162,7 +220,7 @@ export const updateSparePart = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Spare part updated successfully!",
-            data: sparePart
+            data: updatedSparePart
         });
     } catch (error) {
         console.error("Error updating spare part:", error);

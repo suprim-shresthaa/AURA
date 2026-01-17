@@ -14,9 +14,11 @@ import {
     Phone,
     Mail,
     Plus,
-    Minus
+    Minus,
+    Calendar
 } from "lucide-react";
 import { Button } from "./ui/button";
+import BookingModal from "./BookingModal";
 
 export default function SparePartDetailsPage() {
     const { id } = useParams();
@@ -27,6 +29,7 @@ export default function SparePartDetailsPage() {
     const [selectedImage, setSelectedImage] = useState("");
     const [quantity, setQuantity] = useState(1);
     const [addingToCart, setAddingToCart] = useState(false);
+    const [showBookingModal, setShowBookingModal] = useState(false);
 
     useEffect(() => {
         const fetchSparePart = async () => {
@@ -102,6 +105,10 @@ export default function SparePartDetailsPage() {
 
     const allImages = sparePart.images && sparePart.images.length > 0 ? sparePart.images : [];
     const isInStock = sparePart.isAvailable && sparePart.stock > 0;
+    const hasRentPrice = sparePart.rentPrice && sparePart.rentPrice > 0;
+    const hasSellPrice = sparePart.sellPrice && sparePart.sellPrice > 0;
+    // Fallback to old price field for backward compatibility
+    const displaySellPrice = hasSellPrice ? sparePart.sellPrice : (sparePart.price || 0);
 
     const InfoItem = ({ icon: Icon, label, value }) => (
         <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
@@ -216,12 +223,32 @@ export default function SparePartDetailsPage() {
                     {/* Right Column - Details Sidebar */}
                     <div className="space-y-4">
                         {/* Pricing Card */}
-                        <div className="bg-blue-600 rounded-lg shadow-sm p-5 text-white">
-                            <p className="text-sm opacity-90 mb-1">Price</p>
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-3xl font-bold">Rs. {sparePart.price.toLocaleString()}</span>
+                        {(hasRentPrice || hasSellPrice || displaySellPrice) && (
+                            <div className="bg-blue-600 rounded-lg shadow-sm p-5 text-white">
+                                <p className="text-sm opacity-90 mb-2">Pricing</p>
+                                {hasRentPrice && (
+                                    <div className="mb-2">
+                                        <p className="text-xs opacity-80">Rent (per day)</p>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-2xl font-bold">Rs. {sparePart.rentPrice.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {hasSellPrice && (
+                                    <div>
+                                        <p className="text-xs opacity-80">Sell Price</p>
+                                        <div className="flex items-baseline gap-1">
+                                            <span className="text-2xl font-bold">Rs. {sparePart.sellPrice.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {!hasRentPrice && !hasSellPrice && displaySellPrice > 0 && (
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-3xl font-bold">Rs. {displaySellPrice.toLocaleString()}</span>
+                                    </div>
+                                )}
                             </div>
-                        </div>
+                        )}
 
                         {/* Specifications Card */}
                         <div className="bg-white rounded-lg shadow-sm p-5">
@@ -252,48 +279,112 @@ export default function SparePartDetailsPage() {
 
                         {/* Action Buttons */}
                         <div className="space-y-3">
-                            {/* Quantity Selector */}
-                            <div className="bg-white rounded-lg shadow-sm p-4">
-                                <p className="text-sm font-medium text-gray-700 mb-3">Quantity</p>
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                        disabled={quantity <= 1 || addingToCart}
-                                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                                    >
-                                        <Minus className="w-4 h-4" />
-                                    </button>
-                                    <input
-                                        type="number"
-                                        value={quantity}
-                                        onChange={(e) => {
-                                            const val = parseInt(e.target.value) || 1;
-                                            setQuantity(Math.max(1, Math.min(val, sparePart.stock)));
-                                        }}
-                                        min="1"
-                                        max={sparePart.stock}
-                                        className="flex-1 text-center px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
-                                    <button
-                                        onClick={() => setQuantity(Math.min(sparePart.stock, quantity + 1))}
-                                        disabled={quantity >= sparePart.stock || addingToCart}
-                                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                    </button>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-2">{sparePart.stock} available</p>
-                            </div>
+                            {/* Book Button - Show if rentPrice exists */}
+                            {hasRentPrice && (
+                                <Button
+                                    onClick={() => setShowBookingModal(true)}
+                                    disabled={!isInStock}
+                                    size="lg"
+                                    className="w-full h-12 cursor-pointer bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Calendar className="w-4 h-4 mr-2" />
+                                    {isInStock ? "Book Now" : "Out of Stock"}
+                                </Button>
+                            )}
 
-                            <Button
-                                onClick={handleAddToCart}
-                                disabled={!isInStock || addingToCart}
-                                size="lg"
-                                className="w-full h-12 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <ShoppingCart className="w-4 h-4 mr-2" />
-                                {addingToCart ? "Adding..." : isInStock ? "Add to Cart" : "Out of Stock"}
-                            </Button>
+                            {/* Quantity Selector - Only show if sellPrice exists */}
+                            {hasSellPrice && (
+                                <div className="bg-white rounded-lg shadow-sm p-4">
+                                    <p className="text-sm font-medium text-gray-700 mb-3">Quantity</p>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                            disabled={quantity <= 1 || addingToCart}
+                                            className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                        >
+                                            <Minus className="w-4 h-4" />
+                                        </button>
+                                        <input
+                                            type="number"
+                                            value={quantity}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value) || 1;
+                                                setQuantity(Math.max(1, Math.min(val, sparePart.stock)));
+                                            }}
+                                            min="1"
+                                            max={sparePart.stock}
+                                            className="flex-1 text-center px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                        <button
+                                            onClick={() => setQuantity(Math.min(sparePart.stock, quantity + 1))}
+                                            disabled={quantity >= sparePart.stock || addingToCart}
+                                            className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-2">{sparePart.stock} available</p>
+                                </div>
+                            )}
+
+                            {/* Add to Cart Button - Show if sellPrice exists */}
+                            {hasSellPrice && (
+                                <Button
+                                    onClick={handleAddToCart}
+                                    disabled={!isInStock || addingToCart}
+                                    size="lg"
+                                    className="w-full h-12 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <ShoppingCart className="w-4 h-4 mr-2" />
+                                    {addingToCart ? "Adding..." : isInStock ? "Add to Cart" : "Out of Stock"}
+                                </Button>
+                            )}
+
+                            {/* Fallback for old price field */}
+                            {!hasRentPrice && !hasSellPrice && displaySellPrice > 0 && (
+                                <>
+                                    <div className="bg-white rounded-lg shadow-sm p-4">
+                                        <p className="text-sm font-medium text-gray-700 mb-3">Quantity</p>
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                                disabled={quantity <= 1 || addingToCart}
+                                                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                            >
+                                                <Minus className="w-4 h-4" />
+                                            </button>
+                                            <input
+                                                type="number"
+                                                value={quantity}
+                                                onChange={(e) => {
+                                                    const val = parseInt(e.target.value) || 1;
+                                                    setQuantity(Math.max(1, Math.min(val, sparePart.stock)));
+                                                }}
+                                                min="1"
+                                                max={sparePart.stock}
+                                                className="flex-1 text-center px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                            <button
+                                                onClick={() => setQuantity(Math.min(sparePart.stock, quantity + 1))}
+                                                disabled={quantity >= sparePart.stock || addingToCart}
+                                                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-2">{sparePart.stock} available</p>
+                                    </div>
+                                    <Button
+                                        onClick={handleAddToCart}
+                                        disabled={!isInStock || addingToCart}
+                                        size="lg"
+                                        className="w-full h-12 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <ShoppingCart className="w-4 h-4 mr-2" />
+                                        {addingToCart ? "Adding..." : isInStock ? "Add to Cart" : "Out of Stock"}
+                                    </Button>
+                                </>
+                            )}
 
                             <Button
                                 variant="outline"
@@ -308,6 +399,15 @@ export default function SparePartDetailsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Booking Modal for Spare Parts */}
+            {hasRentPrice && (
+                <BookingModal
+                    isOpen={showBookingModal}
+                    onClose={() => setShowBookingModal(false)}
+                    sparePart={sparePart}
+                />
+            )}
         </div>
     );
 }

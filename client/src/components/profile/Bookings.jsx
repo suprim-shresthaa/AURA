@@ -8,7 +8,8 @@ import {
     XCircle,
     AlertCircle,
     Car,
-    DollarSign
+    DollarSign,
+    Package
 } from 'lucide-react';
 import axiosInstance from '@/lib/axiosInstance';
 import { toast } from 'react-toastify';
@@ -42,9 +43,20 @@ export default function Bookings() {
 
     useEffect(() => {
         const filtered = bookings.filter(booking => {
-            const matchesSearch = 
-                booking.vehicleId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                booking.vehicleId?.category?.toLowerCase().includes(searchTerm.toLowerCase());
+            const isVehicle = booking.bookingType === 'vehicle' || booking.vehicleId;
+            const isSparePart = booking.bookingType === 'sparePart' || booking.sparePartId;
+            
+            let matchesSearch = false;
+            if (isVehicle) {
+                matchesSearch = 
+                    booking.vehicleId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    booking.vehicleId?.category?.toLowerCase().includes(searchTerm.toLowerCase());
+            } else if (isSparePart) {
+                matchesSearch = 
+                    booking.sparePartId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    booking.sparePartId?.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    booking.sparePartId?.brand?.toLowerCase().includes(searchTerm.toLowerCase());
+            }
             
             const matchesStatus = statusFilter === 'all' || booking.bookingStatus === statusFilter;
             
@@ -118,7 +130,7 @@ export default function Bookings() {
             <div className="px-6 py-5 border-b border-gray-200">
                 <div>
                     <h3 className="text-lg font-medium text-gray-900">My Bookings</h3>
-                    <p className="mt-1 text-sm text-gray-500">View and manage your vehicle bookings</p>
+                    <p className="mt-1 text-sm text-gray-500">View and manage your vehicle and spare part bookings</p>
                 </div>
             </div>
 
@@ -130,7 +142,7 @@ export default function Bookings() {
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Search by vehicle name or category..."
+                                placeholder="Search by name, category, or brand..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
@@ -164,30 +176,43 @@ export default function Bookings() {
                     </div>
                 ) : filteredBookings.length > 0 ? (
                     <div className="space-y-4">
-                        {filteredBookings.map((booking) => (
+                        {filteredBookings.map((booking) => {
+                            const isVehicle = booking.bookingType === 'vehicle' || booking.vehicleId;
+                            const isSparePart = booking.bookingType === 'sparePart' || booking.sparePartId;
+                            const entity = isVehicle ? booking.vehicleId : booking.sparePartId;
+                            const entityImage = isVehicle ? entity?.mainImage : (entity?.images?.[0] || null);
+                            
+                            return (
                             <div
                                 key={booking._id}
                                 className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                             >
                                 <div className="flex flex-col md:flex-row md:items-center gap-4">
-                                    {/* Vehicle Image and Info */}
+                                    {/* Entity Image and Info */}
                                     <div className="flex items-center gap-4 flex-1">
-                                        {booking.vehicleId?.mainImage && (
+                                        {entityImage && (
                                             <img
-                                                src={booking.vehicleId.mainImage}
-                                                alt={booking.vehicleId.name}
+                                                src={entityImage}
+                                                alt={entity?.name}
                                                 className="w-20 h-20 rounded-lg object-cover"
                                             />
                                         )}
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <Car className="w-4 h-4 text-gray-400" />
+                                                {isVehicle ? (
+                                                    <Car className="w-4 h-4 text-gray-400" />
+                                                ) : (
+                                                    <Package className="w-4 h-4 text-gray-400" />
+                                                )}
                                                 <h4 className="font-semibold text-gray-900">
-                                                    {booking.vehicleId?.name || 'Unknown Vehicle'}
+                                                    {entity?.name || (isVehicle ? 'Unknown Vehicle' : 'Unknown Spare Part')}
                                                 </h4>
                                             </div>
                                             <p className="text-sm text-gray-500">
-                                                {booking.vehicleId?.category || 'N/A'}
+                                                {isVehicle 
+                                                    ? entity?.category || 'N/A'
+                                                    : `${entity?.category || 'N/A'}${entity?.brand ? ` • ${entity.brand}` : ''}`
+                                                }
                                             </p>
                                         </div>
                                     </div>
@@ -246,7 +271,8 @@ export default function Bookings() {
                                     </div>
                                 )}
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 ) : (
                     <div className="text-center py-12">

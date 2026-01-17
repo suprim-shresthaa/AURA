@@ -72,18 +72,10 @@ function createEsewaSignature({ total_amount, transaction_uuid, product_code }) 
  * Helper function to create booking from payment data
  */
 const createBookingFromPaymentData = async (bookingData, userId) => {
-    const { vehicleId, startDate, endDate, totalDays, rentPerDay, totalAmount, notes, paymentMethod } = bookingData;
+    const { vehicleId, sparePartId, startDate, endDate, totalDays, rentPerDay, totalAmount, notes, paymentMethod, bookingType } = bookingData;
 
-    // Get vehicle details
-    const vehicle = await Vehicle.findById(vehicleId);
-    if (!vehicle) {
-        throw new Error("Vehicle not found");
-    }
-
-    // Create booking
-    const booking = await Booking.create({
+    let bookingDataToCreate = {
         userId,
-        vehicleId,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         totalDays,
@@ -92,13 +84,38 @@ const createBookingFromPaymentData = async (bookingData, userId) => {
         paymentMethod,
         paymentStatus: "paid",
         bookingStatus: "confirmed",
-        pickupLocation: vehicle.pickupLocation,
         notes: notes || "",
-        isPaymentDeferred: false
-    });
+        isPaymentDeferred: false,
+        bookingType: bookingType || (vehicleId ? "vehicle" : "sparePart")
+    };
 
-    // Mark vehicle as unavailable
-    // await Vehicle.findByIdAndUpdate(vehicleId, { isAvailable: false });
+    if (vehicleId) {
+        // Vehicle booking
+        const vehicle = await Vehicle.findById(vehicleId);
+        if (!vehicle) {
+            throw new Error("Vehicle not found");
+        }
+
+        bookingDataToCreate.vehicleId = vehicleId;
+        bookingDataToCreate.pickupLocation = vehicle.pickupLocation;
+    } else if (sparePartId) {
+        // Spare part booking
+        const sparePart = await SparePart.findById(sparePartId);
+        if (!sparePart) {
+            throw new Error("Spare part not found");
+        }
+
+        bookingDataToCreate.sparePartId = sparePartId;
+        bookingDataToCreate.pickupLocation = {
+            address: "Store Location",
+            city: "Kathmandu"
+        };
+    } else {
+        throw new Error("Either vehicleId or sparePartId must be provided");
+    }
+
+    // Create booking
+    const booking = await Booking.create(bookingDataToCreate);
 
     return booking;
 };
@@ -127,52 +144,106 @@ export const initiateEsewaPayment = async (req, res) => {
             });
         }
 
-        const { vehicleId, startDate, endDate, totalDays, rentPerDay, totalAmount, notes } = bookingData;
+        const { vehicleId, sparePartId, startDate, endDate, totalDays, rentPerDay, totalAmount, notes, bookingType } = bookingData;
 
         // Validate required fields
-        if (!vehicleId || !startDate || !endDate || !totalDays || !rentPerDay || !totalAmount) {
+        if ((!vehicleId && !sparePartId) || !startDate || !endDate || !totalDays || !rentPerDay || !totalAmount) {
             return res.status(400).json({
                 success: false,
                 message: "All booking fields are required"
             });
         }
 
-        // Get vehicle details
-        const vehicle = await Vehicle.findById(vehicleId);
-        if (!vehicle) {
-            return res.status(404).json({
-                success: false,
-                message: "Vehicle not found"
-            });
-        }
-
-        // Check if vehicle is available
-        if (!vehicle.isAvailable) {
+        if (vehicleId && sparePartId) {
             return res.status(400).json({
                 success: false,
-                message: "Vehicle is not available for booking"
+                message: "Cannot book both vehicle and spare part in one booking"
             });
         }
 
-        // Check for overlapping bookings
         const start = new Date(startDate);
         const end = new Date(endDate);
-        const overlappingBookings = await Booking.find({
-            vehicleId,
-            bookingStatus: { $in: ["pending", "confirmed", "active"] },
-            $or: [
-                {
-                    startDate: { $lte: end },
-                    endDate: { $gte: start }
-                }
-            ]
-        });
 
-        if (overlappingBookings.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Vehicle is already booked for the selected dates"
+        if (vehicleId) {
+            // Vehicle booking validation
+            const vehicle = await Vehicle.findById(vehicleId);
+            if (!vehicle) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Vehicle not found"
+                });
+            }
+
+            // Check if vehicle is available
+            if (!vehicle.isAvailable) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Vehicle is not available for booking"
+                });
+            }
+
+            // Check for overlapping bookings
+            const overlappingBookings = await Booking.find({
+                vehicleId,
+                bookingStatus: { $in: ["pending", "confirmed", "active"] },
+                $or: [
+                    {
+                        startDate: { $lte: end },
+                        endDate: { $gte: start }
+                    }
+                ]
             });
+
+            if (overlappingBookings.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Vehicle is already booked for the selected dates"
+                });
+            }
+        } else if (sparePartId) {
+            // Spare part booking validation
+            const sparePart = await SparePart.findById(sparePartId);
+            if (!sparePart) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Spare part not found"
+                });
+            }
+
+            if (!sparePart.rentPrice) {
+                return res.status(400).json({
+                    success: false,
+                    message: "This spare part is not available for rent"
+                });
+            }
+
+            if (!sparePart.isAvailable || sparePart.stock <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Spare part is out of stock"
+                });
+            }
+
+            // Check for overlapping bookings
+            const overlappingBookings = await Booking.find({
+                sparePartId,
+                bookingStatus: { $in: ["pending", "confirmed", "active"] },
+                $or: [
+                    {
+                        startDate: { $lte: end },
+                        endDate: { $gte: start }
+                    }
+                ]
+            });
+
+            // Check if stock is sufficient
+            const bookedQuantity = overlappingBookings.length;
+            if (sparePart.stock <= bookedQuantity) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Spare part is not available for the selected dates"
+                });
+            }
         }
 
         // Validate amount (minimum 1 rupee)
@@ -184,7 +255,8 @@ export const initiateEsewaPayment = async (req, res) => {
         }
 
         // Generate unique transaction UUID (will be used to retrieve booking data in callback)
-        const transactionUuid = `esewa_${Date.now()}_${userId}_${vehicleId}`;
+        const entityId = vehicleId || sparePartId;
+        const transactionUuid = `esewa_${Date.now()}_${userId}_${entityId}`;
 
         // Prepare payment parameters
         // According to eSewa docs, signature format: field_name=value,field_name=value
@@ -194,7 +266,9 @@ export const initiateEsewaPayment = async (req, res) => {
         // Store booking data temporarily (will be retrieved in callback)
         pendingBookingData.set(transactionUuid, {
             userId,
-            vehicleId,
+            vehicleId: vehicleId || null,
+            sparePartId: sparePartId || null,
+            bookingType: bookingType || (vehicleId ? "vehicle" : "sparePart"),
             startDate,
             endDate,
             totalDays,

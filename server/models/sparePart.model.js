@@ -18,9 +18,20 @@ const sparePartSchema = new mongoose.Schema(
             required: true,
             trim: true
         },
+        // Deprecated: kept for backward compatibility
         price: {
             type: Number,
-            required: true,
+            required: false,
+            min: 0
+        },
+        rentPrice: {
+            type: Number,
+            required: false,
+            min: 0
+        },
+        sellPrice: {
+            type: Number,
+            required: false,
             min: 0
         },
         stock: {

@@ -1,13 +1,14 @@
 import Booking from "../models/booking.model.js";
 import Vehicle from "../models/vehicle.model.js";
 import User from "../models/user.model.js";
+import SparePart from "../models/sparePart.model.js";
 
 export const createBooking = async (req, res) => {
     try {
-        const { vehicleId, startDate, endDate, isPaymentDeferred, notes } = req.body;
+        const { vehicleId, sparePartId, startDate, endDate, isPaymentDeferred, notes } = req.body;
         const userId = req.userId;
 
-        // Check if user is vendor or admin - they cannot book vehicles
+        // Check if user is vendor or admin - they cannot book
         if (!req.user) {
             return res.status(401).json({
                 success: false,
@@ -18,14 +19,29 @@ export const createBooking = async (req, res) => {
         if (req.user.role === "vendor" || req.user.role === "admin") {
             return res.status(403).json({
                 success: false,
-                message: "Vendors and admins cannot book vehicles"
+                message: "Vendors and admins cannot make bookings"
             });
         }
 
-        if (!vehicleId || !startDate || !endDate) {
+        // Validate that either vehicleId or sparePartId is provided
+        if (!vehicleId && !sparePartId) {
             return res.status(400).json({
                 success: false,
-                message: "Vehicle ID, start date, and end date are required"
+                message: "Either vehicle ID or spare part ID is required"
+            });
+        }
+
+        if (vehicleId && sparePartId) {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot book both vehicle and spare part in one booking"
+            });
+        }
+
+        if (!startDate || !endDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Start date and end date are required"
             });
         }
 
@@ -49,89 +65,162 @@ export const createBooking = async (req, res) => {
             });
         }
 
-        // Check if vehicle exists and is available
-        const vehicle = await Vehicle.findById(vehicleId);
-        if (!vehicle) {
-            return res.status(404).json({
-                success: false,
-                message: "Vehicle not found"
-            });
-        }
-
-        if (!vehicle.isAvailable) {
-            return res.status(400).json({
-                success: false,
-                message: "Vehicle is not available for booking"
-            });
-        }
-
-        // Check if vehicle is approved
-        if (vehicle.verificationStatus !== "approved") {
-            return res.status(400).json({
-                success: false,
-                message: "Vehicle is not approved for booking"
-            });
-        }
-
-        // Check if user has approved license for this vehicle type
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
-
-        const approvedLicense = user.licenses.find(
-            license => license.vehicleTypes?.includes(vehicle.category) && license.status === "approved"
-        );
-
-        if (!approvedLicense) {
-            return res.status(403).json({
-                success: false,
-                message: `You need an approved ${vehicle.category} license to book this vehicle. Please upload your license and wait for admin approval.`
-            });
-        }
-
-        // Check for overlapping bookings
-        const overlappingBookings = await Booking.find({
-            vehicleId,
-            bookingStatus: { $in: ["pending", "confirmed", "active"] },
-            $or: [
-                {
-                    startDate: { $lte: end },
-                    endDate: { $gte: start }
-                }
-            ]
-        });
-
-        if (overlappingBookings.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Vehicle is already booked for the selected dates"
-            });
-        }
-
-        // Calculate total days and amount
-        const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-        const totalAmount = totalDays * vehicle.rentPerDay;
-
-        // Create booking
-        const booking = await Booking.create({
+        let bookingData = {
             userId,
-            vehicleId,
             startDate: start,
             endDate: end,
-            totalDays,
-            rentPerDay: vehicle.rentPerDay,
-            totalAmount,
             paymentMethod: "esewa",
             paymentStatus: isPaymentDeferred ? "pending" : "pending",
-            bookingStatus: isPaymentDeferred ? "pending" : "pending", // Always pending until payment is confirmed
-            pickupLocation: vehicle.pickupLocation,
+            bookingStatus: isPaymentDeferred ? "pending" : "pending",
             notes: notes || "",
             isPaymentDeferred
-        });
+        };
+
+        if (vehicleId) {
+            // Vehicle booking logic
+            const vehicle = await Vehicle.findById(vehicleId);
+            if (!vehicle) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Vehicle not found"
+                });
+            }
+
+            if (!vehicle.isAvailable) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Vehicle is not available for booking"
+                });
+            }
+
+            if (vehicle.verificationStatus !== "approved") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Vehicle is not approved for booking"
+                });
+            }
+
+            // Check if user has approved license for this vehicle type
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: "User not found"
+                });
+            }
+
+            const approvedLicense = user.licenses.find(
+                license => license.vehicleTypes?.includes(vehicle.category) && license.status === "approved"
+            );
+
+            if (!approvedLicense) {
+                return res.status(403).json({
+                    success: false,
+                    message: `You need an approved ${vehicle.category} license to book this vehicle. Please upload your license and wait for admin approval.`
+                });
+            }
+
+            // Check for overlapping bookings
+            const overlappingBookings = await Booking.find({
+                vehicleId,
+                bookingStatus: { $in: ["pending", "confirmed", "active"] },
+                $or: [
+                    {
+                        startDate: { $lte: end },
+                        endDate: { $gte: start }
+                    }
+                ]
+            });
+
+            if (overlappingBookings.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Vehicle is already booked for the selected dates"
+                });
+            }
+
+            // Calculate total days and amount
+            const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+            const totalAmount = totalDays * vehicle.rentPerDay;
+
+            bookingData = {
+                ...bookingData,
+                vehicleId,
+                bookingType: "vehicle",
+                totalDays,
+                rentPerDay: vehicle.rentPerDay,
+                totalAmount,
+                pickupLocation: vehicle.pickupLocation
+            };
+        } else if (sparePartId) {
+            // Spare part booking logic
+            const sparePart = await SparePart.findById(sparePartId);
+            if (!sparePart) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Spare part not found"
+                });
+            }
+
+            if (!sparePart.rentPrice) {
+                return res.status(400).json({
+                    success: false,
+                    message: "This spare part is not available for rent"
+                });
+            }
+
+            if (!sparePart.isAvailable || sparePart.stock <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Spare part is out of stock"
+                });
+            }
+
+            // Check for overlapping bookings for this spare part
+            const overlappingBookings = await Booking.find({
+                sparePartId,
+                bookingStatus: { $in: ["pending", "confirmed", "active"] },
+                $or: [
+                    {
+                        startDate: { $lte: end },
+                        endDate: { $gte: start }
+                    }
+                ]
+            });
+
+            // Check if stock is sufficient (considering existing bookings)
+            const bookedQuantity = overlappingBookings.reduce((sum, booking) => {
+                // For now, each booking is for 1 unit, but this can be extended
+                return sum + 1;
+            }, 0);
+
+            if (sparePart.stock <= bookedQuantity) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Spare part is not available for the selected dates"
+                });
+            }
+
+            // Calculate total days and amount
+            const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+            const totalAmount = totalDays * sparePart.rentPrice;
+
+            bookingData = {
+                ...bookingData,
+                sparePartId,
+                bookingType: "sparePart",
+                totalDays,
+                rentPerDay: sparePart.rentPrice,
+                totalAmount,
+                pickupLocation: {
+                    address: "Store Location",
+                    city: "Kathmandu"
+                }
+            };
+        }
+
+        // Create booking
+        const booking = await Booking.create(bookingData);
 
         res.status(201).json({
             success: true,
@@ -152,6 +241,7 @@ export const getUserBookings = async (req, res) => {
         const userId = req.userId;
         const bookings = await Booking.find({ userId })
             .populate("vehicleId", "name mainImage category")
+            .populate("sparePartId", "name images category brand")
             .sort({ createdAt: -1 });
 
         res.json({
@@ -174,6 +264,7 @@ export const getBookingById = async (req, res) => {
 
         const booking = await Booking.findOne({ _id: id, userId })
             .populate("vehicleId")
+            .populate("sparePartId")
             .populate("userId", "name email contact");
 
         if (!booking) {
@@ -257,8 +348,10 @@ export const cancelBooking = async (req, res) => {
         booking.bookingStatus = "cancelled";
         await booking.save();
 
-        // Mark vehicle as available again
-        await Vehicle.findByIdAndUpdate(booking.vehicleId, { isAvailable: true });
+        // Mark vehicle as available again if it's a vehicle booking
+        if (booking.vehicleId) {
+            await Vehicle.findByIdAndUpdate(booking.vehicleId, { isAvailable: true });
+        }
 
         res.json({
             success: true,
@@ -275,17 +368,31 @@ export const cancelBooking = async (req, res) => {
 };
 
 /**
- * Check vehicle availability for a date range
+ * Check availability for a date range (vehicle or spare part)
  * This endpoint doesn't require authentication for checking availability
  */
 export const checkAvailability = async (req, res) => {
     try {
-        const { vehicleId, startDate, endDate } = req.query;
+        const { vehicleId, sparePartId, startDate, endDate } = req.query;
 
-        if (!vehicleId || !startDate || !endDate) {
+        if (!vehicleId && !sparePartId) {
             return res.status(400).json({
                 success: false,
-                message: "Vehicle ID, start date, and end date are required"
+                message: "Either vehicle ID or spare part ID is required"
+            });
+        }
+
+        if (vehicleId && sparePartId) {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot check availability for both vehicle and spare part"
+            });
+        }
+
+        if (!startDate || !endDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Start date and end date are required"
             });
         }
 
@@ -309,69 +416,145 @@ export const checkAvailability = async (req, res) => {
             });
         }
 
-        // Check if vehicle exists and is available
-        const vehicle = await Vehicle.findById(vehicleId);
-        if (!vehicle) {
-            return res.status(404).json({
-                success: false,
-                message: "Vehicle not found"
+        if (vehicleId) {
+            // Vehicle availability check
+            const vehicle = await Vehicle.findById(vehicleId);
+            if (!vehicle) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Vehicle not found"
+                });
+            }
+
+            if (!vehicle.isAvailable) {
+                return res.json({
+                    success: true,
+                    available: false,
+                    message: "Vehicle is not available for booking",
+                    reason: "vehicle_unavailable"
+                });
+            }
+
+            // Check for overlapping bookings
+            const overlappingBookings = await Booking.find({
+                vehicleId,
+                bookingStatus: { $in: ["pending", "confirmed", "active"] },
+                $or: [
+                    {
+                        startDate: { $lte: end },
+                        endDate: { $gte: start }
+                    }
+                ]
             });
-        }
 
-        if (!vehicle.isAvailable) {
-            return res.json({
-                success: true,
-                available: false,
-                message: "Vehicle is not available for booking",
-                reason: "vehicle_unavailable"
-            });
-        }
+            if (overlappingBookings.length > 0) {
+                // Get all booked date ranges for display
+                const bookedRanges = overlappingBookings.map(booking => ({
+                    startDate: booking.startDate,
+                    endDate: booking.endDate
+                }));
 
-        // Check for overlapping bookings
-        const overlappingBookings = await Booking.find({
-            vehicleId,
-            bookingStatus: { $in: ["pending", "confirmed", "active"] },
-            $or: [
-                {
-                    startDate: { $lte: end },
-                    endDate: { $gte: start }
-                }
-            ]
-        });
+                return res.json({
+                    success: true,
+                    available: false,
+                    message: "Vehicle is already booked for the selected dates",
+                    reason: "date_conflict",
+                    bookedRanges
+                });
+            }
 
-        if (overlappingBookings.length > 0) {
-            // Get all booked date ranges for display
-            const bookedRanges = overlappingBookings.map(booking => ({
+            // Get all existing bookings to show unavailable dates
+            const allBookings = await Booking.find({
+                vehicleId,
+                bookingStatus: { $in: ["pending", "confirmed", "active"] }
+            }).select("startDate endDate").sort({ startDate: 1 });
+
+            const bookedRanges = allBookings.map(booking => ({
                 startDate: booking.startDate,
                 endDate: booking.endDate
             }));
 
             return res.json({
                 success: true,
-                available: false,
-                message: "Vehicle is already booked for the selected dates",
-                reason: "date_conflict",
+                available: true,
+                message: "Vehicle is available for the selected dates",
+                bookedRanges
+            });
+        } else if (sparePartId) {
+            // Spare part availability check
+            const sparePart = await SparePart.findById(sparePartId);
+            if (!sparePart) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Spare part not found"
+                });
+            }
+
+            if (!sparePart.rentPrice) {
+                return res.json({
+                    success: true,
+                    available: false,
+                    message: "This spare part is not available for rent",
+                    reason: "not_rentable"
+                });
+            }
+
+            if (!sparePart.isAvailable || sparePart.stock <= 0) {
+                return res.json({
+                    success: true,
+                    available: false,
+                    message: "Spare part is out of stock",
+                    reason: "out_of_stock"
+                });
+            }
+
+            // Check for overlapping bookings
+            const overlappingBookings = await Booking.find({
+                sparePartId,
+                bookingStatus: { $in: ["pending", "confirmed", "active"] },
+                $or: [
+                    {
+                        startDate: { $lte: end },
+                        endDate: { $gte: start }
+                    }
+                ]
+            });
+
+            // Check if stock is sufficient
+            const bookedQuantity = overlappingBookings.length;
+            if (sparePart.stock <= bookedQuantity) {
+                const bookedRanges = overlappingBookings.map(booking => ({
+                    startDate: booking.startDate,
+                    endDate: booking.endDate
+                }));
+
+                return res.json({
+                    success: true,
+                    available: false,
+                    message: "Spare part is not available for the selected dates",
+                    reason: "date_conflict",
+                    bookedRanges
+                });
+            }
+
+            // Get all existing bookings to show unavailable dates
+            const allBookings = await Booking.find({
+                sparePartId,
+                bookingStatus: { $in: ["pending", "confirmed", "active"] }
+            }).select("startDate endDate").sort({ startDate: 1 });
+
+            const bookedRanges = allBookings.map(booking => ({
+                startDate: booking.startDate,
+                endDate: booking.endDate
+            }));
+
+            return res.json({
+                success: true,
+                available: true,
+                message: "Spare part is available for the selected dates",
                 bookedRanges
             });
         }
-
-        // Get all existing bookings to show unavailable dates
-        const allBookings = await Booking.find({
-            vehicleId,
-            bookingStatus: { $in: ["pending", "confirmed", "active"] }
-        }).select("startDate endDate").sort({ startDate: 1 });
-
-        const bookedRanges = allBookings.map(booking => ({
-            startDate: booking.startDate,
-            endDate: booking.endDate
-        }));
-
-        res.json({
-            success: true,
-            available: true,
-            message: "Vehicle is available for the selected dates",
-            bookedRanges
-        });
     } catch (error) {
         console.error("Error checking availability:", error);
         res.status(500).json({

@@ -10,6 +10,16 @@ const bookingSchema = new mongoose.Schema(
         vehicleId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Vehicle",
+            required: false
+        },
+        sparePartId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "SparePart",
+            required: false
+        },
+        bookingType: {
+            type: String,
+            enum: ["vehicle", "sparePart"],
             required: true
         },
         startDate: {
@@ -61,8 +71,8 @@ const bookingSchema = new mongoose.Schema(
             default: "pending"
         },
         pickupLocation: {
-            address: { type: String, required: true },
-            city: { type: String, required: true }
+            address: { type: String, required: false },
+            city: { type: String, required: false }
         },
         notes: {
             type: String,
@@ -81,6 +91,21 @@ bookingSchema.pre("save", function (next) {
     if (this.endDate <= this.startDate) {
         return next(new Error("End date must be after start date"));
     }
+    
+    // Validate that either vehicleId or sparePartId is present
+    if (!this.vehicleId && !this.sparePartId) {
+        return next(new Error("Either vehicleId or sparePartId must be provided"));
+    }
+    
+    // Validate that bookingType matches the provided ID
+    if (this.bookingType === "vehicle" && !this.vehicleId) {
+        return next(new Error("vehicleId is required for vehicle bookings"));
+    }
+    
+    if (this.bookingType === "sparePart" && !this.sparePartId) {
+        return next(new Error("sparePartId is required for spare part bookings"));
+    }
+    
     next();
 });
 

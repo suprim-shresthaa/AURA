@@ -10,6 +10,8 @@ export default function SparePartCard({ part }) {
         name,
         category,
         brand,
+        rentPrice,
+        sellPrice,
         price,
         stock,
         images,
@@ -82,8 +84,10 @@ export default function SparePartCard({ part }) {
             {/* Card Footer */}
             <CardFooter className="px-6 gap-3 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between">
                 <div className="flex flex-col">
-                    <p className="text-xl font-bold text-gray-900">
-                        Rs. {price.toLocaleString()}
+                    <p className="text-sm font-bold text-gray-900">
+                        {rentPrice && `Rent Price: Rs. ${rentPrice?.toLocaleString()}`}<br />
+                        {sellPrice && `Sell Price: Rs. ${sellPrice?.toLocaleString()}`}<br />
+                        {price && `Price: Rs. ${price?.toLocaleString()}`}
                     </p>
                 </div>
                 <Link 

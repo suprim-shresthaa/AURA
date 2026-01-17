@@ -9,9 +9,13 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { AppContent } from "./context/AppContext";
 
-export default function BookingModal({ isOpen, onClose, vehicle }) {
+export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
     const navigate = useNavigate();
     const { userData } = useContext(AppContent);
+    
+    // Determine if this is a vehicle or spare part booking
+    const isSparePart = !!sparePart;
+    const entity = sparePart || vehicle;
     
     const canBook = userData?.role === "user";
     const [step, setStep] = useState(1); // 1: dates, 2: payment option, 3: payment details
@@ -44,10 +48,14 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
             setError("");
             setAvailabilityStatus(null);
             
-            // Check if user has license for this vehicle type
-            checkLicense();
+            // Check if user has license for this vehicle type (only for vehicles)
+            if (!isSparePart) {
+                checkLicense();
+            } else {
+                setHasLicense(true); // No license needed for spare parts
+            }
         }
-    }, [isOpen, vehicle]);
+    }, [isOpen, vehicle, sparePart]);
 
     const checkLicense = async () => {
         if (!vehicle?.category || !userData?.userId) {
@@ -71,6 +79,14 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
         }
     };
 
+    // Get rent price - for vehicles use rentPerDay, for spare parts use rentPrice
+    const getRentPrice = () => {
+        if (isSparePart) {
+            return sparePart?.rentPrice || 0;
+        }
+        return vehicle?.rentPerDay || 0;
+    };
+
     const calculateDays = () => {
         if (!formData.startDate || !formData.endDate) return 0;
         const start = new Date(formData.startDate);
@@ -82,7 +98,7 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
 
     const calculateTotal = () => {
         const days = calculateDays();
-        return days * (vehicle?.rentPerDay || 0);
+        return days * getRentPrice();
     };
 
     const handleInputChange = (e) => {
@@ -91,7 +107,7 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
         setError("");
         
         // Check availability when dates change
-        if ((name === "startDate" || name === "endDate") && vehicle?._id) {
+        if ((name === "startDate" || name === "endDate") && entity?._id) {
             const newStartDate = name === "startDate" ? value : formData.startDate;
             const newEndDate = name === "endDate" ? value : formData.endDate;
             
@@ -104,17 +120,15 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
     };
 
     const checkAvailability = async (startDate, endDate) => {
-        if (!startDate || !endDate || !vehicle?._id) return;
+        if (!startDate || !endDate || !entity?._id) return;
         
         setCheckingAvailability(true);
         try {
-            const response = await axiosInstance.get("/bookings/check-availability", {
-                params: {
-                    vehicleId: vehicle._id,
-                    startDate,
-                    endDate
-                }
-            });
+            const params = isSparePart 
+                ? { sparePartId: sparePart._id, startDate, endDate }
+                : { vehicleId: vehicle._id, startDate, endDate };
+            
+            const response = await axiosInstance.get("/bookings/check-availability", { params });
 
             if (response.data.success) {
                 setAvailabilityStatus({
@@ -170,13 +184,11 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
             if (availabilityStatus === null || checkingAvailability) {
                 setCheckingAvailability(true);
                 try {
-                    const response = await axiosInstance.get("/bookings/check-availability", {
-                        params: {
-                            vehicleId: vehicle._id,
-                            startDate: formData.startDate,
-                            endDate: formData.endDate
-                        }
-                    });
+                    const params = isSparePart
+                        ? { sparePartId: sparePart._id, startDate: formData.startDate, endDate: formData.endDate }
+                        : { vehicleId: vehicle._id, startDate: formData.startDate, endDate: formData.endDate };
+                    
+                    const response = await axiosInstance.get("/bookings/check-availability", { params });
 
                     if (response.data.success) {
                         const newStatus = {
@@ -243,11 +255,12 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
 
             // Prepare booking data
             const bookingData = {
-                vehicleId: vehicle._id,
+                ...(isSparePart ? { sparePartId: sparePart._id } : { vehicleId: vehicle._id }),
+                bookingType: isSparePart ? "sparePart" : "vehicle",
                 startDate: formData.startDate,
                 endDate: formData.endDate,
                 totalDays: days,
-                rentPerDay: vehicle.rentPerDay,
+                rentPerDay: getRentPrice(),
                 totalAmount: total,
                 notes: formData.notes || ""
             };
@@ -339,8 +352,8 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                     <div className="text-center">
                         <X className="mx-auto text-red-600 mb-4" size={48} />
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Restricted</h2>
-                        <p className="text-gray-600 mb-6">
-                            Vendors and admins cannot book vehicles.
+                                <p className="text-gray-600 mb-6">
+                            Vendors and admins cannot make bookings.
                         </p>
                         <Button onClick={onClose} className="w-full">
                             Close
@@ -360,8 +373,10 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Book Vehicle</h2>
-                        <p className="text-sm text-gray-600 mt-1">{vehicle?.name}</p>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                            {isSparePart ? "Book Spare Part" : "Book Vehicle"}
+                        </h2>
+                        <p className="text-sm text-gray-600 mt-1">{entity?.name}</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -418,7 +433,7 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                     {/* Step 1: Select Dates */}
                     {step === 1 && (
                         <div className="space-y-6">
-                            {!hasLicense && (
+                            {!isSparePart && !hasLicense && (
                                 <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg">
                                     <div className="flex items-start gap-3">
                                         <AlertCircle className="text-yellow-600 flex-shrink-0 mt-0.5" size={20} />
@@ -524,7 +539,7 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                                             </div>
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-gray-600">Price per day:</span>
-                                                <span className="font-semibold">Rs. {vehicle?.rentPerDay}</span>
+                                                <span className="font-semibold">Rs. {getRentPrice()}</span>
                                             </div>
                                             <div className="border-t border-gray-200 pt-2 flex justify-between">
                                                 <span className="font-semibold text-gray-900">Total Amount:</span>
@@ -680,8 +695,8 @@ export default function BookingModal({ isOpen, onClose, vehicle }) {
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-600">Vehicle:</span>
-                                        <span className="font-medium">{vehicle?.name}</span>
+                                        <span className="text-gray-600">{isSparePart ? "Spare Part" : "Vehicle"}:</span>
+                                        <span className="font-medium">{entity?.name}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">Start Date:</span>
