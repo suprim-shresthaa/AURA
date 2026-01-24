@@ -4,37 +4,6 @@ import User from "../models/user.model.js";
 import Order from "../models/order.model.js";
 import sendEmail from "../utils/emailTemplates.js";
 
-const CART_LOCK_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-
-/**
- * Check if a spare part is locked by another user
- */
-const isSparePartLocked = async (sparePartId, currentUserId) => {
-    const sparePart = await SparePart.findById(sparePartId);
-    
-    if (!sparePart || !sparePart.cartLock.isLocked) {
-        return false;
-    }
-    
-    // Check if lock has expired
-    if (sparePart.cartLock.lockExpiresAt < new Date()) {
-        await SparePart.findByIdAndUpdate(sparePartId, {
-            "cartLock.isLocked": false,
-            "cartLock.lockedBy": null,
-            "cartLock.lockedAt": null,
-            "cartLock.lockExpiresAt": null
-        });
-        return false;
-    }
-    
-    // Check if locked by current user (not locked for them)
-    if (sparePart.cartLock.lockedBy.toString() === currentUserId.toString()) {
-        return false;
-    }
-    
-    return true;
-};
-
 /**
  * Add item to cart (NO locking at this stage)
  * Locking only happens during checkout when initiateCartPayment is called
@@ -71,6 +40,20 @@ export const addToCart = async (req, res) => {
             return res.status(400).json({ 
                 message: `Only ${sparePart.stock} items available in stock` 
             });
+        }
+        
+        // Check if spare part was updated within the last 2 days
+        if (sparePart.updatedAt) {
+            const TWO_DAYS = 1000 * 60 * 60 * 24 * 2;
+            const updatedAtTime = new Date(sparePart.updatedAt).getTime();
+            const currentTime = Date.now();
+            const isRecentlyUpdated = updatedAtTime > currentTime - TWO_DAYS;
+            
+            if (isRecentlyUpdated) {
+                return res.status(400).json({ 
+                    message: "This item was recently updated. Please wait 2 days before adding to cart." 
+                });
+            }
         }
         
         // Get or create cart for user

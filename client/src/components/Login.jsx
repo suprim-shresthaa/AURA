@@ -7,6 +7,7 @@ import { AppContent } from "./context/AppContext";
 import Loading from "./ui/Loading";
 import axios from "axios";
 import { message } from "antd";
+import { toast } from "react-toastify";
 
 const Login = () => {
     const [isPasswordShown, setIsPasswordShown] = useState(false);
@@ -40,17 +41,9 @@ const Login = () => {
                 message.success("Login successful!");
                 navigate("/");
                 window.location.reload();
-            } else {
-                throw new Error(data.message || "Login failed");
             }
         } catch (error) {
-            console.error("Login error:", error);
-            const errorMessage =
-                error.response?.status === 403
-                    ? `Account is banned: ${error.response?.data?.banReason || "No reason provided"
-                    }`
-                    : error.response?.data?.message || "Login failed";
-            message.error(errorMessage);
+            toast.error(error.response?.data?.message || "Login failed");
         } finally {
             setIsLoading(false);
         }

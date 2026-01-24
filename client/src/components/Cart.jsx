@@ -119,7 +119,7 @@ export default function Cart() {
                                 <CartItem
                                     key={item.sparePartId}
                                     item={item}
-                                    onRemove={() => handleRemoveItem(item.sparePartId)}
+                                    onRemove={() => handleRemoveItem(item.sparePartId?._id)}
                                     loading={loading}
                                 />
                             ))}

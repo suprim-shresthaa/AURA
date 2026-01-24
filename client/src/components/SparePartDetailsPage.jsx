@@ -30,7 +30,7 @@ export default function SparePartDetailsPage() {
     const [quantity, setQuantity] = useState(1);
     const [addingToCart, setAddingToCart] = useState(false);
     const [showBookingModal, setShowBookingModal] = useState(false);
-
+    const [canBook, setCanBook] = useState(false);
     useEffect(() => {
         const fetchSparePart = async () => {
             try {
@@ -39,6 +39,7 @@ export default function SparePartDetailsPage() {
                 if (res.data.data.images && res.data.data.images.length > 0) {
                     setSelectedImage(res.data.data.images[0]);
                 }
+               
             } catch (err) {
                 console.error("Error fetching spare part:", err);
             } finally {
@@ -48,6 +49,16 @@ export default function SparePartDetailsPage() {
         fetchSparePart();
     }, [id]);
 
+    useEffect(() => {
+        if (sparePart) {
+            const TWO_DAYS = 1000 * 60 * 60 * 24 * 2;
+            const updatedAtTime = new Date(sparePart.updatedAt).getTime();
+            const currentTime = Date.now();
+            // Disable booking and cart if updatedAt is less than 2 days from current date
+            const isRecentlyUpdated = updatedAtTime > currentTime - TWO_DAYS;
+            setCanBook(!isRecentlyUpdated); // Allow booking only if NOT recently updated (2+ days old)
+        }
+    }, [sparePart?.updatedAt]);
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -283,12 +294,12 @@ export default function SparePartDetailsPage() {
                             {hasRentPrice && (
                                 <Button
                                     onClick={() => setShowBookingModal(true)}
-                                    disabled={!isInStock}
+                                    disabled={!isInStock || !canBook}
                                     size="lg"
                                     className="w-full h-12 cursor-pointer bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Calendar className="w-4 h-4 mr-2" />
-                                    {isInStock ? "Book Now" : "Out of Stock"}
+                                    {!canBook ? "Recently Updated - Booking Disabled" : isInStock ? "Book Now" : "Out of Stock"}
                                 </Button>
                             )}
 
@@ -331,12 +342,12 @@ export default function SparePartDetailsPage() {
                             {hasSellPrice && (
                                 <Button
                                     onClick={handleAddToCart}
-                                    disabled={!isInStock || addingToCart}
+                                    disabled={!isInStock || !canBook || addingToCart}
                                     size="lg"
                                     className="w-full h-12 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <ShoppingCart className="w-4 h-4 mr-2" />
-                                    {addingToCart ? "Adding..." : isInStock ? "Add to Cart" : "Out of Stock"}
+                                    {addingToCart ? "Adding..." : !canBook ? "Recently Updated - Cart Disabled" : isInStock ? "Add to Cart" : "Out of Stock"}
                                 </Button>
                             )}
 
@@ -376,12 +387,12 @@ export default function SparePartDetailsPage() {
                                     </div>
                                     <Button
                                         onClick={handleAddToCart}
-                                        disabled={!isInStock || addingToCart}
+                                        disabled={!isInStock || !canBook || addingToCart}
                                         size="lg"
                                         className="w-full h-12 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <ShoppingCart className="w-4 h-4 mr-2" />
-                                        {addingToCart ? "Adding..." : isInStock ? "Add to Cart" : "Out of Stock"}
+                                        {addingToCart ? "Adding..." : !canBook ? "Recently Updated - Cart Disabled" : isInStock ? "Add to Cart" : "Out of Stock"}
                                     </Button>
                                 </>
                             )}

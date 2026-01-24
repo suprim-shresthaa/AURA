@@ -273,7 +273,7 @@ export default function VehicleDetailsPage() {
                                     }
                                     setIsBookingModalOpen(true);
                                 }}
-                                disabled={!vehicle.isAvailable}
+                                disabled={!vehicle.isAvailable }
                                 size="lg"
                                 className="w-full h-12 cursor-pointer"
                             >

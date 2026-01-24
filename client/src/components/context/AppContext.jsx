@@ -102,6 +102,7 @@ export const AppContextProvider = (props) => {
     };
 
     const removeItemFromCart = async (sparePartId) => {
+        console.log("sparePartId", sparePartId);
         try {
             const { data } = await axios.post(
                 `${backendUrl}/api/cart/remove`,
