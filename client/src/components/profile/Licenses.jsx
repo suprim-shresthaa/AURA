@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useContext, useMemo } from "react";
 import { FileText, Upload, CheckCircle, XCircle, Clock, AlertCircle, Car } from "lucide-react";
 import axiosInstance from "@/lib/axiosInstance";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppContent } from "../context/AppContext";
-import Loading from "@/components/ui/Loading";
+import Loading from "@/components/Loading";
 import { toast } from "react-toastify";
 
 const vehicleTypes = ["Car", "Bike", "Scooter", "Jeep", "Van"];
@@ -188,10 +186,10 @@ const Licenses = () => {
           <p className="text-gray-600 mt-1">Manage your driving licenses for different vehicle types</p>
         </div>
         {availableVehicleTypes.length > 0 && !showUploadForm && (
-          <Button onClick={() => setShowUploadForm(true)} className="bg-blue-600 hover:bg-blue-700">
+          <button onClick={() => setShowUploadForm(true)} className="bg-primary text-white py-2 px-4 rounded-md flex items-center hover:bg-primary-700 cursor-pointer">
             <Upload className="mr-2 h-4 w-4" />
             Upload License
-          </Button>
+          </button>
         )}
       </div>
 
@@ -203,11 +201,9 @@ const Licenses = () => {
       )}
 
       {showUploadForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload New License</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div  className="border-2 rounded-lg p-4 flex items-start gap-3">
+          <div className="text-lg font-semibold p-2  mb-4">Upload License</div>
+          <div className="flex-1">
             <form onSubmit={handleUpload} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -265,15 +261,15 @@ const Licenses = () => {
               </div>
 
               <div className="flex gap-3 justify-end pt-4 border-t">
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   onClick={cancelUpload}
                   disabled={uploading}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 flex items-center"
                 >
                   Cancel
-                </Button>
-                <Button type="submit" disabled={uploading || selectedVehicleTypes.length === 0 || !licenseImage}>
+                </button>
+                <button type="submit" disabled={uploading || selectedVehicleTypes.length === 0 || !licenseImage} className="px-4 py-2 bg-primary text-white cursor-pointer rounded-md hover:bg-primary/90 flex items-center">
                   {uploading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
@@ -285,16 +281,16 @@ const Licenses = () => {
                       Upload License
                     </>
                   )}
-                </Button>
+                </button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {licenses.length === 0 && !showUploadForm ? (
-        <Card>
-          <CardContent className="pt-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="pt-6">
             <div className="text-center py-12">
               <FileText className="mx-auto text-gray-400 mb-4" size={48} />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No Licenses Uploaded</h3>
@@ -302,14 +298,14 @@ const Licenses = () => {
                 Upload your driving license. You can use the same license image for multiple vehicle types.
               </p>
               {availableVehicleTypes.length > 0 && (
-                <Button onClick={() => setShowUploadForm(true)} className="bg-blue-600 hover:bg-blue-700">
+                <button onClick={() => setShowUploadForm(true)} className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 flex items-center justify-center mx-auto">
                   <Upload className="mr-2 h-4 w-4" />
                   Upload Your First License
-                </Button>
+                </button>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : (
         <div className="grid gap-4">
           {groupedLicenses.map((group) => {
@@ -337,19 +333,17 @@ const Licenses = () => {
             const rejectionReasons = [...new Set(rejectedLicenses.map(l => l.rejectionReason).filter(Boolean))];
 
             return (
-              <Card key={group.key} className="overflow-hidden">
-                <CardHeader>
+              <div  key={group.key} className="overflow-hidden bg-white shadow sm:rounded-lg p-6">
+                <div>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <Car className="h-5 w-5 text-blue-600" />
-                      </div>
+                    
                       <div>
-                        <CardTitle className="text-lg">
+                        <div className="text-lg font-semibold text-gray-900 mb-10">
                           {isMultipleTypes 
                             ? `License for ${vehicleTypes.length} Vehicle Types` 
                             : `${vehicleTypes[0]} License`}
-                        </CardTitle>
+                        </div>
                         <div className="flex flex-wrap gap-2 mt-2">
                           {vehicleTypes.map((type) => (
                             <span
@@ -373,8 +367,8 @@ const Licenses = () => {
                       {statusInfo.label}
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent>
+                </div>
+                <div className="mt-4">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       {rejectionReasons.length > 0 && (
@@ -441,21 +435,20 @@ const Licenses = () => {
                       <p className="text-sm text-gray-600 mb-2">
                         Your license was rejected for {rejectedLicenses.length > 1 ? "these vehicle types" : "this vehicle type"}. You can upload a new one.
                       </p>
-                      <Button
+                      <button
                         onClick={() => {
                           setSelectedVehicleTypes(vehicleTypes);
                           setShowUploadForm(true);
                         }}
-                        variant="outline"
-                        size="sm"
+                        className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 flex items-center"
                       >
                         <Upload className="mr-2 h-4 w-4" />
                         Re-upload License
-                      </Button>
+                      </button>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>

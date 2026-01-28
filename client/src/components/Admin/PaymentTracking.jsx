@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Search, Filter, Download, Eye, Calendar, User, CreditCard, DollarSign, CheckCircle, Clock, XCircle } from "lucide-react";
 import { fetchAllPayments, fetchPaymentById } from "@/data/api";
-import Loading from "@/components/ui/Loading";
+import Loading from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import {
     Card,

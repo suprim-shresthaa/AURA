@@ -1,4 +1,3 @@
-// src/components/profile/ProfileInfo.jsx
 import React, { useContext, useEffect, useState } from "react";
 import { Mail, Phone, MapPin, Edit, Save, X } from "lucide-react";
 import { AppContent } from "../context/AppContext";

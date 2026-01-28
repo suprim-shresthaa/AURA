@@ -1,12 +1,5 @@
 import { cn } from '@/lib/utils';
 
-/**
- * PageHeader - A reusable header component for listing pages
- * @param {string} title - The main title of the page
- * @param {string} [description] - Optional description/subtitle text
- * @param {string} [className] - Additional CSS classes
- * @param {React.ReactNode} [children] - Optional additional content to render below the description
- */
 export function PageHeader({ title, description, className, children }) {
   return (
     <div className={cn('mb-8 relative w-full', className)}>

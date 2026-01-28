@@ -1,10 +1,9 @@
 import React, { useContext, useState, useEffect } from "react";
 import { Mail, Lock, Check, X, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import InputField from "./ui/InputField";
+import InputField from "./InputField";
 import { AppContent } from "./context/AppContext";
 import { message } from "antd";
-import Loading from "./ui/Loading";
+import Loading from "./Loading";
 import { Link } from "react-router-dom";
 
 /**
@@ -318,14 +317,13 @@ const ResetPassword = () => {
                                 {success && <p className="text-green-600 text-sm">{success}</p>}
                                 {error && !email && <p className="text-red-600 text-sm">{error}</p>}
 
-                                <Button
+                                <button
                                     type="submit"
-                                    size="lg"
-                                    className="w-full h-12"
+                                    className="w-full h-12 bg-primary text-white rounded-lg cursor-pointer text-sm sm:text-base"
                                     disabled={isLoading}
                                 >
                                     {isLoading ? "Sending OTP..." : "Send OTP"}
-                                </Button>
+                                </button>
 
                                 <div className="text-center">
                                     <Link
@@ -383,13 +381,13 @@ const ResetPassword = () => {
                             {success && <p className="text-green-600 text-sm mb-4 text-center">{success}</p>}
                             {error && <p className="text-red-600 text-sm mb-4 text-center">{error}</p>}
 
-                            <Button
+                            <button
                                 onClick={handleVerifyOtp}
                                 disabled={isLoading || timeLeft <= 0}
-                                className="w-full h-10 sm:h-12 mb-3 sm:mb-4 text-sm sm:text-base"
+                                className="w-full h-10 sm:h-12 mb-3 sm:mb-4 text-sm sm:text-base bg-primary text-white rounded-lg cursor-pointer"
                             >
                                 {isLoading ? "Verifying..." : "Verify OTP"}
-                            </Button>
+                            </button>
 
                             <div className="text-xs sm:text-sm text-center text-gray-600 mb-4">
                                 Didn't receive the code?{" "}
@@ -481,14 +479,14 @@ const ResetPassword = () => {
                                 {success && <p className="text-green-600 text-sm">{success}</p>}
                                 {error && <p className="text-red-600 text-sm">{error}</p>}
 
-                                <Button
+                                <button
                                     type="submit"
                                     size="lg"
-                                    className="w-full h-12"
+                                    className="w-full h-12 bg-primary text-white rounded-lg cursor-pointer"
                                     disabled={!isValidPassword || isLoading}
                                 >
                                     {isLoading ? "Resetting Password..." : "Reset Password"}
-                                </Button>
+                                </button>
 
                                 <div className="text-center">
                                     <Link

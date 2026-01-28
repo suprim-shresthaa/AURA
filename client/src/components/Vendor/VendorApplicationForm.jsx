@@ -3,7 +3,6 @@ import { Building2, Mail, Phone, MapPin, IdCard, FileUp, Briefcase } from "lucid
 import { useContext } from "react";
 import { AppContent } from '../context/AppContext'
 import { toast } from "sonner"
-import { Button } from "../ui/button";
 
 const VendorApplicationForm = () => {
     const { userData } = useContext(AppContent)
@@ -273,13 +272,13 @@ const VendorApplicationForm = () => {
                     </div>
 
                     {/* Submit Button */}
-                            <Button
+                            <button
                             type="submit"
                         disabled={submitting}
-                        className="w-full h-16"
+                        className="w-full bg-primary text-white font-semibold py-3 rounded-xl cursor-pointer h-16"
                     >
                         {submitting ? "Submitting..." : "Submit Application"}
-                    </Button>
+                    </button>
                 </form>
             </div>
         </div>

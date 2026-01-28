@@ -1,14 +1,11 @@
 import React, { useContext, useState, useEffect } from "react";
 import { Car, User, Mail, Lock, Check, X, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import InputField from "./ui/InputField";
 import { AppContent } from "./context/AppContext";
 import { message } from "antd";
-import Loading from "./ui/Loading";
+import InputField from "./InputField";
+import Loading from "./Loading";
 
-/**
- * Signup component with email verification via OTP.
- */
 const Signup = () => {
     const { backendUrl } = useContext(AppContent);
 
@@ -333,15 +330,15 @@ const Signup = () => {
                                     </div>
                                 )}
 
-                                <Button
+                                <button
                                     text={isLoading ? "Creating your account..." : "Create Account"}
                                     type="submit"
                                     size="lg"
-                                    className="w-full h-12"
+                                    className="w-full bg-primary text-white rounded-lg py-3 cursor-pointer h-12"
                                     disabled={!isValidPassword || !contact || contact.length !== 10 || !address || address.trim().length === 0 || isLoading}
                                 >
                                     {isLoading ? "Creating your account..." : "Create Account"}
-                                </Button>
+                                </button>
                                 <div className="mt-4 sm:mt-6 relative">
                                     <div className="absolute inset-0 flex items-center">
                                         <div className="w-full border-t border-gray-100"></div>
@@ -353,7 +350,7 @@ const Signup = () => {
 
                                 <p className="text-xs sm:text-sm text-center text-gray-500 mt-4 sm:mt-6">
                                     Already have an account?{" "}
-                                    <a href="/login" className="font-semibold text-blue-600 hover:text-blue-700">
+                                    <a href="/login" className="font-semibold text-primary">
                                         Sign in
                                     </a>
                                 </p>
@@ -398,26 +395,26 @@ const Signup = () => {
                                     : "Code has expired. Please request a new one."}
                             </p>
 
-                            <Button
+                            <button
                                 text={isLoading ? "Verifying..." : "Verify Email"}
                                 onClick={handleVerify}
                                 disabled={isLoading || timeLeft <= 0}
-                                className="w-full h-10 sm:h-12 mb-3 sm:mb-4 text-sm sm:text-base"
+                                className="w-full h-10 bg-primary hover:bg-primary-700 text-white rounded-lg sm:h-12 mb-3 sm:mb-4 text-sm sm:text-base"
                             >
                                 {isLoading ? "Verifying..." : "Verify Email"}
-                            </Button>
+                            </button>
 
                             <div className="text-xs sm:text-sm text-center text-gray-600">
                                 Didn't receive the code?{" "}
                                 {resendDisabled ? (
                                     <span className="text-blue-600">Resend available in {countdown}s</span>
                                 ) : (
-                                    <Button
+                                    <button
                                         onClick={handleResendOtp}
                                         className="text-secondary-foreground hover:text-primary font-medium hover:underline"
                                     >
                                         Resend OTP
-                                    </Button>
+                                    </button>
                                 )}
                             </div>
                         </>

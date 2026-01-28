@@ -1,18 +1,8 @@
-import { Button } from '@/components/ui/button';
-import { AppContent } from '../components/context/AppContext';
-import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { heroContent } from '@/data/mockdata';
-const heroButtonStyles = {
-    primary: "bg-[#1380ec] text-white hover:bg-[#0f64b8]",
-    secondary: "bg-[#e7edf3] text-[#0d141b] hover:bg-[#d5e0ed]",
-  };
-export default function HeroSection() {
-    const {userData} = useContext(AppContent);
-    const navigate = useNavigate();
 
-    // console.log(userData);
-    
+export default function HeroSection() {
+    const navigate = useNavigate();
     return (
       <section className="relative w-full h-[600px] flex items-center justify-center overflow-hidden">
         {/* Background Image */}
@@ -40,14 +30,13 @@ export default function HeroSection() {
           {/* Action Buttons */}
           <div className="flex flex-wrap justify-center gap-3">
             {heroContent.actions.map((action) => (
-              <Button
+              <button
                 key={action.label}
-                size="lg"
                 onClick={() => action.path && navigate(action.path)}
-                className={`min-w-[160px] h-12 px-6 font-bold tracking-[0.015em] ${heroButtonStyles[action.variant]}`}
+                className='inline-flex cursor-pointer items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-white shadow-sm transition-all hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50'
               >
                 {action.label}
-              </Button>
+              </button>
             ))}
           </div>
         </div>

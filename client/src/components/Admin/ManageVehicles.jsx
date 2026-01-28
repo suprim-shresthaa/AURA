@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "@/lib/axiosInstance";
 import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
-import Loading from "@/components/ui/Loading";
+import Loading from "@/components/Loading";
 
 const ManageVehicles = () => {
   const navigate = useNavigate();

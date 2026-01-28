@@ -12,7 +12,7 @@ import {
     RefreshCw,
 } from "lucide-react";
 import { fetchAllPayments } from "@/data/api";
-import Loading from "@/components/ui/Loading";
+import Loading from "@/components/Loading";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

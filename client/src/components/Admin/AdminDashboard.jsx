@@ -12,7 +12,7 @@ import {
     XCircle,
 } from "lucide-react";
 import { fetchAdminStats } from "@/data/api";
-import Loading from "@/components/ui/Loading";
+import Loading from "@/components/Loading";
 
 const Dashboard = () => {
     const [stats, setStats] = useState(null);

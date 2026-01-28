@@ -1,4 +1,3 @@
-// src/components/profile/Sidebar.jsx
 import React, { useContext, useRef, useState } from "react";
 import { User, Settings, LogOut, Edit, ArrowRightCircle, Calendar, FileText, ShoppingBag } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
@@ -143,20 +142,6 @@ const Sidebar = ({ userData }) => {
                 >
                     <Calendar className="mr-3 h-5 w-5" />
                     My Bookings
-                </NavLink>
-
-                <NavLink
-                    to="/profile/orders"
-                    className={({ isActive }) =>
-                        `w-full flex items-center px-6 py-3 text-sm font-medium ${
-                            isActive
-                                ? "bg-amber-50 text-amber-700 border-l-4 border-amber-600"
-                                : "text-gray-600 hover:bg-gray-50"
-                        }`
-                    }
-                >
-                    <ShoppingBag className="mr-3 h-5 w-5" />
-                    My Orders
                 </NavLink>
 
                 {showLicenses && (

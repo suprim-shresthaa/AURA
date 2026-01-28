@@ -1,26 +1,20 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
     Car,
-    User,
     Mail,
     Phone,
     MapPin,
     Calendar,
     Gauge,
-    DollarSign,
     Fuel,
     Users,
     Settings,
-    Package,
     ArrowLeft
 } from "lucide-react";
 import BookingModal from "./BookingModal";
 import { AppContent } from "./context/AppContext";
-import { Button } from "./ui/button";
-
-const API_URL = "http://localhost:5001/api/vehicles";
+import axiosInstance from "@/lib/axiosInstance";
 
 export default function VehicleDetailsPage() {
     const { id } = useParams();
@@ -36,7 +30,7 @@ export default function VehicleDetailsPage() {
     useEffect(() => {
         const fetchVehicle = async () => {
             try {
-                const res = await axios.get(`${API_URL}/${id}`);
+                const res = await axiosInstance.get(`/vehicles/${id}`);
                 setVehicle(res.data.data);
                 setSelectedImage(res.data.data.mainImage);
             } catch (err) {
@@ -87,15 +81,13 @@ export default function VehicleDetailsPage() {
         <div className="min-h-screen">
             <div className="max-w-6xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
                 {/* Header */}
-                                 {/* Back Button */}
-                                 <Button
-                    variant="ghost"
+                <button
                     onClick={() => navigate("/vehicles")}
-                    className="mb-4"
+                    className="mb-4 flex items-center text-sm text-gray-600 hover:text-primary transition-colors cursor-pointer" 
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Vehicles
-                </Button>
+                </button>
                 <div className="mb-6">
                     <h1 className="text-3xl font-bold text-gray-900 mb-3">{vehicle.name}</h1>
                     <div className="flex flex-wrap items-center gap-3">
@@ -251,13 +243,12 @@ export default function VehicleDetailsPage() {
 
                         {/* Action Button */}
                         {!isLoggedin ? (
-                            <Button
+                            <button
                                 onClick={() => navigate("/login")}
-                                size="lg"
-                                className="w-full h-12 cursor-pointer"
+                                className="w-full h-12 bg-primary text-white font-semibold py-3 rounded-xl cursor-pointer"
                             >
                                 Login to Book
-                            </Button>
+                            </button>
                         ) : !canBook ? (
                             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                 <p className="text-yellow-800 text-sm font-medium">
@@ -265,7 +256,7 @@ export default function VehicleDetailsPage() {
                                 </p>
                             </div>
                         ) : (
-                            <Button
+                            <button
                                 onClick={() => {
                                     if (!vehicle.isAvailable) {
                                         alert("This vehicle is not available for booking");
@@ -274,11 +265,10 @@ export default function VehicleDetailsPage() {
                                     setIsBookingModalOpen(true);
                                 }}
                                 disabled={!vehicle.isAvailable }
-                                size="lg"
-                                className="w-full h-12 cursor-pointer"
+                                className="w-full bg-primary text-white font-semibold py-3  rounded-lg h-12 cursor-pointer"
                             >
                                 {vehicle.isAvailable ? "Book Now" : "Not Available"}
-                            </Button>
+                            </button>
                         )}
                     </div>
                 </div>

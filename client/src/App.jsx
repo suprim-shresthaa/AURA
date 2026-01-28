@@ -20,7 +20,6 @@ import VehicleListing from "./components/VehiclesListing";
 import Profile from "./components/profile/Profile";
 import ProfileInfo from "./components/profile/ProfileInfo";
 import Bookings from "./components/profile/Bookings";
-import Orders from "./components/profile/Orders";
 import Licenses from "./components/profile/Licenses";
 import Settings from "./components/profile/Settings";
 import VendorDashboard from "./components/Vendor/VendorDashboard";
@@ -57,7 +56,6 @@ function AppContent() {
           <Route path="/profile" element={<Profile />}>
             <Route index element={<ProfileInfo />} />
             <Route path="bookings" element={<Bookings />} />
-            <Route path="orders" element={<Orders />} />
             <Route path="licenses" element={<Licenses />} />
             <Route path="settings" element={<Settings />} />
           </Route>

@@ -1,4 +1,3 @@
-// src/components/profile/Settings.jsx
 import React, { useContext, useState } from "react";
 import { Eye, EyeOff, Check, X } from "lucide-react";
 import axios from "axios";

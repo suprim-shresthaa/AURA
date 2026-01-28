@@ -4,7 +4,7 @@ import axiosInstance from "@/lib/axiosInstance";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ConfirmationModal from "@/components/ui/ConfirmationModal";
-import Loading from "@/components/ui/Loading";
+import Loading from "@/components/Loading";
 
 const ManageLicenses = () => {
   const [licenses, setLicenses] = useState([]);

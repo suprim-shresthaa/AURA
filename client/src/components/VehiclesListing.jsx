@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import axiosInstance from '@/lib/axiosInstance';
 import { Search, Car, RotateCcw } from 'lucide-react';
 import VehicleCard from './VehicleCard';
-import { Button } from './ui/button';
 import { PageHeader } from './ui/PageHeader';
 import { AppContent } from './context/AppContext';
 
 const VehicleListing = () => {
-    const navigate = useNavigate();
     const { userData, isLoggedin } = useContext(AppContent);
     const [searchParams, setSearchParams] = useSearchParams();
     const keywordFromUrl = searchParams.get('keyword') || '';
@@ -22,7 +20,6 @@ const VehicleListing = () => {
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [allCities, setAllCities] = useState([]);
-    const [userLicenses, setUserLicenses] = useState([]);
 
     // Sync searchTerm with URL when URL changes (e.g., browser back/forward)
     useEffect(() => {
@@ -67,7 +64,6 @@ const VehicleListing = () => {
                         const approvedLicenses = (response.data.data || []).filter(
                             license => license.status === "approved"
                         );
-                        setUserLicenses(approvedLicenses.map(l => l.vehicleType));
                     }
                 } catch (error) {
                     console.error("Error fetching licenses:", error);
@@ -235,15 +231,13 @@ const VehicleListing = () => {
                                 ))}
                             </select>
                         )}
-                        <Button
+                        <button
                             onClick={resetFilters}
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-100"
                         >
                             <RotateCcw className="w-4 h-4" />
                             Reset Filters
-                        </Button>
+                        </button>
                     </div>
                 </div>
 

@@ -1,10 +1,8 @@
 import React, { useContext, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Car, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import InputField from "./ui/InputField";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { AppContent } from "./context/AppContext";
-import Loading from "./ui/Loading";
+import Loading from "./Loading";
 import axios from "axios";
 import { message } from "antd";
 import { toast } from "react-toastify";
@@ -116,15 +114,14 @@ const Login = () => {
                         </div>
 
                         {/* Submit Button */}
-                        <Button
+                        <button
                             text={isLoading ? "Signing in..." : "Sign In"}
                             type="submit"
-                            size="lg"
-                            className="w-full h-12"
+                            className="bg-primary cursor-pointer text-white py-3 rounded-xl w-full h-12"
                             disabled={isLoading}
                         >
                             {isLoading ? "Signing in..." : "Sign In"}
-                        </Button>
+                        </button>
                         {/* Divider */}
                         <div className="mt-6 relative">
                             <div className="absolute inset-0 flex items-center">

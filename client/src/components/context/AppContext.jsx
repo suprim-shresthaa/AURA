@@ -1,6 +1,5 @@
 import { createContext, useState, useEffect } from "react";
 import axios from "axios";
-import { toast } from "react-toastify";
 import Cookies from "js-cookie";
 
 export const AppContent = createContext();
@@ -21,13 +20,10 @@ export const AppContextProvider = (props) => {
     // Single auth check on mount
     useEffect(() => {
         const checkAuth = async () => {
-            // console.log("🔍 Checking authentication...");
             try {
                 const { data } = await axios.get(`${backendUrl}/api/auth/is-auth`);
-                // console.log("✅ Auth check response:", data);
                 if (data.success) {
                     setIsLoggedin(true);
-                    // console.log("🔹 Auth successful — fetching user data...");
                     await getUserData();
                 } else {
                     console.log("❌ Auth failed — not logged in.");
@@ -45,14 +41,11 @@ export const AppContextProvider = (props) => {
     }, [backendUrl]);
 
     const getUserData = async () => {
-        // console.log("📡 getUserData() called...");
         try {
             const { data } = await axios.post(`${backendUrl}/api/user/data`);
-            // console.log("📦 getUserData response:", data);
             if (data.success) {
                 setUserData(data.userData);
                 setIsLoggedin(true);
-                // console.log("✅ User data set successfully:", data.userData);
             } else {
                 console.log("⚠️ getUserData returned success = false");
             }
