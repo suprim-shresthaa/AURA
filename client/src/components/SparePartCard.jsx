@@ -11,8 +11,6 @@ export default function SparePartCard({ part }) {
         category,
         brand,
         rentPrice,
-        sellPrice,
-        price,
         stock,
         images,
         isAvailable,
@@ -86,8 +84,6 @@ export default function SparePartCard({ part }) {
                 <div className="flex flex-col">
                     <p className="text-sm font-bold text-gray-900">
                         {rentPrice && `Rent Price: Rs. ${rentPrice?.toLocaleString()}`}<br />
-                        {sellPrice && `Sell Price: Rs. ${sellPrice?.toLocaleString()}`}<br />
-                        {price && `Price: Rs. ${price?.toLocaleString()}`}
                     </p>
                 </div>
                 <Link 

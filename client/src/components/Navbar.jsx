@@ -4,16 +4,14 @@ import { Button } from "@/components/ui/button";
 import { navLinks } from "@/data/mockdata";
 import { AppContent } from "./context/AppContext";
 import useLogout from "../hooks/useLogout";
-import { Menu, X, LogOut, User, ShoppingCart } from "lucide-react";
+import { Menu, X, LogOut, User } from "lucide-react";
 
 const Navbar = () => {
-  const { isLoggedin, userData, cartItems } = useContext(AppContent);
+  const { isLoggedin, userData } = useContext(AppContent);
   const logout = useLogout();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  const cartCount = cartItems?.length || 0;
 
   const isActive = (href) => {
     if (href === "/") return location.pathname === "/";
@@ -74,20 +72,6 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             {isLoggedin ? (
               <>
-                {/* Cart Icon */}
-                <Link
-                  to="/cart"
-                  className="relative flex items-center justify-center p-2 rounded-full hover:bg-muted transition-colors"
-                  title="Shopping Cart"
-                >
-                  <ShoppingCart className="w-5 h-5 text-foreground" />
-                  {cartCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                      {cartCount > 9 ? "9+" : cartCount}
-                    </span>
-                  )}
-                </Link>
-
                 {userData?.role === "vendor" && (
                   <Link
                     to="/vendor/vehicle-upload"
@@ -182,25 +166,6 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
-
-              {/* Mobile Cart Link */}
-              {isLoggedin && (
-                <Link
-                  to="/cart"
-                  className={`block ${
-                    isActive("/cart") ? "text-primary bg-muted" : ""
-                  } hover:text-primary hover:bg-muted px-3 py-4 rounded-md text-base font-medium transition-colors flex items-center gap-2`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <ShoppingCart className="w-4 h-4" />
-                  Shopping Cart
-                  {cartCount > 0 && (
-                    <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                      {cartCount}
-                    </span>
-                  )}
-                </Link>
-              )}
 
               {/* Mobile Action Buttons */}
               {isLoggedin ? (

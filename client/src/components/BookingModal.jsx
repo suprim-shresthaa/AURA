@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { X, Calendar, DollarSign, CreditCard, Clock, CheckCircle2, FileText, AlertCircle } from "lucide-react";
+import { X, Calendar, CheckCircle2, FileText, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,19 +18,13 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
     const entity = sparePart || vehicle;
     
     const canBook = userData?.role === "user";
-    const [step, setStep] = useState(1); // 1: dates, 2: payment option, 3: payment details
+    const [step, setStep] = useState(1); // 1: dates, 2: confirm & pay
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [checkingAvailability, setCheckingAvailability] = useState(false);
     const [availabilityStatus, setAvailabilityStatus] = useState(null); // { available: true/false, bookedRanges: [] }
     
-    const [formData, setFormData] = useState({
-        startDate: "",
-        endDate: "",
-        paymentOption: "", // "now" or "todo"
-        paymentMethod: "",
-        notes: ""
-    });
+    const [formData, setFormData] = useState({ startDate: "", endDate: "", notes: "" });
 
     const [hasLicense, setHasLicense] = useState(true);
 
@@ -41,8 +35,6 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
             setFormData({
                 startDate: "",
                 endDate: "",
-                paymentOption: "",
-                paymentMethod: "",
                 notes: ""
             });
             setError("");
@@ -153,90 +145,49 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
 
 
     const handleNext = async () => {
-        if (step === 1) {
-            // Check license before proceeding
-            if (!hasLicense) {
-                setError(`You need an approved ${vehicle?.category} license to book this vehicle.`);
-                return;
-            }
-            // First validate basic date rules
-            if (!formData.startDate || !formData.endDate) {
-                setError("Please select both start and end dates");
-                return;
-            }
+        // Validate dates and availability, then go to confirmation step
+        if (!hasLicense) {
+            setError(`You need an approved ${vehicle?.category} license to book this vehicle.`);
+            return;
+        }
+        if (!formData.startDate || !formData.endDate) {
+            setError("Please select both start and end dates");
+            return;
+        }
 
-            const start = new Date(formData.startDate);
-            const end = new Date(formData.endDate);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+        const start = new Date(formData.startDate);
+        const end = new Date(formData.endDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-            if (start < today) {
-                setError("Start date cannot be in the past");
-                return;
-            }
+        if (start < today) {
+            setError("Start date cannot be in the past");
+            return;
+        }
+        if (end <= start) {
+            setError("End date must be after start date");
+            return;
+        }
 
-            if (end <= start) {
-                setError("End date must be after start date");
-                return;
-            }
-
-            // Check availability if not already checked or if dates changed
-            if (availabilityStatus === null || checkingAvailability) {
-                setCheckingAvailability(true);
-                try {
-                    const params = isSparePart
-                        ? { sparePartId: sparePart._id, startDate: formData.startDate, endDate: formData.endDate }
-                        : { vehicleId: vehicle._id, startDate: formData.startDate, endDate: formData.endDate };
-                    
-                    const response = await axiosInstance.get("/bookings/check-availability", { params });
-
-                    if (response.data.success) {
-                        const newStatus = {
-                            available: response.data.available,
-                            bookedRanges: response.data.bookedRanges || [],
-                            message: response.data.message
-                        };
-                        setAvailabilityStatus(newStatus);
-
-                        if (!response.data.available) {
-                            setError(response.data.message || "Vehicle is not available for the selected dates");
-                            setCheckingAvailability(false);
-                            return;
-                        } else {
-                            setError("");
-                            // If available, proceed to next step
-                            setStep(2);
-                        }
-                    }
-                } catch (err) {
-                    console.error("Error checking availability:", err);
-                    setError("Failed to check availability. Please try again.");
-                } finally {
-                    setCheckingAvailability(false);
-                }
-                return;
-            }
-
-            // If availability is checked and not available, show error
-            if (availabilityStatus && !availabilityStatus.available) {
-                setError(availabilityStatus.message || "Vehicle is not available for the selected dates");
-                return;
-            }
-
-            // If available, proceed to next step
-            if (availabilityStatus && availabilityStatus.available) {
+        setCheckingAvailability(true);
+        try {
+            const params = isSparePart
+                ? { sparePartId: sparePart._id, startDate: formData.startDate, endDate: formData.endDate }
+                : { vehicleId: vehicle._id, startDate: formData.startDate, endDate: formData.endDate };
+            const response = await axiosInstance.get("/bookings/check-availability", { params });
+            if (response.data.success && response.data.available) {
+                setAvailabilityStatus({ available: true, bookedRanges: response.data.bookedRanges || [] });
+                setError("");
                 setStep(2);
+            } else {
+                setAvailabilityStatus({ available: false, bookedRanges: response.data?.bookedRanges || [] });
+                setError(response.data?.message || "Not available for selected dates");
             }
-        } else if (step === 2) {
-            if (!formData.paymentOption) {
-                setError("Please select a payment option");
-                return;
-            }
-            if (formData.paymentOption === "now" && !formData.paymentMethod) {
-                setError("Please select a payment method");
-                return;
-            }
-            setStep(3);
+        } catch (err) {
+            console.error(err);
+            setError("Failed to check availability. Please try again.");
+        } finally {
+            setCheckingAvailability(false);
         }
     };
 
@@ -265,75 +216,35 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                 notes: formData.notes || ""
             };
 
-            // If payment option is "now", initiate payment (booking will be created after payment succeeds)
-            if (formData.paymentOption === "now") {
-                try {
-                    if (formData.paymentMethod === "esewa") {
-                        // eSewa payment
-                        const paymentResponse = await axiosInstance.post("/payments/esewa/initiate", {
-                            bookingData: bookingData
-                        });
-
-                        if (paymentResponse.data.success && paymentResponse.data.data.formData) {
-                            // Create and submit form to eSewa
-                            const form = document.createElement("form");
-                            form.method = "POST";
-                            form.action = paymentResponse.data.data.formUrl;
-
-                            Object.keys(paymentResponse.data.data.formData).forEach(key => {
-                                const input = document.createElement("input");
-                                input.type = "hidden";
-                                input.name = key;
-                                input.value = paymentResponse.data.data.formData[key];
-                                form.appendChild(input);
-                            });
-                            console.log(form)
-                            document.body.appendChild(form);
-                            form.submit();
-                            return; // Don't close modal yet, let eSewa handle the redirect
-                        } else {
-                            setError("Failed to initiate payment. Please try again.");
-                        }
-                    }
-                } catch (paymentErr) {
-                    console.error("Payment initiation error:", paymentErr);
-                    
-                    // Handle authentication errors specifically
-                    if (paymentErr.response?.status === 401) {
-                        const errorMessage = paymentErr.response?.data?.message || "Session expired. Please login again.";
-                        setError(errorMessage);
-                        toast.error(errorMessage);
-                        
-                        // Redirect to login after showing error
-                        setTimeout(() => {
-                            onClose();
-                            navigate("/login");
-                        }, 2000);
-                        return;
-                    }
-                    
-                    setError(
-                        paymentErr.response?.data?.message || 
-                        "Failed to initiate payment. Please try again."
-                    );
+            // Always initiate eSewa payment (booking will be created after successful payment)
+            try {
+                const paymentResponse = await axiosInstance.post("/payments/esewa/initiate", { bookingData });
+                if (paymentResponse.data.success && paymentResponse.data.data?.formData) {
+                    const form = document.createElement("form");
+                    form.method = "POST";
+                    form.action = paymentResponse.data.data.formUrl;
+                    Object.keys(paymentResponse.data.data.formData).forEach(key => {
+                        const input = document.createElement("input");
+                        input.type = "hidden";
+                        input.name = key;
+                        input.value = paymentResponse.data.data.formData[key];
+                        form.appendChild(input);
+                    });
+                    document.body.appendChild(form);
+                    form.submit();
+                    return;
                 }
-            } else {
-                // Payment deferred - create booking immediately
-                const response = await axiosInstance.post("/bookings/create", {
-                    ...bookingData,
-                    isPaymentDeferred: true,
-                    paymentMethod: null
-                });
-
-                if (response.data.success) {
-                    toast.success(response.data.message || "Booking saved successfully!");
-                    setTimeout(() => {
-                        onClose();
-                        navigate("/profile");
-                    }, 1500);
-                } else {
-                    setError(response.data.message || "Failed to create booking. Please try again.");
+                setError("Failed to initiate payment. Please try again.");
+            } catch (paymentErr) {
+                console.error("Payment initiation error:", paymentErr);
+                if (paymentErr.response?.status === 401) {
+                    const errorMessage = paymentErr.response?.data?.message || "Session expired. Please login again.";
+                    setError(errorMessage);
+                    toast.error(errorMessage);
+                    setTimeout(() => { onClose(); navigate("/login"); }, 2000);
+                    return;
                 }
+                setError(paymentErr.response?.data?.message || "Failed to initiate payment. Please try again.");
             }
         } catch (err) {
             setError(err.response?.data?.message || "Failed to process booking. Please try again.");
@@ -390,33 +301,21 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                 {/* Progress Steps */}
                 <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                     <div className="flex items-center justify-between">
-                        {[1, 2, 3].map((s) => (
+                        {[1, 2].map((s) => (
                             <div key={s} className="flex items-center flex-1">
                                 <div className="flex items-center">
                                     <div
                                         className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm ${
-                                            step >= s
-                                                ? "bg-blue-600 text-white"
-                                                : "bg-gray-200 text-gray-600"
+                                            step >= s ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-600"
                                         }`}
                                     >
                                         {step > s ? <CheckCircle2 size={16} /> : s}
                                     </div>
-                                    <span
-                                        className={`ml-2 text-sm font-medium ${
-                                            step >= s ? "text-blue-600" : "text-gray-600"
-                                        }`}
-                                    >
-                                        {s === 1 ? "Dates" : s === 2 ? "Payment" : "Confirm"}
+                                    <span className={`ml-2 text-sm font-medium ${step >= s ? "text-blue-600" : "text-gray-600"}`}>
+                                        {s === 1 ? "Dates" : "Confirm & Pay"}
                                     </span>
                                 </div>
-                                {s < 3 && (
-                                    <div
-                                        className={`flex-1 h-0.5 mx-2 ${
-                                            step > s ? "bg-blue-600" : "bg-gray-200"
-                                        }`}
-                                    />
-                                )}
+                                {s < 2 && <div className={`flex-1 h-0.5 mx-2 ${step > s ? "bg-blue-600" : "bg-gray-200"}`} />}
                             </div>
                         ))}
                     </div>
@@ -554,139 +453,15 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                         </div>
                     )}
 
-                    {/* Step 2: Payment Option */}
+                    {/* Confirm & Pay */}
                     {step === 2 && (
-                        <div className="space-y-6">
-                            <div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                                    Choose Payment Option
-                                </h3>
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setFormData(prev => ({ 
-                                                ...prev, 
-                                                paymentOption: "now",
-                                                paymentMethod: prev.paymentMethod || "esewa" // Default to esewa if not set
-                                            }));
-                                            setError("");
-                                        }}
-                                        className={`p-6 border-2 rounded-lg text-left transition-all ${
-                                            formData.paymentOption === "now"
-                                                ? "border-blue-600 bg-blue-50"
-                                                : "border-gray-200 hover:border-gray-300"
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className={`p-2 rounded-lg ${
-                                                formData.paymentOption === "now" ? "bg-blue-600" : "bg-gray-200"
-                                            }`}>
-                                                <DollarSign className="text-white" size={20} />
-                                            </div>
-                                            <span className="font-semibold text-gray-900">Pay Now</span>
-                                        </div>
-                                        <p className="text-sm text-gray-600">
-                                            Complete payment immediately and confirm your booking
-                                        </p>
-                                    </button>
-
-                                    {/* <button
-                                        type="button"
-                                        onClick={() => {
-                                            setFormData(prev => ({ ...prev, paymentOption: "todo" }));
-                                            setError("");
-                                        }}
-                                        className={`p-6 border-2 rounded-lg text-left transition-all ${
-                                            formData.paymentOption === "todo"
-                                                ? "border-blue-600 bg-blue-50"
-                                                : "border-gray-200 hover:border-gray-300"
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className={`p-2 rounded-lg ${
-                                                formData.paymentOption === "todo" ? "bg-blue-600" : "bg-gray-200"
-                                            }`}>
-                                                <Clock className="text-white" size={20} />
-                                            </div>
-                                            <span className="font-semibold text-gray-900">Save for Later</span>
-                                        </div>
-                                        <p className="text-sm text-gray-600">
-                                            Save booking to your todos and pay later
-                                        </p>
-                                    </button> */}
-                                </div>
-
-                                {formData.paymentOption === "now" && (
-                                    <div className="mt-6">
-                                        <Label className="mb-3 block">Payment Method</Label>
-                                        <div className="grid grid-cols-1 gap-4">
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setFormData(prev => ({ ...prev, paymentMethod: "esewa" }));
-                                                    setError("");
-                                                }}
-                                                className={`p-4 border-2 rounded-lg text-left transition-all ${
-                                                    formData.paymentMethod === "esewa"
-                                                        ? "border-blue-600 bg-blue-50"
-                                                        : "border-gray-200 hover:border-gray-300"
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <CreditCard className="text-blue-600" size={20} />
-                                                    <div>
-                                                        <span className="font-semibold text-gray-900 block">eSewa</span>
-                                                        <span className="text-xs text-gray-600">Mobile wallet</span>
-                                                    </div>
-                                                </div>
-                                            </button>
-                                        </div>
-                                        <p className="text-xs text-gray-500 mt-2">
-                                            You will be redirected to the secure payment page to complete your transaction.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base">Booking Summary</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Vehicle:</span>
-                                            <span className="font-medium">{vehicle?.name}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Duration:</span>
-                                            <span className="font-medium">{days} days</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Total Amount:</span>
-                                            <span className="font-bold text-blue-600">Rs. {total}</span>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
-
-                    {/* Step 3: Confirm */}
-                    {step === 3 && (
                         <div className="space-y-6">
                             <div className="text-center py-4">
                                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <CheckCircle2 className="text-green-600" size={32} />
                                 </div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                                    Review Your Booking
-                                </h3>
-                                <p className="text-sm text-gray-600">
-                                    Please review your booking details before confirming
-                                </p>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">Review & Pay with eSewa</h3>
+                                <p className="text-sm text-gray-600">You'll be redirected to eSewa to complete the payment.</p>
                             </div>
 
                             <Card>
@@ -700,28 +475,16 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">Start Date:</span>
-                                        <span className="font-medium">
-                                            {new Date(formData.startDate).toLocaleDateString()}
-                                        </span>
+                                        <span className="font-medium">{new Date(formData.startDate).toLocaleDateString()}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">End Date:</span>
-                                        <span className="font-medium">
-                                            {new Date(formData.endDate).toLocaleDateString()}
-                                        </span>
+                                        <span className="font-medium">{new Date(formData.endDate).toLocaleDateString()}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-gray-600">Duration:</span>
                                         <span className="font-medium">{days} days</span>
                                     </div>
-                                    {/* <div className="flex justify-between text-sm">
-                                        <span className="text-gray-600">Payment:</span>
-                                        <span className="font-medium">
-                                            {formData.paymentOption === "now" 
-                                                ? "Pay Now (eSewa)"
-                                                : "Save for Later"}
-                                        </span>
-                                    </div> */}
                                     <div className="border-t border-gray-200 pt-3 flex justify-between">
                                         <span className="font-semibold text-gray-900">Total Amount:</span>
                                         <span className="text-xl font-bold text-blue-600">Rs. {total}</span>
@@ -730,9 +493,7 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                             </Card>
 
                             <div>
-                                <Label htmlFor="notes" className="mb-2 block">
-                                    Additional Notes (Optional)
-                                </Label>
+                                <Label htmlFor="notes" className="mb-2 block">Additional Notes (Optional)</Label>
                                 <textarea
                                     id="notes"
                                     name="notes"
@@ -745,6 +506,8 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                             </div>
                         </div>
                     )}
+
+                    
                 </div>
 
                 {/* Footer */}
@@ -765,11 +528,8 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                     >
                         Cancel
                     </Button>
-                    {step < 3 ? (
-                        <Button
-                            onClick={handleNext}
-                            disabled={loading || checkingAvailability}
-                        >
+                    {step < 2 ? (
+                        <Button onClick={handleNext} disabled={loading || checkingAvailability}>
                             {checkingAvailability ? (
                                 <>
                                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
@@ -780,17 +540,14 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                             )}
                         </Button>
                     ) : (
-                        <Button
-                            onClick={handleSubmit}
-                            disabled={loading}
-                        >
+                        <Button onClick={handleSubmit} disabled={loading}>
                             {loading ? (
                                 <>
                                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
                                     Processing...
                                 </>
                             ) : (
-                                formData.paymentOption === "now" ? "Confirm & Pay" : "Save Booking"
+                                "Confirm & Pay"
                             )}
                         </Button>
                     )}

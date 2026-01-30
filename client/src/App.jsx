@@ -32,10 +32,6 @@ import SparePartsListing from "./components/SparePartsListing";
 import SparePartDetailsPage from "./components/SparePartDetailsPage";
 import AdminLayout from "./components/Admin/AdminLayout";
 import PaymentCallback from "./components/PaymentCallback";
-import EsewaCallbackHandler from "./components/EsewaCallbackHandler";
-import Cart from "./components/Cart";
-import Checkout from "./components/Checkout";
-import CartPaymentCallback from "./components/CartPaymentCallback";
 import "./App.css"; 
 
 function AppContent() {
@@ -62,16 +58,12 @@ function AppContent() {
           <Route path="/vehicles/:id" element={<VehicleDetailsPage />} />
           <Route path="/spare-parts" element={<SparePartsListing />} />
           <Route path="/spare-parts/:id" element={<SparePartDetailsPage />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/api/payments/cart/callback" element={<CartPaymentCallback />} />
           <Route path="/payment/success" element={<PaymentCallback />} />
           <Route path="/payment/failed" element={<PaymentCallback />} />
           <Route path="/payment/cancelled" element={<PaymentCallback />} />
           <Route path="/payment/pending" element={<PaymentCallback />} />
           <Route path="/payment/esewa/success" element={<PaymentCallback />} />
           <Route path="/payment/esewa/failure" element={<PaymentCallback />} />
-          <Route path="/api/payments/esewa/callback" element={<EsewaCallbackHandler />} />
 
           <Route path="/vendor/apply" element={<VendorApplicationForm />} />
           <Route path="/vendor/vehicle-upload" element={<VehicleUploadForm />} />

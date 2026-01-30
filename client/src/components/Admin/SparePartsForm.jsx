@@ -12,7 +12,7 @@ const categories = [
 
 const SparePartsForm = () => {
     const [formData, setFormData] = useState({
-        name: "", category: "", brand: "", rentPrice: "", sellPrice: "", stock: "",
+        name: "", category: "", brand: "", rentPrice: "", stock: "",
         compatibleVehicles: "", description: "", images: []
     });
 
@@ -38,9 +38,9 @@ const SparePartsForm = () => {
         setError("");
         setSuccess(false);
 
-        // Validate that at least one price is provided
-        if (!formData.rentPrice && !formData.sellPrice) {
-            setError("At least one price (Rent Price or Sell Price) must be provided");
+        // Validate that rent price is provided (rental-only)
+        if (!formData.rentPrice) {
+            setError("Rent Price must be provided");
             setLoading(false);
             return;
         }
@@ -51,9 +51,6 @@ const SparePartsForm = () => {
         data.append("brand", formData.brand);
         if (formData.rentPrice) {
             data.append("rentPrice", formData.rentPrice);
-        }
-        if (formData.sellPrice) {
-            data.append("sellPrice", formData.sellPrice);
         }
         data.append("stock", formData.stock);
         data.append("compatibleVehicles", formData.compatibleVehicles);
@@ -68,7 +65,7 @@ const SparePartsForm = () => {
 
             setSuccess(true);
             setFormData({
-                name: "", category: "", brand: "", rentPrice: "", sellPrice: "", stock: "",
+                name: "", category: "", brand: "", rentPrice: "", stock: "",
                 compatibleVehicles: "", description: "", images: []
             });
             setImagePreviews([]);
@@ -144,16 +141,6 @@ const SparePartsForm = () => {
                                         className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none"
                                         placeholder="e.g., 500" min="0" step="0.01" />
                                     <p className="text-xs text-gray-500 mt-1">Price per day for renting this part</p>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        <DollarSign size={16} className="inline mr-2" /> Sell Price (NPR)
-                                    </label>
-                                    <input type="number" name="sellPrice" value={formData.sellPrice} onChange={handleChange}
-                                        className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none"
-                                        placeholder="e.g., 5000" min="0" step="0.01" />
-                                    <p className="text-xs text-gray-500 mt-1">Price for purchasing this part</p>
                                 </div>
 
                                 <div>
