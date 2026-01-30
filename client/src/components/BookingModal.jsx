@@ -498,6 +498,7 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                             </Card>
 
                             {/* Insurance Add-on */}
+                            { !isSparePart && (
                             <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
                                 <label className="inline-flex items-start gap-3">
                                     <input
@@ -512,6 +513,7 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                                     </div>
                                 </label>
                             </div>
+                            )}
 
                             <div>
                                 <Label htmlFor="notes" className="mb-2 block">Additional Notes (Optional)</Label>

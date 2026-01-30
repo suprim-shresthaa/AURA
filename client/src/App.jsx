@@ -62,9 +62,7 @@ function AppContent() {
           <Route path="/payment/failed" element={<PaymentCallback />} />
           <Route path="/payment/cancelled" element={<PaymentCallback />} />
           <Route path="/payment/pending" element={<PaymentCallback />} />
-          <Route path="/payment/esewa/success" element={<PaymentCallback />} />
-          <Route path="/payment/esewa/failure" element={<PaymentCallback />} />
-
+          
           <Route path="/vendor/apply" element={<VendorApplicationForm />} />
           <Route path="/vendor/vehicle-upload" element={<VehicleUploadForm />} />
           <Route path="/vendor/vehicle-upload/:id" element={<VehicleUploadForm />} />

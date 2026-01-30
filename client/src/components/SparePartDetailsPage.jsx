@@ -48,7 +48,7 @@ export default function SparePartDetailsPage() {
             const TWO_DAYS = 1000 * 60 * 60 * 24 * 2;
             const updatedAtTime = new Date(sparePart.updatedAt).getTime();
             const currentTime = Date.now();
-            // Disable booking and cart if updatedAt is less than 2 days from current date
+            // Disable booking if updatedAt is less than 2 days from current date
             const isRecentlyUpdated = updatedAtTime > currentTime - TWO_DAYS;
             setCanBook(!isRecentlyUpdated); // Allow booking only if NOT recently updated (2+ days old)
         }

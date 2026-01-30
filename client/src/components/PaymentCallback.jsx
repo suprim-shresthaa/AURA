@@ -16,6 +16,7 @@ const PaymentCallback = () => {
     useEffect(() => {
         const path = window.location.pathname;
         const bookingIdParam = searchParams.get("bookingId");
+        const type = searchParams.get("type"); // "sparepart" or "vehicle"
         console.log(bookingIdParam);
         const errorParam = searchParams.get("error");
         const statusParam = searchParams.get("status");
@@ -52,6 +53,8 @@ const PaymentCallback = () => {
         }
     };
 
+    console.log("Booking Details:", bookingDetails);
+
     const renderContent = () => {
         switch (status) {
             case "success":
@@ -72,7 +75,7 @@ const PaymentCallback = () => {
                                 <CardContent className="space-y-2 text-left">
                                     <div className="flex justify-between">
                                         <span className="text-gray-600">Vehicle:</span>
-                                        <span className="font-medium">{bookingDetails.vehicleId?.name || "N/A"}</span>
+                                        <span className="font-medium">{bookingDetails.vehicleId?.name || bookingDetails.sparePartId?.name}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-gray-600">Amount:</span>
@@ -104,13 +107,11 @@ const PaymentCallback = () => {
                             </Card>
                         )}
                         <div className="flex gap-4 justify-center">
-                            {bookingId ? <Button onClick={() => navigate("/profile/bookings")}>
+                            <Button onClick={() => navigate("/profile/bookings")}>
                                 View My Bookings
-                            </Button> : <Button onClick={() => navigate("/profile/orders")}>
-                                View My Orders
-                            </Button>}
-                            <Button variant="outline" onClick={() => navigate("/vehicles")}>
-                                Browse More Vehicles
+                            </Button>
+                            <Button variant="outline" onClick={() => navigate(bookingDetails && bookingDetails.sparePartId ? "/spare-parts" : "/vehicles")}>
+                                {bookingDetails && bookingDetails.sparePartId ? "Browse Spare Parts" : "Browse Vehicles"}
                             </Button>
                         </div>
                     </div>

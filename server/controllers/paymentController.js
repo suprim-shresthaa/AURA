@@ -5,11 +5,11 @@ import Vehicle from "../models/vehicle.model.js";
 import User from "../models/user.model.js";
 import SparePart from "../models/sparePart.model.js";
 import sendEmail from "../utils/emailTemplates.js";
-
+const frontendURL = process.env.FRONTEND_URL;
 // eSewa API configuration
-const ESEWA_BASE_URL = process.env.ESEWA_BASE_URL || "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
-const ESEWA_PRODUCT_CODE = process.env.ESEWA_PRODUCT_CODE || "EPAYTEST";    
-const ESEWA_SECRET_KEY = process.env.ESEWA_SECRET_KEY || "8gBm/:&EnhH.1/q";
+const ESEWA_BASE_URL = process.env.ESEWA_BASE_URL;
+const ESEWA_PRODUCT_CODE = process.env.ESEWA_PRODUCT_CODE;
+const ESEWA_SECRET_KEY = process.env.ESEWA_SECRET_KEY;
 
 // Validate eSewa configuration
 if (!ESEWA_SECRET_KEY) {
@@ -351,7 +351,7 @@ export const esewaPaymentCallback = async (req, res) => {
         const bookingData = pendingBookingData.get(transaction_uuid);
 
         if (!bookingData) {
-            return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/failed?error=booking_data_not_found`);
+            return res.redirect(`${frontendURL}/payment/failed?error=booking_data_not_found`);
         }
 
         // Verify signature 
@@ -452,19 +452,19 @@ export const esewaPaymentCallback = async (req, res) => {
                     // Remove from temporary storage
                     pendingBookingData.delete(transaction_uuid);
                     
-                    return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/success?bookingId=${booking._id}`);
+                    return res.redirect(`${frontendURL}/payment/success?bookingId=${booking._id}`);
             
             } catch (createError) {
                 console.error("Error creating booking after payment:", createError);
                 pendingBookingData.delete(transaction_uuid);
-                return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/failed?error=booking_creation_failed`);
+                return res.redirect(`${frontendURL}/payment/failed?error=booking_creation_failed`);
             }
         } else if (status === "CANCELED" || status === "FAILURE") {
             pendingBookingData.delete(transaction_uuid);
-            return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/cancelled`);
+            return res.redirect(`${frontendURL}/payment/cancelled`);
         }
     } catch (error) {
         console.error("Error handling eSewa payment callback:", error);
-        return res.redirect(`${process.env.CLIENT_URL || "http://localhost:5173"}/payment/failed?error=callback_error`);
+        return res.redirect(`${frontendURL}/payment/failed?error=callback_error`);
     }
 };
