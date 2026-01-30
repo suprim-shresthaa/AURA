@@ -2,8 +2,6 @@ import React, { useContext, useState } from "react";
 import { Eye, EyeOff, Check, X } from "lucide-react";
 import axios from "axios";
 import { AppContent } from "../context/AppContext";
-import Cookies from "js-cookie";
-import { toast } from "react-toastify";
 
 const Settings = () => {
     const { userData, backendUrl } = useContext(AppContent);
@@ -14,14 +12,6 @@ const Settings = () => {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
-
-    // Delete Account Modal
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [emailInput, setEmailInput] = useState("");
-    const [deleteError, setDeleteError] = useState("");
-
-    console.log(userData?.userId);
-
 
     const togglePassword = (field) =>
         setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
@@ -64,7 +54,7 @@ const Settings = () => {
         try {
             const payload = {
                 ...passwords,
-                userId: userData?.userId,   // ⬅️ SEND USER ID
+                userId: userData?.userId,   // SEND USER ID
             };
 
             const res = await axios.post(
@@ -87,30 +77,6 @@ const Settings = () => {
         }
     };
 
-
-    const handleDeleteAccount = async () => {
-        if (emailInput !== userData?.email) {
-            setDeleteError("Email does not match.");
-            return;
-        }
-
-        try {
-            const res = await axios.delete(`${backendUrl}/api/user/delete-user`, {
-                data: { userId: userData?.userId },
-                withCredentials: true,
-            });
-
-            if (res.data.success) {
-                Cookies.remove("token");
-                toast.success("Account deleted.");
-                window.location.href = "/login";
-            } else {
-                setDeleteError(res.data.message);
-            }
-        } catch (err) {
-            setDeleteError("Failed to delete account.");
-        }
-    };
 
     return (
         <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -209,60 +175,7 @@ const Settings = () => {
                         </button>
                     )}
                 </div>
-
-                {/* Delete Account */}
-                <div className="border-t pt-6">
-                    <h4 className="text-sm font-medium text-red-700">Delete Account</h4>
-                    <p className="mt-1 text-sm text-gray-500">
-                        This action is permanent. All your data will be lost.
-                    </p>
-                    <button
-                        onClick={() => setShowDeleteModal(true)}
-                        className="mt-3 px-4 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
-                    >
-                        Delete My Account
-                    </button>
-                </div>
             </div>
-
-            {/* Delete Confirmation Modal */}
-            {showDeleteModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-                        <h3 className="text-lg font-semibold text-red-700">Confirm Deletion</h3>
-                        <p className="mt-2 text-sm text-gray-600">
-                            Type your email <strong>{userData?.email}</strong> to confirm.
-                        </p>
-                        <input
-                            type="email"
-                            value={emailInput}
-                            onChange={(e) => setEmailInput(e.target.value)}
-                            placeholder="your@email.com"
-                            className="mt-3 w-full px-3 py-2 border rounded-md"
-                        />
-                        {deleteError && <p className="mt-2 text-sm text-red-600">{deleteError}</p>}
-                        <div className="mt-5 flex space-x-3">
-                            <button
-                                onClick={handleDeleteAccount}
-                                disabled={emailInput !== userData?.email}
-                                className="px-4 py-2 bg-red-600 text-white rounded-md text-sm disabled:bg-gray-400"
-                            >
-                                Delete Forever
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setShowDeleteModal(false);
-                                    setEmailInput("");
-                                    setDeleteError("");
-                                }}
-                                className="px-4 py-2 border rounded-md text-sm"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

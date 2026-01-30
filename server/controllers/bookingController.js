@@ -5,7 +5,7 @@ import SparePart from "../models/sparePart.model.js";
 
 export const createBooking = async (req, res) => {
     try {
-        const { vehicleId, sparePartId, startDate, endDate, isPaymentDeferred, notes } = req.body;
+        const { vehicleId, sparePartId, startDate, endDate, isPaymentDeferred, notes, insuranceSelected } = req.body;
         const userId = req.userId;
 
         // Check if user is vendor or admin - they cannot book
@@ -73,7 +73,9 @@ export const createBooking = async (req, res) => {
             paymentStatus: isPaymentDeferred ? "pending" : "pending",
             bookingStatus: isPaymentDeferred ? "pending" : "pending",
             notes: notes || "",
-            isPaymentDeferred
+            isPaymentDeferred,
+            insuranceSelected: !!insuranceSelected,
+            insuranceAmount: !!insuranceSelected ? 500 : 0
         };
 
         if (vehicleId) {
@@ -141,7 +143,9 @@ export const createBooking = async (req, res) => {
 
             // Calculate total days and amount
             const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-            const totalAmount = totalDays * vehicle.rentPerDay;
+            let totalAmount = totalDays * vehicle.rentPerDay;
+            const insuranceAmount = !!insuranceSelected ? 500 : 0;
+            totalAmount += insuranceAmount;
 
             bookingData = {
                 ...bookingData,
@@ -150,6 +154,8 @@ export const createBooking = async (req, res) => {
                 totalDays,
                 rentPerDay: vehicle.rentPerDay,
                 totalAmount,
+                insuranceSelected: !!insuranceSelected,
+                insuranceAmount,
                 pickupLocation: vehicle.pickupLocation
             };
         } else if (sparePartId) {
@@ -218,7 +224,9 @@ export const createBooking = async (req, res) => {
 
             // Calculate total days and amount
             const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-            const totalAmount = totalDays * sparePart.rentPrice;
+            let totalAmount = totalDays * sparePart.rentPrice;
+            const insuranceAmount = !!insuranceSelected ? 500 : 0;
+            totalAmount += insuranceAmount;
 
             bookingData = {
                 ...bookingData,
@@ -227,6 +235,8 @@ export const createBooking = async (req, res) => {
                 totalDays,
                 rentPerDay: sparePart.rentPrice,
                 totalAmount,
+                insuranceSelected: !!insuranceSelected,
+                insuranceAmount,
                 pickupLocation: {
                     address: "Store Location",
                     city: "Kathmandu"

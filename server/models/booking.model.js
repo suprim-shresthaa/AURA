@@ -42,6 +42,19 @@ const bookingSchema = new mongoose.Schema(
             type: Number,
             required: true
         },
+        // Insurance addon
+        insuranceSelected: {
+            type: Boolean,
+            default: false
+        },
+        insuranceAmount: {
+            type: Number,
+            default: 0
+        },
+        insuranceDetails: {
+            type: String,
+            default: "Accidental coverage"
+        },
         paymentStatus: {
             type: String,
             enum: ["pending", "paid", "refunded"],

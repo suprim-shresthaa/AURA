@@ -27,6 +27,7 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
     const [formData, setFormData] = useState({ startDate: "", endDate: "", notes: "" });
 
     const [hasLicense, setHasLicense] = useState(true);
+    const [insuranceSelected, setInsuranceSelected] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -90,7 +91,9 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
 
     const calculateTotal = () => {
         const days = calculateDays();
-        return days * getRentPrice();
+        const base = days * getRentPrice();
+        const insurance = insuranceSelected ? 500 : 0;
+        return base + insurance;
     };
 
     const handleInputChange = (e) => {
@@ -213,6 +216,8 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                 totalDays: days,
                 rentPerDay: getRentPrice(),
                 totalAmount: total,
+                insuranceSelected: !!insuranceSelected,
+                insuranceAmount: insuranceSelected ? 500 : 0,
                 notes: formData.notes || ""
             };
 
@@ -491,6 +496,22 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                                     </div>
                                 </CardContent>
                             </Card>
+
+                            {/* Insurance Add-on */}
+                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                <label className="inline-flex items-start gap-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={insuranceSelected}
+                                        onChange={(e) => setInsuranceSelected(e.target.checked)}
+                                        className="mt-1"
+                                    />
+                                    <div>
+                                        <div className="font-medium">Add Insurance (Accidental coverage)</div>
+                                        <div className="text-sm text-gray-600">Rs. 500 — covers accidental damage during rental period.</div>
+                                    </div>
+                                </label>
+                            </div>
 
                             <div>
                                 <Label htmlFor="notes" className="mb-2 block">Additional Notes (Optional)</Label>

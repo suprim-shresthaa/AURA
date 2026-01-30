@@ -254,6 +254,13 @@ export const getAllPayments = async (req, res) => {
             updatedAt: booking.updatedAt
         }));
 
+        // Attach insurance fields for each payment
+        payments.forEach((p, idx) => {
+            const b = bookings[idx];
+            p.insuranceSelected = !!b.insuranceSelected;
+            p.insuranceAmount = b.insuranceAmount || 0;
+        });
+
         res.json({
             success: true,
             data: {
@@ -351,6 +358,8 @@ export const getPaymentById = async (req, res) => {
                 pickupLocation: booking.pickupLocation,
                 notes: booking.notes,
                 isPaymentDeferred: booking.isPaymentDeferred,
+                insuranceSelected: booking.insuranceSelected,
+                insuranceAmount: booking.insuranceAmount || 0,
                 createdAt: booking.createdAt,
                 updatedAt: booking.updatedAt
             }

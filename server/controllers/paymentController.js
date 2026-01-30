@@ -60,7 +60,7 @@ function createEsewaSignature({ total_amount, transaction_uuid, product_code }) 
  * Helper function to create booking from payment data
  */
 const createBookingFromPaymentData = async (bookingData, userId) => {
-    const { vehicleId, sparePartId, startDate, endDate, totalDays, rentPerDay, totalAmount, notes, paymentMethod, bookingType } = bookingData;
+    const { vehicleId, sparePartId, startDate, endDate, totalDays, rentPerDay, totalAmount, notes, paymentMethod, bookingType, insuranceSelected, insuranceAmount } = bookingData;
 
     let bookingDataToCreate = {
         userId,
@@ -76,6 +76,13 @@ const createBookingFromPaymentData = async (bookingData, userId) => {
         isPaymentDeferred: false,
         bookingType: bookingType || (vehicleId ? "vehicle" : "sparePart")
     };
+
+    // Attach insurance information if present
+    if (insuranceSelected) {
+        bookingDataToCreate.insuranceSelected = true;
+        bookingDataToCreate.insuranceAmount = insuranceAmount || 0;
+        bookingDataToCreate.insuranceDetails = "Accidental coverage";
+    }
 
     if (vehicleId) {
         // Vehicle booking
@@ -259,7 +266,9 @@ export const initiateEsewaPayment = async (req, res) => {
             rentPerDay,
             totalAmount,
             notes: notes || "",
-            paymentMethod: "esewa"
+            paymentMethod: "esewa",
+            insuranceSelected: !!bookingData.insuranceSelected,
+            insuranceAmount: bookingData.insuranceAmount || 0
         });
         
         // total_amount should always have 2 decimal places for eSewa

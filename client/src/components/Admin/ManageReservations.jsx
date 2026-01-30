@@ -244,6 +244,9 @@ const ManageReservations = () => {
                                                     <div className="space-y-1">
                                                         <p className="font-semibold text-slate-900">{formatCurrency(reservation.amount)}</p>
                                                         <p className="text-xs text-slate-500">Payment: {reservation.paymentStatus}</p>
+                                                        {reservation.insuranceSelected && (
+                                                            <p className="text-xs text-slate-500">Insurance: Rs. {reservation.insuranceAmount || 500}</p>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

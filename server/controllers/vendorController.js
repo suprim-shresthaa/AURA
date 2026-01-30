@@ -389,6 +389,12 @@ export const getVendorPayments = async (req, res) => {
             createdAt: booking.createdAt,
             updatedAt: booking.updatedAt
         }));
+        // Include insurance fields in payment objects
+        payments.forEach((p, idx) => {
+            const b = bookings[idx];
+            p.insuranceSelected = !!b.insuranceSelected;
+            p.insuranceAmount = b.insuranceAmount || 0;
+        });
 
         res.json({
             success: true,

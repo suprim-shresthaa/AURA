@@ -246,9 +246,12 @@ export default function VendorReservations() {
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center gap-2">
                                                         <DollarSign className="w-4 h-4 text-gray-400" />
-                                                        <p className="font-semibold text-gray-900">
-                                                            {formatCurrency(booking.totalAmount)}
-                                                        </p>
+                                                        <div>
+                                                            <p className="font-semibold text-gray-900">{formatCurrency(booking.totalAmount)}</p>
+                                                            {booking.insuranceSelected && (
+                                                                <p className="text-xs text-gray-500">Insurance: Rs. {booking.insuranceAmount || 500}</p>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">

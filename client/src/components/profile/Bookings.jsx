@@ -243,6 +243,9 @@ export default function Bookings() {
                                             <p className="text-xs text-gray-500">
                                                 {booking.paymentMethod === 'esewa' ? 'eSewa' : booking.paymentMethod || 'N/A'}
                                             </p>
+                                            {booking.insuranceSelected && (
+                                                <p className="text-xs text-gray-500 mt-1">Insurance: Rs. {booking.insuranceAmount || 500} (Accidental coverage)</p>
+                                            )}
                                         </div>
                                     </div>
 
