@@ -261,7 +261,7 @@ export const uploadLicense = async (req, res) => {
             vehicleTypes = [];
         }
 
-        const validVehicleTypes = ["Car", "Bike", "Scooter", "Jeep", "Van"];
+        const validVehicleTypes = ["Car", "Bike", "Scooter", "Van"];
 
         // Validate vehicle types
         if (vehicleTypes.length === 0) {

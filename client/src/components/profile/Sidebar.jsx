@@ -129,7 +129,7 @@ const Sidebar = ({ userData }) => {
                     <User className="mr-3 h-5 w-5" />
                     Profile
                 </NavLink>
-
+                    {userData?.role === "user" && (
                 <NavLink
                     to="/profile/bookings"
                     className={({ isActive }) =>
@@ -143,7 +143,7 @@ const Sidebar = ({ userData }) => {
                     <Calendar className="mr-3 h-5 w-5" />
                     My Bookings
                 </NavLink>
-
+                    )}
                 {showLicenses && (
                     <NavLink
                         to="/profile/licenses"

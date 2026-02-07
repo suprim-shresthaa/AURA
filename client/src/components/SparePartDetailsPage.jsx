@@ -241,12 +241,12 @@ export default function SparePartDetailsPage() {
                             {hasRentPrice && (
                                 <Button
                                     onClick={() => setShowBookingModal(true)}
-                                    disabled={!isInStock || !canBook}
+                                    disabled={!isInStock || !canBook || !isLoggedin}
                                     size="lg"
                                     className="w-full h-12 cursor-pointer bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Calendar className="w-4 h-4 mr-2" />
-                                    {!canBook ? "Recently Updated - Booking Disabled" : isInStock ? "Book Now" : "Out of Stock"}
+                                    {!canBook ? "Recently Updated - Booking Disabled" : !isLoggedin ? "Login to Book" : isInStock ? "Book Now" : "Out of Stock"}
                                 </Button>
                             )}
                         </div>

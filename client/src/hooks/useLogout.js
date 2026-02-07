@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { message } from "antd";
 import { AppContent } from "../components/context/AppContext";
+import { toast } from "react-toastify";
 
 const useLogout = () => {
     const navigate = useNavigate();
@@ -22,7 +23,7 @@ const useLogout = () => {
                 Cookies.remove("token");
                 setIsLoggedin(false);
                 setUserData(null);
-                message.success("Successfully logged out!");
+                toast.success("Successfully logged out!");
                 navigate("/");
             } else {
                 throw new Error(data.message || "Logout failed");

@@ -8,7 +8,7 @@ import HeroSection from "./HeroSection";
 import VehicleCard from "@/components/VehicleCard";
 
 
-const vehicleCategories = ["Car", "Bike", "Scooter", "Jeep", "Van"];
+const vehicleCategories = ["Car", "Bike", "Scooter", "Van"];
 
 const Home = () => {
   const [vehicles, setVehicles] = useState([]);

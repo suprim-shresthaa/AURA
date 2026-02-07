@@ -13,7 +13,7 @@ const vehicleSchema = new mongoose.Schema(
         category: {
             type: String,
             required: true,
-            enum: ["Car", "Bike", "Scooter", "Jeep", "Van"]
+            enum: ["Car", "Bike", "Scooter", "Van"]
         },
 
         modelYear: { type: Number, required: true },

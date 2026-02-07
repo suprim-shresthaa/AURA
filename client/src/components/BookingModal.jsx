@@ -260,25 +260,25 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
 
     if (!isOpen) return null;
 
-    // Prevent vendors and admins from booking
-    if (!canBook) {
-        return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-                    <div className="text-center">
-                        <X className="mx-auto text-red-600 mb-4" size={48} />
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Restricted</h2>
-                                <p className="text-gray-600 mb-6">
-                            Vendors and admins cannot make bookings.
-                        </p>
-                        <Button onClick={onClose} className="w-full">
-                            Close
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    // // Prevent vendors and admins from booking
+    // if (!canBook && !user) {
+    //     return (
+    //         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    //             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+    //                 <div className="text-center">
+    //                     <X className="mx-auto text-red-600 mb-4" size={48} />
+    //                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Restricted</h2>
+    //                             <p className="text-gray-600 mb-6">
+    //                         Vendors and admins cannot make bookings.
+    //                     </p>
+    //                     <Button onClick={onClose} className="w-full">
+    //                         Close
+    //                     </Button>
+    //                 </div>
+    //             </div>
+    //         </div>
+    //     );
+    // }
 
     const days = calculateDays();
     const total = calculateTotal();

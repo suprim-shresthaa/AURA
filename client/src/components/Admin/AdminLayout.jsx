@@ -29,6 +29,10 @@ import {
     FileText,
     Package,
 } from "lucide-react";
+import { toast } from "react-toastify";
+import axiosInstance from "@/lib/axiosInstance";
+import Cookies from "js-cookie";
+import useLogout from "@/hooks/useLogout";
 
 const adminNavItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
@@ -56,7 +60,8 @@ const AdminLayout = () => {
     const location = useLocation();
     const pathname = location.pathname;
     const meta = pageMeta[pathname] || { title: "Admin", subtitle: "Control Center" };
-
+    const logout = useLogout();
+    
     return (
         <SidebarProvider>
             <div className="flex min-h-screen justify-center items-start w-full">
@@ -95,8 +100,9 @@ const AdminLayout = () => {
 
                     <SidebarFooter>
                         <Button
+                            onClick={logout}
                             variant="ghost"
-                            className="justify-start gap-2 px-2 text-sidebar-foreground hover:text-sidebar-accent-foreground"
+                            className="justify-start gap-2 px-2"
                         >
                             <LogOut className="h-4 w-4" />
                             Logout

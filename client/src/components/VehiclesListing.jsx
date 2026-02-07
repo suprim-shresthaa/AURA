@@ -123,7 +123,7 @@ const VehicleListing = () => {
         return () => clearTimeout(timeoutId);
     }, [searchTerm, selectedType, selectedTransmission, priceRange, fuelType, city]);
 
-    const types = ['all', 'Car', 'Bike', 'Scooter', 'Jeep', 'Van'];
+    const types = ['all', 'Car', 'Bike', 'Scooter', 'Van'];
 
     const resetFilters = () => {
         setSearchTerm('');

@@ -256,7 +256,7 @@ export default function VehicleUploadForm() {
                                     required
                                 >
                                     <option value="">Select category</option>
-                                    {["Car", "Bike", "Scooter", "Jeep", "Van"].map(cat => (
+                                    {["Car", "Bike", "Scooter", "Van"].map(cat => (
                                         <option key={cat} value={cat}>{cat}</option>
                                     ))}
                                 </select>

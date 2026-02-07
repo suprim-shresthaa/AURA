@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { AppContent } from '../context/AppContext';
 import ConfirmationModal from '../ui/ConfirmationModal';
+import Sidebar from './Sidebar';
 
 export default function MyVehicleListings() {
     const navigate = useNavigate();
@@ -119,9 +120,9 @@ export default function MyVehicleListings() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-            <div className="max-w-7xl mx-auto p-6">
-
+        <div className="flex min-h-screen  bg-gray-50">
+            <Sidebar isOpen={true} setIsOpen={true} />
+        <div className='flex flex-1 mx-4 mt-4 flex-col '>
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-6">
                         <div>
@@ -276,7 +277,6 @@ export default function MyVehicleListings() {
                     </div>
                 )}
             </div>
-
             <ConfirmationModal
                 isOpen={modalOpen}
                 onClose={closeModal}

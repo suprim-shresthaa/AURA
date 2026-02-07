@@ -5,7 +5,7 @@ import { AppContent } from "../context/AppContext";
 import Loading from "@/components/Loading";
 import { toast } from "react-toastify";
 
-const vehicleTypes = ["Car", "Bike", "Scooter", "Jeep", "Van"];
+const vehicleTypes = ["Car", "Bike", "Scooter", "Van"];
 
 const statusConfig = {
   pending: {

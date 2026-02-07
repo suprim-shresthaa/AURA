@@ -31,6 +31,7 @@ import SparePartsForm from "./components/Admin/SparePartsForm";
 import SparePartsListing from "./components/SparePartsListing";
 import SparePartDetailsPage from "./components/SparePartDetailsPage";
 import AdminLayout from "./components/Admin/AdminLayout";
+import VendorLayout from "./components/Vendor/VendorLayout";
 import PaymentCallback from "./components/PaymentCallback";
 import "./App.css"; 
 

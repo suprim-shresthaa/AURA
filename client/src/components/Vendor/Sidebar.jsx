@@ -80,7 +80,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
             {/* Sidebar */}
             <div
-                className={`fixed lg:static left-0 top-0 h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 transition-all duration-300 z-40 flex flex-col ${isOpen ? 'w-64' : 'w-0 lg:w-20'
+                className={`fixed lg:static left-0 top-0 h-[90vh] bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 transition-all duration-300 flex flex-col ${isOpen ? 'w-64' : 'w-0 lg:w-20'
                     } overflow-hidden`}
             >
                 <div className="flex flex-col h-full p-4">
