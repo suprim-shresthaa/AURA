@@ -34,6 +34,8 @@ import AdminLayout from "./components/Admin/AdminLayout";
 import VendorLayout from "./components/Vendor/VendorLayout";
 import PaymentCallback from "./components/PaymentCallback";
 import "./App.css"; 
+import InsuranceTerms from "./components/InsuranceTerms";
+import BookingTerms from "./components/BookingTerms";
 
 function AppContent() {
   const location = useLocation();
@@ -46,6 +48,8 @@ function AppContent() {
       <div className={`bg-slate-100 min-h-screen flex-1`}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path='/insurance-terms' element={<InsuranceTerms />} />
+          <Route path='/booking-terms' element={<BookingTerms />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<ResetPassword />} />

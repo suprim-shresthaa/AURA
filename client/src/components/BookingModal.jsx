@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import axiosInstance from "@/lib/axiosInstance";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { AppContent } from "./context/AppContext";
 
@@ -28,6 +28,8 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
 
     const [hasLicense, setHasLicense] = useState(true);
     const [insuranceSelected, setInsuranceSelected] = useState(false);
+    const [agreedToInsuranceTerms, setAgreedToInsuranceTerms] = useState(false);
+    const [agreedToBookingTerms, setAgreedToBookingTerms] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -527,6 +529,42 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                                     placeholder="Any special requests or notes..."
                                 />
                             </div>
+
+                            {/* Terms and Conditions */}
+                            <div className="pt-4">
+                                {insuranceSelected && (
+                                <div className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        id="agreeInsuranceTerms"
+                                        checked={agreedToInsuranceTerms}
+                                        onChange={(e) => setAgreedToInsuranceTerms(e.target.checked)}
+                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <label htmlFor="agreeInsuranceTerms" className="ml-2 text-sm text-gray-600">
+                                        I agree to the{" "}
+                                        <Link target="_blank" to="/insurance-terms" className="text-blue-600 hover:underline">
+                                            insurance terms and conditions
+                                        </Link>
+                                    </label>
+                                </div>
+                                )}
+                                <div className="flex items-center mt-2">
+                                    <input
+                                        type="checkbox"
+                                        id="agreeBookingTerms"
+                                        checked={agreedToBookingTerms}
+                                        onChange={(e) => setAgreedToBookingTerms(e.target.checked)}
+                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <label htmlFor="agreeBookingTerms" className="ml-2 text-sm text-gray-600">
+                                        I agree to the{" "}
+                                        <Link target="_blank" to="/booking-terms" className="text-blue-600 hover:underline">
+                                            booking terms and conditions
+                                        </Link>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -563,7 +601,7 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                             )}
                         </Button>
                     ) : (
-                        <Button onClick={handleSubmit} disabled={loading}>
+                        <Button onClick={handleSubmit} disabled={loading || (insuranceSelected && !agreedToInsuranceTerms) || !agreedToBookingTerms}>
                             {loading ? (
                                 <>
                                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
