@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Upload, Car, FileImage, Calendar, FileText, Loader2 } from "lucide-react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { Upload, Car, FileImage, Calendar, FileText, Loader2, ArrowLeft } from "lucide-react";
 import { AppContent } from "../context/AppContext";
 import axiosInstance from "@/lib/axiosInstance";
 import { toast } from "react-toastify";
@@ -205,6 +205,10 @@ export default function VehicleUploadForm() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-12 px-4">
+            <Link to="/vendor/listings" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6">
+                <ArrowLeft className="w-6 h-6" />
+                Back to Listings
+            </Link>
             <div className="max-w-4xl mx-auto">
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">

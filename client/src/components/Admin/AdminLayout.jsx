@@ -29,31 +29,26 @@ import {
     FileText,
     Package,
 } from "lucide-react";
-import { toast } from "react-toastify";
-import axiosInstance from "@/lib/axiosInstance";
-import Cookies from "js-cookie";
 import useLogout from "@/hooks/useLogout";
 
 const adminNavItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
     { id: "users", label: "Manage Users", icon: Users, href: "/admin/users" },
     { id: "reservations", label: "Reservations", icon: Calendar, href: "/admin/reservations" },
-    { id: "orders", label: "Orders", icon: Package, href: "/admin/orders" },
     { id: "applications", label: "Applications", icon: Book, href: "/admin/applications" },
     { id: "vehicles", label: "Manage Vehicles", icon: Car, href: "/admin/vehicles" },
     { id: "licenses", label: "Manage Licenses", icon: FileText, href: "/admin/licenses" },
-    { id: "spare-parts", label: "Spare Parts", icon: Wrench, href: "/admin/add-spare-parts" },
+    { id: "spare-parts", label: "Manage Spare Parts", icon: Wrench, href: "/admin/spare-parts" },
 ];
 
 const pageMeta = {
     "/admin/dashboard": { title: "Dashboard", subtitle: "Admin" },
     "/admin/users": { title: "Manage Users", subtitle: "User Management" },
     "/admin/reservations": { title: "Reservations", subtitle: "Booking Management" },
-    "/admin/orders": { title: "Orders", subtitle: "Spare Parts Orders" },
     "/admin/applications": { title: "Applications", subtitle: "Vendor Onboarding" },
     "/admin/vehicles": { title: "Manage Vehicles", subtitle: "Vehicle Verification" },
     "/admin/licenses": { title: "Manage Licenses", subtitle: "License Approval" },
-    "/admin/add-spare-parts": { title: "Spare Parts", subtitle: "Inventory" },
+    "/admin/spare-parts": { title: "Manage Spare Parts", subtitle: "Parts Management" },
 };
 
 const AdminLayout = () => {

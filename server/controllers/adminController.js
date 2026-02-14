@@ -1,5 +1,6 @@
 import Booking from "../models/booking.model.js";
 import Vehicle from "../models/vehicle.model.js";
+import SparePart from "../models/sparePart.model.js";
 import User from "../models/user.model.js";
 import mongoose from "mongoose";
 import sendEmail from '../utils/emailTemplates.js';
@@ -172,6 +173,7 @@ export const getAllPayments = async (req, res) => {
             status, 
             paymentStatus, 
             paymentMethod,
+            bookingType,
             startDate,
             endDate,
             page = 1,
@@ -195,6 +197,10 @@ export const getAllPayments = async (req, res) => {
             query.paymentMethod = paymentMethod;
         }
         
+        if (bookingType && bookingType !== "all") {
+            query.bookingType = bookingType;
+        }
+        
         if (startDate || endDate) {
             query.createdAt = {};
             if (startDate) {
@@ -216,6 +222,7 @@ export const getAllPayments = async (req, res) => {
         const bookings = await Booking.find(query)
             .populate("userId", "name email contact")
             .populate("vehicleId", "name mainImage category vendorId")
+            .populate("sparePartId", "name price images vendorId category")
             .sort(sortOptions)
             .skip(skip)
             .limit(parseInt(limit));
@@ -227,19 +234,28 @@ export const getAllPayments = async (req, res) => {
         const payments = bookings.map(booking => ({
             id: booking._id,
             bookingId: booking._id,
+            bookingType: booking.bookingType,
             customer: {
                 id: booking.userId?._id,
                 name: booking.userId?.name,
                 email: booking.userId?.email,
                 contact: booking.userId?.contact
             },
-            vehicle: {
-                id: booking.vehicleId?._id,
-                name: booking.vehicleId?.name,
-                category: booking.vehicleId?.category,
-                image: booking.vehicleId?.mainImage,
-                vendorId: booking.vehicleId?.vendorId
-            },
+            vehicle: booking.vehicleId ? {
+                id: booking.vehicleId._id,
+                name: booking.vehicleId.name,
+                category: booking.vehicleId.category,
+                image: booking.vehicleId.mainImage,
+                vendorId: booking.vehicleId.vendorId
+            } : null,
+            sparePart: booking.sparePartId ? {
+                id: booking.sparePartId._id,
+                name: booking.sparePartId.name,
+                price: booking.sparePartId.price,
+                category: booking.sparePartId.category,
+                images: booking.sparePartId.images,
+                vendorId: booking.sparePartId.vendorId
+            } : null,
             amount: booking.totalAmount,
             paymentMethod: booking.paymentMethod,
             paymentStatus: booking.paymentStatus,
@@ -790,6 +806,101 @@ export const rejectLicense = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to reject license",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get all spare parts for admin management
+ */
+export const getAllSparePartsAdmin = async (req, res) => {
+    try {
+        const { 
+            availability,
+            category,
+            page = 1,
+            limit = 20,
+            sortBy = "createdAt",
+            sortOrder = "desc"
+        } = req.query;
+
+        // Build query
+        const query = {};
+        
+        if (availability && availability !== "all") {
+            query.isAvailable = availability === "available";
+        }
+        
+        if (category && category !== "all") {
+            query.category = category;
+        }
+
+        // Calculate pagination
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const sortOptions = {};
+        sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+        // Get spare parts with pagination
+        const spareParts = await SparePart.find(query)
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        // Get total count for pagination
+        const total = await SparePart.countDocuments(query);
+
+        res.json({
+            success: true,
+            data: spareParts,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        });
+
+    } catch (error) {
+        console.error("Error fetching spare parts:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Toggle spare part availability
+ */
+export const toggleSparePartAvailability = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { isAvailable } = req.body;
+
+        const sparePart = await SparePart.findById(id);
+        if (!sparePart) {
+            return res.status(404).json({
+                success: false,
+                message: "Spare part not found"
+            });
+        }
+
+        sparePart.isAvailable = isAvailable;
+        await sparePart.save();
+
+        res.json({
+            success: true,
+            message: `Spare part ${isAvailable ? 'enabled' : 'disabled'} successfully`,
+            data: sparePart
+        });
+
+    } catch (error) {
+        console.error("Error toggling spare part availability:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error",
             error: error.message
         });
     }

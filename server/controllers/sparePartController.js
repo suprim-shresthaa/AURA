@@ -1,5 +1,4 @@
 import SparePart from "../models/sparePart.model.js";
-import { upload } from "../config/cloudinary.js";
 
 export const createSparePart = async (req, res) => {
     try {

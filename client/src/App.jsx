@@ -11,9 +11,9 @@ import VendorApplicationForm from "./components/Vendor/VendorApplicationForm";
 import ManageApplications from "./components/Admin/ManageApplications";
 import ManageUsers from "./components/Admin/ManageUsers";
 import ManageReservations from "./components/Admin/ManageReservations";
-import ManageOrders from "./components/Admin/ManageOrders";
 import ManageVehicles from "./components/Admin/ManageVehicles";
 import ManageLicenses from "./components/Admin/ManageLicenses";
+import ManageSpareParts from "./components/Admin/ManageSpareParts";
 import AdminVehicleDetailsPage from "./components/Admin/AdminVehicleDetailsPage";
 import VehicleUploadForm from "./components/Vendor/VehicleUploadForm";
 import VehicleListing from "./components/VehiclesListing";
@@ -79,11 +79,11 @@ function AppContent() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<ManageUsers />} />
             <Route path="reservations" element={<ManageReservations />} />
-            <Route path="orders" element={<ManageOrders />} />
             <Route path="applications" element={<ManageApplications />} />
             <Route path="vehicles" element={<ManageVehicles />} />
             <Route path="vehicles/:id" element={<AdminVehicleDetailsPage />} />
             <Route path="licenses" element={<ManageLicenses />} />
+            <Route path="spare-parts" element={<ManageSpareParts />} />
             <Route path="add-spare-parts" element={<SparePartsForm />} />
           </Route>
         </Routes>

@@ -19,7 +19,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/admin/dashboard' },
         { id: 'users', label: 'Manage Users', icon: Users, path: '/admin/users' },
         { id: 'reservations', label: 'Reservations', icon: Calendar, path: '/admin/reservations' },
-        { id: 'orders', label: 'Orders', icon: Package, path: '/admin/orders' },
         { id: 'applications', label: 'Manage Applications', icon: Book, path: '/admin/applications' },
         { id: 'spare-parts', label: 'Spare Parts', icon: Wrench, path: '/admin/spare-parts' },
     ];

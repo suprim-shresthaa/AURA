@@ -1,6 +1,6 @@
 import express from "express";
 import { upload } from "../config/cloudinary.js";
-import { createVehicle, updateVehicle, deleteVehicle, getAllVehicles, getVehicleById, getVehiclesByVendor, searchVehicles } from "../controllers/vehicleController.js";
+import { createVehicle, updateVehicle, deleteVehicle, getAllVehicles, getVehicleById, getVehiclesByVendor, searchVehicles, toggleVehicleAvailability } from "../controllers/vehicleController.js";
 
 const router = express.Router();
 
@@ -13,6 +13,7 @@ const uploadFields = upload.fields([
 
 router.post("/create", uploadFields, createVehicle);
 router.put("/:id", uploadFields, updateVehicle);
+router.put("/:id/availability", toggleVehicleAvailability);
 router.get("/all-vehicles", getAllVehicles)
 router.get("/search", searchVehicles)
 router.get('/vendor-vehicles', getVehiclesByVendor)

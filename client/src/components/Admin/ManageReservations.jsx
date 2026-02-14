@@ -10,8 +10,10 @@ import {
     AlertCircle,
     XCircle,
     RefreshCw,
+    Car,
+    Wrench,
 } from "lucide-react";
-import { fetchAllPayments } from "@/data/api";
+import { fetchAllReservations } from "@/data/api";
 import Loading from "@/components/Loading";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,13 +40,15 @@ const ManageReservations = () => {
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
+    const [bookingType, setBookingType] = useState("all"); // "all", "vehicle", "sparePart"
 
     const loadReservations = async () => {
         try {
             setLoading(true);
             setError(null);
-            const data = await fetchAllPayments({
+            const data = await fetchAllReservations({
                 status: filterStatus,
+                bookingType: bookingType,
                 limit: 100,
                 sortBy: "createdAt",
                 sortOrder: "desc",
@@ -60,7 +64,7 @@ const ManageReservations = () => {
 
     useEffect(() => {
         loadReservations();
-    }, [filterStatus]);
+    }, [filterStatus, bookingType]);
 
     const filteredReservations = useMemo(() => {
         return reservations.filter((res) => {
@@ -68,7 +72,8 @@ const ManageReservations = () => {
             const matchesSearch =
                 res.customer?.name?.toLowerCase().includes(search) ||
                 res.customer?.email?.toLowerCase().includes(search) ||
-                res.vehicle?.name?.toLowerCase().includes(search);
+                res.vehicle?.name?.toLowerCase().includes(search) ||
+                res.sparePart?.name?.toLowerCase().includes(search);
             return matchesSearch;
         });
     }, [reservations, searchTerm]);
@@ -103,9 +108,77 @@ const ManageReservations = () => {
     const formatCurrency = (amount) =>
         new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount || 0);
 
+    const getItemName = (reservation) => {
+        if (reservation.bookingType === "vehicle" && reservation.vehicle) {
+            return reservation.vehicle.name;
+        } else if (reservation.bookingType === "sparePart" && reservation.sparePart) {
+            return reservation.sparePart.name;
+        }
+        return "Unknown Item";
+    };
+
+    const getItemCategory = (reservation) => {
+        if (reservation.bookingType === "vehicle" && reservation.vehicle) {
+            return reservation.vehicle.category;
+        } else if (reservation.bookingType === "sparePart" && reservation.sparePart) {
+            return reservation.sparePart.category;
+        }
+        return "N/A";
+    };
+
+    const getItemIcon = (reservation) => {
+        return reservation.bookingType === "vehicle" ? Car : Wrench;
+    };
+
     return (
         <div className="min-h-screen p-8">
             <div className="max-w-7xl mx-auto">
+                {/* Header with toggle */}
+                <div className="mb-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Reservations Management</h1>
+                            <p className="text-sm text-gray-600 mt-1">Manage all vehicle and spare part reservations</p>
+                        </div>
+                        
+                        {/* Booking Type Toggle */}
+                        <div className="flex items-center gap-2 bg-white rounded-lg p-1 border">
+                            <button
+                                onClick={() => setBookingType("all")}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                    bookingType === "all" 
+                                        ? "bg-blue-100 text-blue-700" 
+                                        : "text-gray-600 hover:text-gray-900"
+                                }`}
+                            >
+                                <Calendar size={16} />
+                                All Reservations
+                            </button>
+                            <button
+                                onClick={() => setBookingType("vehicle")}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                    bookingType === "vehicle" 
+                                        ? "bg-emerald-100 text-emerald-700" 
+                                        : "text-gray-600 hover:text-gray-900"
+                                }`}
+                            >
+                                <Car size={16} />
+                                Vehicles
+                            </button>
+                            <button
+                                onClick={() => setBookingType("sparePart")}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                    bookingType === "sparePart" 
+                                        ? "bg-orange-100 text-orange-700" 
+                                        : "text-gray-600 hover:text-gray-900"
+                                }`}
+                            >
+                                <Wrench size={16} />
+                                Spare Parts
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
                     <Card className="shadow-none border-slate-200">
@@ -145,7 +218,7 @@ const ManageReservations = () => {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <Input
                             type="text"
-                            placeholder="Search by customer or vehicle..."
+                            placeholder="Search by customer, vehicle, or spare part..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-10"
@@ -184,7 +257,7 @@ const ManageReservations = () => {
                                     <tr className="bg-slate-50 border-b border-slate-200">
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Customer</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Contact</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Vehicle</th>
+                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Item</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Dates</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Status</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Payment</th>
@@ -195,6 +268,7 @@ const ManageReservations = () => {
                                         const normalizedStatus = reservation.bookingStatus?.toLowerCase();
                                         const config = statusConfig[normalizedStatus] || statusConfig.pending;
                                         const StatusIcon = config.icon;
+                                        const ItemIcon = getItemIcon(reservation);
 
                                         return (
                                             <tr key={reservation.id || reservation.bookingId} className="hover:bg-blue-50 transition duration-150">
@@ -222,9 +296,25 @@ const ManageReservations = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="space-y-1">
-                                                        <p className="text-sm font-medium text-slate-900">{reservation.vehicle?.name || "Vehicle"}</p>
-                                                        <p className="text-sm text-slate-600">{reservation.vehicle?.category || "N/A"}</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                                            reservation.bookingType === "vehicle" 
+                                                                ? "bg-emerald-100" 
+                                                                : "bg-orange-100"
+                                                        }`}>
+                                                            <ItemIcon size={16} className={
+                                                                reservation.bookingType === "vehicle" 
+                                                                    ? "text-emerald-600" 
+                                                                    : "text-orange-600"
+                                                            } />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <p className="text-sm font-medium text-slate-900">{getItemName(reservation)}</p>
+                                                            <p className="text-sm text-slate-600">{getItemCategory(reservation)}</p>
+                                                            <Badge variant="outline" className="text-xs">
+                                                                {reservation.bookingType === "vehicle" ? "Vehicle" : "Spare Part"}
+                                                            </Badge>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">

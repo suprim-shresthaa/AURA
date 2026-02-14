@@ -27,6 +27,23 @@ export const fetchAllPayments = async (filters = {}) => {
   return data?.data ?? null;
 };
 
+export const fetchAllReservations = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.status) params.append("status", filters.status);
+  if (filters.paymentStatus) params.append("paymentStatus", filters.paymentStatus);
+  if (filters.paymentMethod) params.append("paymentMethod", filters.paymentMethod);
+  if (filters.bookingType) params.append("bookingType", filters.bookingType);
+  if (filters.startDate) params.append("startDate", filters.startDate);
+  if (filters.endDate) params.append("endDate", filters.endDate);
+  if (filters.page) params.append("page", filters.page);
+  if (filters.limit) params.append("limit", filters.limit);
+  if (filters.sortBy) params.append("sortBy", filters.sortBy);
+  if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
+
+  const { data } = await axiosInstance.get(`/admin/payments?${params.toString()}`);
+  return data?.data ?? null;
+};
+
 export const fetchAllOrders = async (filters = {}) => {
   const params = new URLSearchParams();
   if (filters.status) params.append("status", filters.status);
@@ -101,6 +118,37 @@ export const approveLicense = async (licenseId) => {
 export const rejectLicense = async (licenseId, rejectionReason) => {
   const { data } = await axiosInstance.post(`/admin/licenses/${licenseId}/reject`, {
     rejectionReason
+  });
+  return data;
+};
+
+// Spare Parts API functions
+export const fetchAllSpareParts = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.availability && filters.availability !== "all") {
+    params.append("availability", filters.availability);
+  }
+  if (filters.category) params.append("category", filters.category);
+  if (filters.page) params.append("page", filters.page);
+  if (filters.limit) params.append("limit", filters.limit);
+  if (filters.sortBy) params.append("sortBy", filters.sortBy);
+  if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
+
+  const { data } = await axiosInstance.get(`/admin/spare-parts?${params.toString()}`);
+  return data?.data ?? [];
+};
+
+export const toggleSparePartAvailability = async (partId, isAvailable) => {
+  const { data } = await axiosInstance.put(`/admin/spare-parts/${partId}/availability`, {
+    isAvailable
+  });
+  return data;
+};
+
+// Vehicle availability toggle for vendors
+export const toggleVehicleAvailability = async (vehicleId, isAvailable) => {
+  const { data } = await axiosInstance.put(`/vehicles/${vehicleId}/availability`, {
+    isAvailable
   });
   return data;
 };

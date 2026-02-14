@@ -365,7 +365,7 @@ export const updateVehicle = async (req, res) => {
         vehicle.bluebook = bluebook;
         vehicle.images = images;
 
-        // If vehicle was rejected, reset to pending when updated
+        // Reset verification status to pending when vehicle is updated
         if (vehicle.verificationStatus === "rejected") {
             vehicle.verificationStatus = "pending";
             vehicle.rejectionReason = "";
@@ -383,6 +383,47 @@ export const updateVehicle = async (req, res) => {
 
     } catch (error) {
         console.error("Error updating vehicle:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
+// Toggle vehicle availability (vendor only)
+export const toggleVehicleAvailability = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { isAvailable } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid vehicle ID"
+            });
+        }
+
+        const vehicle = await Vehicle.findById(id);
+        if (!vehicle) {
+            return res.status(404).json({
+                success: false,
+                message: "Vehicle not found"
+            });
+        }
+
+        // Update availability
+        vehicle.isAvailable = isAvailable;
+        await vehicle.save();
+
+        res.json({
+            success: true,
+            message: `Vehicle availability ${isAvailable ? 'enabled' : 'disabled'} successfully`,
+            data: vehicle
+        });
+
+    } catch (error) {
+        console.error("Error toggling vehicle availability:", error);
         return res.status(500).json({
             success: false,
             message: "Server error",

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Car, DollarSign, Edit, Trash2, Plus, AlertCircle, Eye, Search
+    Car, DollarSign, Edit, Trash2, Plus, AlertCircle, Eye, Search, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { AppContent } from '../context/AppContext';
 import ConfirmationModal from '../ui/ConfirmationModal';
@@ -17,6 +17,7 @@ export default function MyVehicleListings() {
     const [modalOpen, setModalOpen] = useState(false);
     const [vehicleToDelete, setVehicleToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [updatingAvailability, setUpdatingAvailability] = useState({});
 
     const { userData } = useContext(AppContent);
     const vendorId = userData?.vendorId || userData?.userId || null;
@@ -77,6 +78,37 @@ export default function MyVehicleListings() {
     };
     const handleView = (id) => {
         navigate(`/vehicles/${id}`);
+    };
+
+    const handleToggleAvailability = async (vehicleId, currentAvailability) => {
+        setUpdatingAvailability(prev => ({ ...prev, [vehicleId]: true }));
+        try {
+            const res = await fetch(`http://localhost:5001/api/vehicles/${vehicleId}/availability`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                },
+                body: JSON.stringify({ isAvailable: !currentAvailability })
+            });
+            
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || `Failed (${res.status})`);
+            }
+            
+            setVehicles(prev => 
+                prev.map(vehicle => 
+                    vehicle._id === vehicleId 
+                        ? { ...vehicle, isAvailable: !currentAvailability }
+                        : vehicle
+                )
+            );
+        } catch (err) {
+            alert(err.message || 'Failed to update availability');
+        } finally {
+            setUpdatingAvailability(prev => ({ ...prev, [vehicleId]: false }));
+        }
     };
 
     const filteredVehicles = vehicles.filter(v => {
@@ -230,10 +262,28 @@ export default function MyVehicleListings() {
                                         </div>
 
                                         <div className="col-span-2">
-                                            <div className="space-y-1">
-                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${vehicle.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                    {vehicle.isAvailable ? 'Available' : 'Rented'}
-                                                </span>
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${vehicle.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                        {vehicle.isAvailable ? 'Available' : 'Unavailable'}
+                                                    </span>
+                                                    {vehicle.verificationStatus === 'approved' && (
+                                                        <button
+                                                            onClick={() => handleToggleAvailability(vehicle._id, vehicle.isAvailable)}
+                                                            disabled={updatingAvailability[vehicle._id]}
+                                                            className="text-blue-600 hover:text-blue-800 p-1"
+                                                            title={`${vehicle.isAvailable ? 'Disable' : 'Enable'} availability`}
+                                                        >
+                                                            {updatingAvailability[vehicle._id] ? (
+                                                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                                                            ) : vehicle.isAvailable ? (
+                                                                <ToggleRight size={30} className="text-green-600" />
+                                                            ) : (
+                                                                <ToggleLeft size={30} className="text-red-600" />
+                                                            )}
+                                                        </button>
+                                                    )}
+                                                </div>
                                                 {vehicle.verificationStatus && (
                                                     <div>
                                                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${

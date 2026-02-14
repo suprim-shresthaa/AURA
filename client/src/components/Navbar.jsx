@@ -80,6 +80,14 @@ const Navbar = () => {
                     Add Vehicle
                   </Link>
                 )}
+                {userData?.role === "admin" && (
+                  <Link
+                    to="/admin/add-spare-parts"
+                    className="bg-primary hover:bg-primary/95 text-white px-6 py-2 rounded-md text-sm font-bold transition-colors"
+                  >
+                    Add Spare Parts
+                  </Link>
+                )}
                 {/* {userData?.role !== "vendor" && (
                   <Link
                     to="/vendor/apply"

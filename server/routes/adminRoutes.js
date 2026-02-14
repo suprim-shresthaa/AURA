@@ -9,7 +9,9 @@ import {
     rejectVehicle,
     getPendingLicenses,
     approveLicense,
-    rejectLicense
+    rejectLicense,
+    getAllSparePartsAdmin,
+    toggleSparePartAvailability
 } from "../controllers/adminController.js";
 import requireAdmin from "../middlewares/adminAuth.js";
 
@@ -32,6 +34,10 @@ router.post("/vehicles/:id/reject", requireAdmin, rejectVehicle);
 router.get("/licenses/pending", requireAdmin, getPendingLicenses);
 router.post("/licenses/:licenseId/approve", requireAdmin, approveLicense);
 router.post("/licenses/:licenseId/reject", requireAdmin, rejectLicense);
+
+// Spare parts management endpoints
+router.get("/spare-parts", requireAdmin, getAllSparePartsAdmin);
+router.put("/spare-parts/:id/availability", requireAdmin, toggleSparePartAvailability);
 
 export default router;
 
