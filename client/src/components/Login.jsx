@@ -6,6 +6,7 @@ import Loading from "./Loading";
 import axios from "axios";
 import { message } from "antd";
 import { toast } from "react-toastify";
+import GoogleSignIn from "./GoogleSignIn";
 
 const Login = () => {
     const [isPasswordShown, setIsPasswordShown] = useState(false);
@@ -130,6 +131,11 @@ const Login = () => {
                             <div className="relative flex justify-center">
                                 <span className="px-4 bg-white text-gray-400 text-sm">or</span>
                             </div>
+                        </div>
+
+                        {/* Google Sign-in */}
+                        <div className="mt-4">
+                            <GoogleSignIn />
                         </div>
 
                         {/* Signup Link */}

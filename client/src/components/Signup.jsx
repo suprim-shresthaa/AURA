@@ -5,6 +5,7 @@ import { AppContent } from "./context/AppContext";
 import { message } from "antd";
 import InputField from "./InputField";
 import Loading from "./Loading";
+import GoogleSignIn from "./GoogleSignIn";
 
 const Signup = () => {
     const { backendUrl } = useContext(AppContent);
@@ -346,6 +347,11 @@ const Signup = () => {
                                     <div className="relative flex justify-center">
                                         <span className="px-4 bg-white text-gray-400 text-xs sm:text-sm">or</span>
                                     </div>
+                                </div>
+
+                                {/* Google Sign-in */}
+                                <div className="mt-4">
+                                    <GoogleSignIn />
                                 </div>
 
                                 <p className="text-xs sm:text-sm text-center text-gray-500 mt-4 sm:mt-6">

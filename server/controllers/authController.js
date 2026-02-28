@@ -424,7 +424,7 @@ export const resetPassword = async (req, res) => {
 
 export const google = async (req, res, next) => {
     try {
-        const { name, email, photo } = req.body;
+        const { name, email, photo, googleId } = req.body;
 
         // Validate required fields
         if (!name || !email) {
@@ -446,6 +446,12 @@ export const google = async (req, res, next) => {
                     message: 'Account is banned',
                     banReason: existingUser.banInfo.reason || 'No reason provided'
                 });
+            }
+
+            // Update googleId if not already set
+            if (googleId && !existingUser.googleId) {
+                existingUser.googleId = googleId;
+                await existingUser.save();
             }
 
             // User exists and is not banned - generate token and respond
@@ -479,8 +485,10 @@ export const google = async (req, res, next) => {
             name: name.trim(),
             email: email.toLowerCase().trim(),
             password: hashedPassword,
-            image: photo || undefined, // Use schema default if photo not provided
-            isAccountVerified: true // Mark Google users as verified
+            image: photo || undefined, 
+            googleId: googleId || undefined,
+            isAccountVerified: true, // Mark Google users as verified
+            licenses: [] // Explicitly set empty licenses array for Google users
         });
 
         await newUser.save();

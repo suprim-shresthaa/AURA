@@ -70,12 +70,18 @@ const userSchema = new mongoose.Schema({
         default: "https://res.cloudinary.com/dxigipf0k/image/upload/v1741190518/wy6ytirqcswljhf3c13v.png"
     },
 
+    // Google OAuth
+    googleId: {
+        type: String,
+        sparse: true
+    },
+
     // License management
     licenses: [{
         vehicleTypes: {
             type: [String],
             enum: ["Car", "Bike", "Scooter", "Van"],
-            required: true,
+            required: false,
             validate: {
                 validator: function(v) {
                     return v && v.length > 0;
@@ -85,7 +91,7 @@ const userSchema = new mongoose.Schema({
         },
         licenseImage: {
             type: String,
-            required: true
+            required: false
         },
         status: {
             type: String,
