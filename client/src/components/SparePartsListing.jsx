@@ -164,19 +164,6 @@ const SparePartsListing = () => {
                             <option value="high">Rs. 5,000+</option>
                         </select>
                     </div>
-                    
-                    {/* Stock Filter */}
-                    <div className="mt-3">
-                        <select
-                            value={inStock}
-                            onChange={(e) => setInStock(e.target.value)}
-                            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white w-full md:w-auto"
-                        >
-                            <option value="all">All Items</option>
-                            <option value="true">In Stock Only</option>
-                            <option value="false">Out of Stock</option>
-                        </select>
-                    </div>
                 </div>
 
                 {/* Results Count */}

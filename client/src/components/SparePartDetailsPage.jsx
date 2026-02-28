@@ -116,17 +116,6 @@ export default function SparePartDetailsPage() {
                         <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
                             {sparePart.brand}
                         </span>
-                        {isInStock ? (
-                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium flex items-center gap-1">
-                                <CheckCircle className="w-3.5 h-3.5" />
-                                In Stock
-                            </span>
-                        ) : (
-                            <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium flex items-center gap-1">
-                                <XCircle className="w-3.5 h-3.5" />
-                                Out of Stock
-                            </span>
-                        )}
                     </div>
                 </div>
 

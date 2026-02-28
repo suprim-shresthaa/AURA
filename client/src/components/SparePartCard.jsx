@@ -42,21 +42,6 @@ export default function SparePartCard({ part }) {
                     aria-label={name}
                     className="absolute inset-0 z-10"
                 />
-
-                {/* Stock Status Badge */}
-                <div className="absolute top-3 right-3 z-20">
-                    {isInStock ? (
-                        <Badge className="bg-green-500 hover:bg-green-600 text-white border-0 flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" />
-                            In Stock
-                        </Badge>
-                    ) : (
-                        <Badge className="bg-red-500 hover:bg-red-600 text-white border-0 flex items-center gap-1">
-                            <XCircle className="w-3 h-3" />
-                            Out of Stock
-                        </Badge>
-                    )}
-                </div>
             </div>
 
             {/* Card Content */}
