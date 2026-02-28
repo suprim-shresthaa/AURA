@@ -28,6 +28,7 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
 
     const [hasLicense, setHasLicense] = useState(true);
     const [insuranceSelected, setInsuranceSelected] = useState(false);
+    const [driverSelected, setDriverSelected] = useState(false);
     const [agreedToInsuranceTerms, setAgreedToInsuranceTerms] = useState(false);
     const [agreedToBookingTerms, setAgreedToBookingTerms] = useState(false);
 
@@ -95,7 +96,8 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
         const days = calculateDays();
         const base = days * getRentPrice();
         const insurance = insuranceSelected ? 500 : 0;
-        return base + insurance;
+        const driver = driverSelected ? days * 300 : 0;
+        return base + insurance + driver;
     };
 
     const handleInputChange = (e) => {
@@ -220,6 +222,8 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                 totalAmount: total,
                 insuranceSelected: !!insuranceSelected,
                 insuranceAmount: insuranceSelected ? 500 : 0,
+                driverSelected: !!driverSelected,
+                driverAmount: driverSelected ? days * 300 : 0,
                 notes: formData.notes || ""
             };
 
@@ -447,6 +451,18 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                                                 <span className="text-gray-600">Price per day:</span>
                                                 <span className="font-semibold">Rs. {getRentPrice()}</span>
                                             </div>
+                                            {insuranceSelected && (
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">Insurance:</span>
+                                                    <span className="font-semibold">Rs. 500</span>
+                                                </div>
+                                            )}
+                                            {driverSelected && (
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">Driver ({days} days):</span>
+                                                    <span className="font-semibold">Rs. {days * 300}</span>
+                                                </div>
+                                            )}
                                             <div className="border-t border-gray-200 pt-2 flex justify-between">
                                                 <span className="font-semibold text-gray-900">Total Amount:</span>
                                                 <span className="text-xl font-bold text-blue-600">
@@ -492,6 +508,22 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                                         <span className="text-gray-600">Duration:</span>
                                         <span className="font-medium">{days} days</span>
                                     </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-600">Base Rental:</span>
+                                        <span className="font-medium">Rs. {days * getRentPrice()}</span>
+                                    </div>
+                                    {insuranceSelected && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600">Insurance:</span>
+                                            <span className="font-medium">Rs. 500</span>
+                                        </div>
+                                    )}
+                                    {driverSelected && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600">Driver Service:</span>
+                                            <span className="font-medium">Rs. {days * 300}</span>
+                                        </div>
+                                    )}
                                     <div className="border-t border-gray-200 pt-3 flex justify-between">
                                         <span className="font-semibold text-gray-900">Total Amount:</span>
                                         <span className="text-xl font-bold text-blue-600">Rs. {total}</span>
@@ -512,6 +544,24 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                                     <div>
                                         <div className="font-medium">Add Insurance (Accidental coverage)</div>
                                         <div className="text-sm text-gray-600">Rs. 500 — covers accidental damage during rental period.</div>
+                                    </div>
+                                </label>
+                            </div>
+                            )}
+
+                            {/* Driver Add-on */}
+                            { !isSparePart && (
+                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                <label className="inline-flex items-start gap-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={driverSelected}
+                                        onChange={(e) => setDriverSelected(e.target.checked)}
+                                        className="mt-1"
+                                    />
+                                    <div>
+                                        <div className="font-medium">Add Driver Service</div>
+                                        <div className="text-sm text-gray-600">Rs. 300 per day — professional driver for your rental period.</div>
                                     </div>
                                 </label>
                             </div>
