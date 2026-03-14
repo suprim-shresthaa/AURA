@@ -906,3 +906,132 @@ export const toggleSparePartAvailability = async (req, res) => {
     }
 };
 
+export const banUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reason } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ success: false, message: 'User id is required' });
+        }
+
+        // Prevent banning admins
+        const target = await User.findById(id);
+        if (!target) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        if (target.role === 'admin') {
+            return res.status(403).json({ success: false, message: 'Cannot ban an admin user' });
+        }
+
+        target.banInfo.isBanned = true;
+        target.banInfo.reason = reason || '';
+
+        await target.save();
+        try {
+            await sendEmail(target.email, 'account-banned', {
+                userName: target.name,
+                remarks: reason || '',
+                adminEmail: process.env.SENDER_EMAIL
+            });
+        } catch (emailErr) {
+            console.error('Failed to send ban email to user:', emailErr);
+        }
+
+        return res.status(200).json({ success: true, message: 'User banned successfully', data: { userId: target._id, banInfo: target.banInfo } });
+    } catch (error) {
+        console.error('Error banning user:', error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const unbanUser = async (req, res) => {
+    try {
+        const admin = req.user;
+        const { id } = req.params;
+        const { reason } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ success: false, message: 'User id is required' });
+        }
+
+        const target = await User.findById(id);
+        if (!target) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        target.banInfo = target.banInfo || {};
+        target.banInfo.isBanned = false;
+        target.banInfo.unbannedAt = new Date();
+        target.banInfo.unbanReason = reason || '';
+        target.banInfo.unbannedBy = admin._id;
+        // Keep bannedBy and at for history; clear scheduled unban
+        target.banInfo.willBeUnbannedAt = null;
+
+        await target.save();
+
+        // Notify the user by email (do not fail the request if email fails)
+        try {
+            await sendEmail(target.email, 'account-unbanned', {
+                userName: target.name,
+                adminEmail: process.env.SENDER_EMAIL
+            });
+        } catch (emailErr) {
+            console.error('Failed to send unban email to user:', emailErr);
+        }
+
+        return res.status(200).json({ success: true, message: 'User unbanned successfully', data: { userId: target._id, banInfo: target.banInfo } });
+    } catch (error) {
+        console.error('Error unbanning user:', error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({ success: false, message: 'User id is required' });
+        }
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Prevent deleting admins
+        if (user.role === 'admin') {
+            return res.status(403).json({ success: false, message: 'Cannot delete an admin user' });
+        }
+
+        await User.findByIdAndDelete(id);
+
+        // Notify the user by email about account deletion (best-effort)
+        try {
+            await sendEmail(user.email, 'account-deleted', {
+                userName: user.name,
+                reason: req.body?.reason || '',
+                adminEmail: process.env.SENDER_EMAIL
+            });
+        } catch (emailErr) {
+            console.error('Failed to send account-deleted email to user:', emailErr);
+        }
+
+        return res.status(200).json({ success: true, message: 'User deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+export const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find().select('-password');
+        res.status(200).json({ success: true, data: users });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

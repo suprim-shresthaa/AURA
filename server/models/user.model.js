@@ -80,7 +80,7 @@ const userSchema = new mongoose.Schema({
     licenses: [{
         vehicleTypes: {
             type: [String],
-            enum: ["Car", "Bike", "Scooter", "Van"],
+            enum: ["Car", "Bike", "Scooter", "Van", "Jeep"],
             required: false,
             validate: {
                 validator: function(v) {

@@ -4,7 +4,7 @@ import axios from "axios";
 import { Search, Trash2, UserCheck, UserX, Users } from "lucide-react";
 import RemarksModal from "../ui/RemarksModal";
 
-const API_BASE = "http://localhost:5001/api/user";
+const API_BASE = "http://localhost:5001/api/admin";
 
 const ManageUsers = () => {
     const [users, setUsers] = useState([]);

@@ -59,7 +59,7 @@ const emailTemplates = {
       <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
         <h3 style="margin: 0 0 10px 0; font-size: 18px;">Suspension Details:</h3>
         <p><strong>Reason:</strong> ${remarks || "Violation of terms of service"}</p>
-        <p><strong>Action By:</strong> ${adminEmail}</p>
+        <p><strong>Contact:</strong> ${adminEmail}</p>
         <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
       </div>
       <p>During this suspension, you won't be able to access your account.</p>
@@ -74,10 +74,6 @@ const emailTemplates = {
       <h2 style="color: #10b981;">Account Access Restored</h2>
       <p>Dear ${userName},</p>
       <p>Your AURA account suspension has been lifted and full access has been restored.</p>
-      <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
-        <p><strong>Action By:</strong> ${adminEmail}</p>
-        <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-      </div>
       <p>You may now log in and use all platform features.</p>
       <p>Please review our community guidelines to ensure compliance.</p>
       <p style="color: #64748b; font-size: 14px;">This is an automated message. Please do not reply directly to this email.</p>

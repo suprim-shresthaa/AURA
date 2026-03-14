@@ -1,12 +1,12 @@
 import express from 'express';
-import { changePassword, getAllUsers, getUserData, updateProfile, updateProfileImage, uploadLicense, getMyLicenses } from '../controllers/userController.js';
+import { changePassword, getUserData, updateProfile, updateProfileImage, uploadLicense, getMyLicenses } from '../controllers/userController.js';
 import userAuth from '../middlewares/userAuth.js';
 import { upload } from '../config/cloudinary.js';
 
 const userRouter = express.Router();
 
 userRouter.post('/data', userAuth, getUserData);
-userRouter.get('/all-users', getAllUsers)
+
 userRouter.put("/edit/profile", userAuth, updateProfile);
 userRouter.put("/update-profile-img", userAuth, upload.single('image'), updateProfileImage);
 userRouter.post("/change-password", userAuth, changePassword);

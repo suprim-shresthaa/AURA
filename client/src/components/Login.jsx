@@ -14,6 +14,7 @@ const Login = () => {
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const [accountBannedInfo, setAccountBannedInfo] = useState(null);
     const { backendUrl, setIsLoggedin, getUserData, setUserData } =
         useContext(AppContent);
 
@@ -42,7 +43,11 @@ const Login = () => {
                 window.location.reload();
             }
         } catch (error) {
+            if(error.response.data.message === "Account is banned") {
+                setAccountBannedInfo("Your account has been banned. Please check email for details.");
+            }else{
             toast.error(error.response?.data?.message || "Login failed");
+        }
         } finally {
             setIsLoading(false);
         }
@@ -123,6 +128,9 @@ const Login = () => {
                         >
                             {isLoading ? "Signing in..." : "Sign In"}
                         </button>
+                        {accountBannedInfo && (
+                                <h3 className="text-sm text-red-500 mb-2">{accountBannedInfo}</h3>
+                        )}
                         {/* Divider */}
                         <div className="mt-6 relative">
                             <div className="absolute inset-0 flex items-center">

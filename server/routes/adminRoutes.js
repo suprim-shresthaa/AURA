@@ -11,9 +11,11 @@ import {
     approveLicense,
     rejectLicense,
     getAllSparePartsAdmin,
-    toggleSparePartAvailability
+    toggleSparePartAvailability,
+    getAllUsers
 } from "../controllers/adminController.js";
 import requireAdmin from "../middlewares/adminAuth.js";
+import { banUser, deleteUser, unbanUser } from "../controllers/adminController.js";
 
 const router = express.Router();
 
@@ -38,6 +40,13 @@ router.post("/licenses/:licenseId/reject", requireAdmin, rejectLicense);
 // Spare parts management endpoints
 router.get("/spare-parts", requireAdmin, getAllSparePartsAdmin);
 router.put("/spare-parts/:id/availability", requireAdmin, toggleSparePartAvailability);
+
+// Admin actions on users
+router.post('/ban/:id', requireAdmin, banUser);
+router.post('/unban/:id', requireAdmin, unbanUser);
+router.delete('/:id', requireAdmin, deleteUser);
+
+router.get('/all-users', getAllUsers)
 
 export default router;
 
