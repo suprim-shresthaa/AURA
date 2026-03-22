@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
     Search,
     Wrench,
@@ -7,13 +8,8 @@ import {
     RefreshCw,
     Package,
     DollarSign,
-    Calendar,
-    User,
-    MapPin,
-    ToggleLeft,
-    ToggleRight,
 } from "lucide-react";
-import { fetchAllSpareParts, toggleSparePartAvailability } from "@/data/api";
+import { fetchAllSpareParts, toggleSparePartAvailability, deleteSparePart } from "@/data/api";
 import Loading from "@/components/Loading";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -34,6 +30,7 @@ const ManageSpareParts = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterAvailability, setFilterAvailability] = useState("all");
     const [updatingAvailability, setUpdatingAvailability] = useState({});
+    const [deletingId, setDeletingId] = useState(null);
 
     const loadSpareParts = async () => {
         try {
@@ -67,6 +64,21 @@ const ManageSpareParts = () => {
             part.brand?.toLowerCase().includes(search)
         );
     });
+
+    const handleDelete = async (partId) => {
+        if (!window.confirm("Remove this spare part from the catalog?")) return;
+        setDeletingId(partId);
+        try {
+            await deleteSparePart(partId);
+            setSpareParts((prev) => prev.filter((p) => p._id !== partId));
+            toast.success("Spare part removed");
+        } catch (err) {
+            console.error("Failed to delete spare part", err);
+            toast.error(err.response?.data?.message || "Failed to delete spare part");
+        } finally {
+            setDeletingId(null);
+        }
+    };
 
     const handleToggleAvailability = async (partId, currentAvailability) => {
         setUpdatingAvailability(prev => ({ ...prev, [partId]: true }));
@@ -262,26 +274,49 @@ const ManageSpareParts = () => {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <Button
-                                                    onClick={() => handleToggleAvailability(part._id, part.isAvailable)}
-                                                    disabled={updatingAvailability[part._id]}
-                                                    size="sm"
-                                                    variant={part.isAvailable ? "outline" : "default"}
-                                                    className={`flex items-center gap-2 ${
-                                                        part.isAvailable 
-                                                            ? "text-red-600 hover:bg-red-50" 
-                                                            : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                                                    }`}
-                                                >
-                                                    {updatingAvailability[part._id] ? (
-                                                        <RefreshCw size={16} className="animate-spin" />
-                                                    ) : part.isAvailable ? (
-                                                        <EyeOff size={16} />
-                                                    ) : (
-                                                        <Eye size={16} />
-                                                    )}
-                                                    {part.isAvailable ? "Disable" : "Enable"}
-                                                </Button>
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <Button variant="outline" size="sm" asChild>
+                                                            <Link to={`/spare-parts/${part._id}`}>View</Link>
+                                                        </Button>
+                                                        <Button variant="outline" size="sm" asChild>
+                                                            <Link to={`/admin/edit-spare-parts/${part._id}`}>Edit</Link>
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="text-red-600 hover:text-red-700"
+                                                            onClick={() => handleDelete(part._id)}
+                                                            disabled={deletingId === part._id}
+                                                        >
+                                                            {deletingId === part._id ? (
+                                                                <RefreshCw size={16} className="animate-spin" />
+                                                            ) : (
+                                                                "Delete"
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                    <Button
+                                                        onClick={() => handleToggleAvailability(part._id, part.isAvailable)}
+                                                        disabled={updatingAvailability[part._id]}
+                                                        size="sm"
+                                                        variant={part.isAvailable ? "outline" : "default"}
+                                                        className={`flex items-center gap-2 w-fit ${
+                                                            part.isAvailable
+                                                                ? "text-red-600 hover:bg-red-50"
+                                                                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                        }`}
+                                                    >
+                                                        {updatingAvailability[part._id] ? (
+                                                            <RefreshCw size={16} className="animate-spin" />
+                                                        ) : part.isAvailable ? (
+                                                            <EyeOff size={16} />
+                                                        ) : (
+                                                            <Eye size={16} />
+                                                        )}
+                                                        {part.isAvailable ? "Disable" : "Enable"}
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

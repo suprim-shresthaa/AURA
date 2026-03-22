@@ -85,6 +85,7 @@ function AppContent() {
             <Route path="licenses" element={<ManageLicenses />} />
             <Route path="spare-parts" element={<ManageSpareParts />} />
             <Route path="add-spare-parts" element={<SparePartsForm />} />
+            <Route path="edit-spare-parts/:id" element={<SparePartsForm />} />
           </Route>
         </Routes>
       </div>

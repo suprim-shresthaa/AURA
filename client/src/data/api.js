@@ -145,6 +145,23 @@ export const toggleSparePartAvailability = async (partId, isAvailable) => {
   return data;
 };
 
+export const fetchSparePartById = async (id) => {
+  const { data } = await axiosInstance.get(`/spare-parts/${id}`);
+  return data?.data ?? null;
+};
+
+export const updateSparePart = async (id, formData) => {
+  const { data } = await axiosInstance.put(`/spare-parts/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });
+  return data;
+};
+
+export const deleteSparePart = async (id) => {
+  const { data } = await axiosInstance.delete(`/spare-parts/${id}`);
+  return data;
+};
+
 // Vehicle availability toggle for vendors
 export const toggleVehicleAvailability = async (vehicleId, isAvailable) => {
   const { data } = await axiosInstance.put(`/vehicles/${vehicleId}/availability`, {

@@ -1,5 +1,8 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axiosInstance from "@/lib/axiosInstance";
+import { fetchSparePartById, updateSparePart } from "@/data/api";
+import Loading from "@/components/Loading";
 import {
     Package, Tag, DollarSign, Box, Car, FileText,
     ImagePlus, Plus, Loader2, CheckCircle, XCircle
@@ -11,15 +14,52 @@ const categories = [
 ];
 
 const SparePartsForm = () => {
+    const { id } = useParams();
+    const isEdit = Boolean(id);
+    const navigate = useNavigate();
+
     const [formData, setFormData] = useState({
         name: "", category: "", brand: "", rentPrice: "", stock: "",
         compatibleVehicles: "", description: "", images: []
     });
 
     const [imagePreviews, setImagePreviews] = useState([]);
+    const [existingImageUrls, setExistingImageUrls] = useState([]);
+    const [loadingPart, setLoadingPart] = useState(!!isEdit);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        if (!id) return;
+        let cancelled = false;
+        (async () => {
+            setLoadingPart(true);
+            setError("");
+            try {
+                const part = await fetchSparePartById(id);
+                if (!part || cancelled) return;
+                setFormData({
+                    name: part.name || "",
+                    category: part.category || "",
+                    brand: part.brand || "",
+                    rentPrice: part.rentPrice != null ? String(part.rentPrice) : "",
+                    stock: part.stock != null ? String(part.stock) : "",
+                    compatibleVehicles: part.compatibleVehicles || "",
+                    description: part.description || "",
+                    images: [],
+                });
+                setExistingImageUrls(Array.isArray(part.images) ? part.images : []);
+            } catch (err) {
+                if (!cancelled) {
+                    setError(err.response?.data?.message || "Could not load spare part.");
+                }
+            } finally {
+                if (!cancelled) setLoadingPart(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [id]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -59,24 +99,36 @@ const SparePartsForm = () => {
         formData.images.forEach((img) => data.append("images", img));
 
         try {
-            const res = await axios.post("http://localhost:5001/api/spare-parts/add", data, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-
-            setSuccess(true);
-            setFormData({
-                name: "", category: "", brand: "", rentPrice: "", stock: "",
-                compatibleVehicles: "", description: "", images: []
-            });
-            setImagePreviews([]);
-
-            setTimeout(() => setSuccess(false), 5000);
+            if (isEdit) {
+                await updateSparePart(id, data);
+                setSuccess(true);
+                setTimeout(() => navigate("/admin/spare-parts"), 1200);
+            } else {
+                await axiosInstance.post("/spare-parts/add", data, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+                setSuccess(true);
+                setFormData({
+                    name: "", category: "", brand: "", rentPrice: "", stock: "",
+                    compatibleVehicles: "", description: "", images: []
+                });
+                setImagePreviews([]);
+                setTimeout(() => setSuccess(false), 5000);
+            }
         } catch (err) {
             setError(err.response?.data?.message || "Something went wrong!");
         } finally {
             setLoading(false);
         }
     };
+
+    if (loadingPart) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+                <Loading />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12 px-4">
@@ -85,13 +137,15 @@ const SparePartsForm = () => {
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mb-4 shadow-lg">
                         <Package className="text-white" size={32} />
                     </div>
-                    <h1 className="text-4xl font-bold text-gray-800 mb-2">Add Spare Part</h1>
+                    <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                        {isEdit ? "Edit Spare Part" : "Add Spare Part"}
+                    </h1>
                     <p className="text-gray-600">Fill in the details below</p>
                 </div>
 
                 {success && (
                     <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-xl flex items-center gap-3">
-                        <CheckCircle /> Spare part added successfully!
+                        <CheckCircle /> {isEdit ? "Spare part updated!" : "Spare part added successfully!"}
                     </div>
                 )}
 
@@ -174,14 +228,41 @@ const SparePartsForm = () => {
                             <div className="mb-6">
                                 <label className="block text-sm font-semibold text-gray-700 mb-3">
                                     <ImagePlus size={16} className="inline mr-2" /> Product Images
+                                    {isEdit && (
+                                        <span className="block text-xs font-normal text-gray-500 mt-1">
+                                            Optional: upload new images to replace current ones. Leave empty to keep existing photos.
+                                        </span>
+                                    )}
                                 </label>
+                                {existingImageUrls.length > 0 && (
+                                    <p className="text-sm text-gray-600 mb-2">Current images</p>
+                                )}
+                                {existingImageUrls.length > 0 && (
+                                    <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mb-6">
+                                        {existingImageUrls.map((src, i) => (
+                                            <div key={`ex-${i}`} className="aspect-square rounded-lg overflow-hidden border">
+                                                <img src={src} alt="" className="w-full h-full object-cover" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-400 transition-all bg-gray-50">
-                                    <input type="file" accept="image/*" multiple id="images" className="hidden" onChange={handleImageUpload} />
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        id="images"
+                                        className="hidden"
+                                        onChange={handleImageUpload}
+                                        required={!isEdit}
+                                    />
                                     <label htmlFor="images" className="cursor-pointer">
                                         <div className="inline-flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-full mb-3">
                                             <Plus className="text-indigo-600" size={24} />
                                         </div>
-                                        <p className="text-gray-600 font-medium">Click to upload images</p>
+                                        <p className="text-gray-600 font-medium">
+                                            {isEdit ? "Upload replacement images" : "Click to upload images"}
+                                        </p>
                                         <p className="text-sm text-gray-500">PNG, JPG, WEBP up to 10MB</p>
                                     </label>
                                 </div>
@@ -203,7 +284,7 @@ const SparePartsForm = () => {
                                 className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 disabled:opacity-70"
                             >
                                 {loading ? <Loader2 className="animate-spin" /> : null}
-                                {loading ? "Adding..." : "Add Spare Part"}
+                                {loading ? (isEdit ? "Saving..." : "Adding...") : isEdit ? "Save changes" : "Add Spare Part"}
                             </button>
                         </form>
                     </div>
