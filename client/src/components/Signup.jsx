@@ -6,6 +6,7 @@ import { message } from "antd";
 import InputField from "./InputField";
 import Loading from "./Loading";
 import GoogleSignIn from "./GoogleSignIn";
+import { toast } from "react-toastify";
 
 const Signup = () => {
     const { backendUrl } = useContext(AppContent);
@@ -99,8 +100,13 @@ const Signup = () => {
             });
 
             const data = await response.json();
+            console.log(data);
 
             if (!response.ok) {
+                if (response.status === 409) {
+                    toast.error(data.message);
+                    return;
+                }
                 if (response.status === 409 && data.isResend) {
                     message.info("Existing verification found. New OTP sent.");
                     setShowVerification(true);
@@ -222,6 +228,9 @@ const Signup = () => {
         return `${m}:${s}`;
     };
 
+    const togglePasswordVisibility = () =>
+        setIsPasswordShown((prev) => !prev);
+
     /* -------------------------------------------------------------------------- */
     /*                              Validation Icon                               */
     /* -------------------------------------------------------------------------- */
@@ -300,7 +309,7 @@ const Signup = () => {
                                 <InputField
                                     id="password"
                                     label="Password"
-                                    type={isPasswordShown ? "text" : "password"}
+                                    type="password"
                                     placeholder="Create Password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -308,12 +317,11 @@ const Signup = () => {
                                     onBlur={() => password.length === 0 && setShowPasswordRequirements(false)}
                                     icon={<Lock className="w-5 h-5 text-gray-400" />}
                                     isPasswordShown={isPasswordShown}
-                                    togglePasswordVisibility={() => setIsPasswordShown((prev) => !prev)}
+                                    togglePasswordVisibility={togglePasswordVisibility}
                                     required
                                     autoComplete="new-password"
                                     className="text-sm sm:text-base"
                                 />
-
                                 {showPasswordRequirements && (
                                     <div className="mt-2 p-3 bg-gray-50 rounded-lg space-y-1 text-xs sm:text-sm">
                                         <p className="font-medium text-gray-500">Password must contain:</p>

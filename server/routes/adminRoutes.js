@@ -13,6 +13,7 @@ import {
     getAllSparePartsAdmin,
     toggleSparePartAvailability,
     getAllUsers,
+    getAllDeletedUsers,
     getUserByIdAdmin
 } from "../controllers/adminController.js";
 import requireAdmin from "../middlewares/adminAuth.js";
@@ -48,7 +49,8 @@ router.post('/ban/:id', requireAdmin, banUser);
 router.post('/unban/:id', requireAdmin, unbanUser);
 router.delete('/:id', requireAdmin, deleteUser);
 
-router.get('/all-users', getAllUsers)
+router.get('/all-users', requireAdmin, getAllUsers);
+router.get('/deleted-users', requireAdmin, getAllDeletedUsers);
 
 export default router;
 

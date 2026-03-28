@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { footerLinks, socialLinks } from "@/data/mockdata";
 import { Facebook, Instagram, Twitter } from "lucide-react";
 
@@ -13,13 +14,13 @@ const Footer = () => {
       <div className="flex max-w-[960px] flex-1 flex-col px-5 py-10 text-center gap-6">
         <div className="flex flex-wrap items-center justify-center gap-6 sm:flex-row sm:justify-around">
           {footerLinks.map((link) => (
-            <a
+            <Link
               key={link.label}
-              href={link.href}
+              to={link.to}
               className="text-[#4c739a] text-base leading-normal min-w-40"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </div>
 

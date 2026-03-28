@@ -37,6 +37,9 @@ import PaymentCallback from "./components/PaymentCallback";
 import "./App.css"; 
 import InsuranceTerms from "./components/InsuranceTerms";
 import BookingTerms from "./components/BookingTerms";
+import PrivacyPolicy from "./components/PrivacyPolicy";
+import TermsOfService from "./components/TermsOfService";
+import ContactUs from "./components/ContactUs";
 
 function AppContent() {
   const location = useLocation();
@@ -52,6 +55,9 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path='/insurance-terms' element={<InsuranceTerms />} />
           <Route path='/booking-terms' element={<BookingTerms />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/contact" element={<ContactUs />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<ResetPassword />} />

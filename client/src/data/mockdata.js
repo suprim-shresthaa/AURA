@@ -17,9 +17,9 @@ export const heroContent = {
 };
 
 export const footerLinks = [
-  { label: "Privacy Policy", href: "#" },
-  { label: "Terms of Service", href: "#" },
-  { label: "Contact Us", href: "#" },
+  { label: "Privacy Policy", to: "/privacy-policy" },
+  { label: "Terms of Service", to: "/terms-of-service" },
+  { label: "Contact Us", to: "/contact" },
 ];
 
 export const socialLinks = [

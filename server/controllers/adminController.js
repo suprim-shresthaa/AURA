@@ -2,6 +2,8 @@ import Booking from "../models/booking.model.js";
 import Vehicle from "../models/vehicle.model.js";
 import SparePart from "../models/sparePart.model.js";
 import User from "../models/user.model.js";
+import DeletedUser from "../models/deletedUser.model.js";
+import VendorApplication from "../models/vendorApplication.model.js";
 import mongoose from "mongoose";
 import sendEmail from '../utils/emailTemplates.js';
 
@@ -996,7 +998,11 @@ export const deleteUser = async (req, res) => {
             return res.status(400).json({ success: false, message: 'User id is required' });
         }
 
-        const user = await User.findById(id);
+        const user = await User.findById(id)
+            .populate("banInfo.bannedBy", "name email")
+            .populate("banInfo.unbannedBy", "name email")
+            .populate("licenses.approvedBy", "name email");
+
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
@@ -1006,20 +1012,46 @@ export const deleteUser = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Cannot delete an admin user' });
         }
 
+        const reason = typeof req.body?.reason === "string" ? req.body.reason : "";
+
+        // Remove this user's vehicle listings (vendor inventory)
+        await Vehicle.deleteMany({ vendorId: id });
+
+        // Allow future vendor signup with same email / phone on a new account
+        await VendorApplication.deleteMany({ user: id });
+
+        const snapshot = user.toObject();
+        delete snapshot.password;
+        delete snapshot.verifyOtp;
+        delete snapshot.verifyOtpExpireAt;
+        delete snapshot.resetOtp;
+        delete snapshot.resetOtpExpireAt;
+
+        await DeletedUser.create({
+            originalUserId: user._id,
+            email: user.email,
+            snapshot,
+            deletedBy: req.user?._id || null,
+            reason,
+        });
+
         await User.findByIdAndDelete(id);
 
         // Notify the user by email about account deletion (best-effort)
         try {
             await sendEmail(user.email, 'account-deleted', {
                 userName: user.name,
-                reason: req.body?.reason || '',
+                reason,
                 adminEmail: process.env.SENDER_EMAIL
             });
         } catch (emailErr) {
             console.error('Failed to send account-deleted email to user:', emailErr);
         }
 
-        return res.status(200).json({ success: true, message: 'User deleted successfully' });
+        return res.status(200).json({
+            success: true,
+            message: 'User removed. Their email can be used to register a new account.',
+        });
     } catch (error) {
         console.error('Error deleting user:', error);
         return res.status(500).json({ success: false, message: error.message });
@@ -1032,6 +1064,33 @@ export const getAllUsers = async (req, res) => {
         res.status(200).json({ success: true, data: users });
     }
     catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/** List archived (soft-deleted) users for admin */
+export const getAllDeletedUsers = async (req, res) => {
+    try {
+        const rows = await DeletedUser.find()
+            .sort({ deletedAt: -1 })
+            .populate("deletedBy", "name email")
+            .lean();
+
+        const data = rows.map((row) => ({
+            _id: row.originalUserId,
+            originalUserId: row.originalUserId,
+            name: row.snapshot?.name,
+            email: row.email,
+            role: row.snapshot?.role,
+            image: row.snapshot?.image,
+            deletedAt: row.deletedAt,
+            reason: row.reason,
+            deletedBy: row.deletedBy,
+        }));
+
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        console.error("Error listing deleted users:", error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
@@ -1052,11 +1111,28 @@ export const getUserByIdAdmin = async (req, res) => {
             .populate("banInfo.unbannedBy", "name email")
             .populate("licenses.approvedBy", "name email");
 
-        if (!user) {
+        if (user) {
+            return res.status(200).json({ success: true, data: user });
+        }
+
+        const archived = await DeletedUser.findOne({ originalUserId: id })
+            .populate("deletedBy", "name email")
+            .lean();
+
+        if (!archived) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        res.status(200).json({ success: true, data: user });
+        const data = {
+            ...archived.snapshot,
+            _id: archived.originalUserId,
+            isDeleted: true,
+            deletedAt: archived.deletedAt,
+            deletionReason: archived.reason,
+            deletedByAdmin: archived.deletedBy,
+        };
+
+        res.status(200).json({ success: true, data });
     } catch (error) {
         console.error("Error fetching user (admin):", error);
         res.status(500).json({ success: false, message: error.message });

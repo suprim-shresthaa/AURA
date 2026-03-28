@@ -13,6 +13,7 @@ import {
     XCircle,
     Clock,
     User,
+    Archive,
 } from "lucide-react";
 import axiosInstance from "@/lib/axiosInstance";
 
@@ -118,6 +119,32 @@ const AdminUserDetailsPage = () => {
                     </Link>
                 </div>
 
+                {user.isDeleted && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                        <p className="font-semibold flex items-center gap-2">
+                            <Archive size={18} />
+                            This account was removed
+                        </p>
+                        <p className="mt-1 text-amber-900/90">
+                            There is no login for this email anymore. The person can register again with the same email.
+                        </p>
+                        {user.deletedAt && (
+                            <p className="mt-2 text-xs text-amber-800/80">
+                                Removed {formatDate(user.deletedAt)}
+                                {user.deletionReason ? ` · ${user.deletionReason}` : ""}
+                            </p>
+                        )}
+                        {user.deletedByAdmin &&
+                            typeof user.deletedByAdmin === "object" &&
+                            user.deletedByAdmin?.name && (
+                                <p className="mt-1 text-xs text-amber-800/80">
+                                    By admin: {user.deletedByAdmin.name}
+                                    {user.deletedByAdmin.email ? ` (${user.deletedByAdmin.email})` : ""}
+                                </p>
+                            )}
+                    </div>
+                )}
+
                 {/* Header card */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="p-6 md:p-8 flex flex-col sm:flex-row gap-6">
@@ -140,7 +167,12 @@ const AdminUserDetailsPage = () => {
                                 <span className="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
                                     {roleLabel}
                                 </span>
-                                {ban.isBanned ? (
+                                {user.isDeleted ? (
+                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-900">
+                                        <Archive size={14} />
+                                        Removed
+                                    </span>
+                                ) : ban.isBanned ? (
                                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
                                         <Ban size={14} />
                                         Banned

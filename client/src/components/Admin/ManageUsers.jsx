@@ -1,15 +1,14 @@
 // ManageUsers.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { Search, Trash2, UserCheck, UserX, Users } from "lucide-react";
+import axiosInstance from "@/lib/axiosInstance";
+import { Search, Trash2, UserCheck, UserX, Users, Archive } from "lucide-react";
 import RemarksModal from "../ui/RemarksModal";
-
-const API_BASE = "http://localhost:5001/api/admin";
 
 const ManageUsers = () => {
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
+    const [deletedUsers, setDeletedUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -22,35 +21,53 @@ const ManageUsers = () => {
         userName: null,
     });
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                setLoading(true);
-                setError(null);
+    const loadLists = async (options = { showLoading: true }) => {
+        const showLoading = options.showLoading !== false;
+        try {
+            if (showLoading) setLoading(true);
+            setError(null);
 
-                const { data } = await axios.get(`${API_BASE}/all-users`);
-                const apiUsers = data.data;
+            const [activeRes, deletedRes] = await Promise.all([
+                axiosInstance.get("/admin/all-users"),
+                axiosInstance.get("/admin/deleted-users"),
+            ]);
 
-                const mapped = apiUsers.map((u) => ({
-                    id: u._id,
-                    name: u.name || "Unknown User",
-                    email: u.email || "No email",
+            const apiUsers = activeRes.data.data || [];
+            const mapped = apiUsers.map((u) => ({
+                id: u._id,
+                name: u.name || "Unknown User",
+                email: u.email || "No email",
+                role: u.role
+                    ? u.role.charAt(0).toUpperCase() + u.role.slice(1).toLowerCase()
+                    : "User",
+                status: u.banInfo?.isBanned ? "Banned" : "Active",
+                image: u.image || null,
+            }));
+            setUsers(mapped);
+
+            const del = deletedRes.data.data || [];
+            setDeletedUsers(
+                del.map((u) => ({
+                    id: u._id || u.originalUserId,
+                    name: u.name || "Unknown",
+                    email: u.email || "",
                     role: u.role
                         ? u.role.charAt(0).toUpperCase() + u.role.slice(1).toLowerCase()
                         : "User",
-                    status: u.banInfo?.isBanned ? "Banned" : "Active",
                     image: u.image || null,
-                }));
+                    deletedAt: u.deletedAt,
+                }))
+            );
+        } catch (err) {
+            setError(err.response?.data?.message || err.message || "Failed to load users");
+            console.error(err);
+        } finally {
+            if (showLoading) setLoading(false);
+        }
+    };
 
-                setUsers(mapped);
-            } catch (err) {
-                setError(err.response?.data?.message || err.message || "Failed to load users");
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchUsers();
+    useEffect(() => {
+        loadLists();
     }, []);
 
     const filteredUsers = users.filter(
@@ -71,22 +88,23 @@ const ManageUsers = () => {
 
     // Perform actions
     const performBan = async (userId, reason) => {
-        await axios.post(`${API_BASE}/ban/${userId}`, { reason });
+        await axiosInstance.post(`/admin/ban/${userId}`, { reason });
         setUsers((prev) =>
             prev.map((u) => (u.id === userId ? { ...u, status: "Banned" } : u))
         );
     };
 
     const performUnban = async (userId, reason = "") => {
-        await axios.post(`${API_BASE}/unban/${userId}`, { reason });
+        await axiosInstance.post(`/admin/unban/${userId}`, { reason });
         setUsers((prev) =>
             prev.map((u) => (u.id === userId ? { ...u, status: "Active" } : u))
         );
     };
 
     const performDelete = async (userId, reason) => {
-        await axios.delete(`${API_BASE}/${userId}`, { data: { reason } });
+        await axiosInstance.delete(`/admin/${userId}`, { data: { reason } });
         setUsers((prev) => prev.filter((u) => u.id !== userId));
+        await loadLists({ showLoading: false });
     };
 
     // Unified submit handler for modal
@@ -129,11 +147,12 @@ const ManageUsers = () => {
                 };
             case "delete":
                 return {
-                    title: `Delete ${modal.userName}`,
-                    description: "This action is permanent and cannot be undone. All user data will be removed.",
+                    title: `Remove ${modal.userName}`,
+                    description:
+                        "Their account will be closed and their vehicle listings removed. A copy is kept for admins. They can register again with the same email.",
                     actionType: "ban", // red style
-                    placeholder: "State the reason for permanent deletion...",
-                    submitText: "Delete Permanently",
+                    placeholder: "Reason for removal (optional)...",
+                    submitText: "Remove account",
                 };
             default:
                 return {};
@@ -184,7 +203,8 @@ const ManageUsers = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-200">
+                                    <tr className="bg-slate-50 border-b border-slate-200"> 
+                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">ID</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">User</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Email</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Role</th>
@@ -207,6 +227,8 @@ const ManageUsers = () => {
                                                 }
                                             }}
                                         >
+                                            {/* id */}
+                                            <td className="px-6 py-4">{user.id}</td>
                                             {/* User Avatar + Name */}
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
@@ -270,7 +292,7 @@ const ManageUsers = () => {
                                                         type="button"
                                                         onClick={() => openModal("delete", user.id, user.name)}
                                                         className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition duration-150"
-                                                        title="Delete user permanently"
+                                                        title="Remove account (archived for admins)"
                                                     >
                                                         <Trash2 size={18} />
                                                     </button>
@@ -313,6 +335,90 @@ const ManageUsers = () => {
                                 </span>
                             </div>
                         )}
+                    </div>
+
+                    {/* Removed accounts (archived) */}
+                    <div className="mt-10">
+                        <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                            <Archive size={20} className="text-slate-500" />
+                            Removed accounts
+                        </h2>
+                        <p className="text-sm text-slate-500 mb-4">
+                            These users no longer have a login. The same email can register again. Open a row for full details (same as active users).
+                        </p>
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-200">
+                                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">User</th>
+                                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Email</th>
+                                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Role</th>
+                                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Removed</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-200">
+                                        {deletedUsers.map((user) => (
+                                            <tr
+                                                key={String(user.id)}
+                                                className="hover:bg-slate-50 transition duration-150 cursor-pointer"
+                                                onClick={() => navigate(`/admin/users/${user.id}`)}
+                                                role="button"
+                                                tabIndex={0}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" || e.key === " ") {
+                                                        e.preventDefault();
+                                                        navigate(`/admin/users/${user.id}`);
+                                                    }
+                                                }}
+                                            >
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="shrink-0">
+                                                            {user.image ? (
+                                                                <img
+                                                                    src={user.image}
+                                                                    alt={user.name}
+                                                                    className="w-10 h-10 rounded-full object-cover border border-slate-200 opacity-90"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
+                                                                    <span className="text-slate-500 text-sm font-medium">
+                                                                        {user.name.charAt(0).toUpperCase()}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="font-medium text-slate-700">{user.name}</div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-slate-600 text-sm">{user.email}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className="inline-flex px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
+                                                        {user.role}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-slate-500">
+                                                    {user.deletedAt
+                                                        ? new Date(user.deletedAt).toLocaleString(undefined, {
+                                                              dateStyle: "medium",
+                                                              timeStyle: "short",
+                                                          })
+                                                        : "—"}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {deletedUsers.length === 0 && (
+                                            <tr>
+                                                <td colSpan="4" className="px-6 py-8 text-center text-slate-500 text-sm">
+                                                    No removed accounts yet.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
