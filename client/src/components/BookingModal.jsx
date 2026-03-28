@@ -158,7 +158,7 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
             return;
         }
         if (!formData.startDate || !formData.endDate) {
-            setError("Please select both start and end dates");
+            setError("Please select both start and return dates");
             return;
         }
 
@@ -172,7 +172,7 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
             return;
         }
         if (end <= start) {
-            setError("End date must be after start date");
+            setError("Return date must be after start date");
             return;
         }
 
@@ -393,7 +393,7 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                                     <div>
                                         <Label htmlFor="endDate" className="mb-2 block">
                                             <Calendar className="inline w-4 h-4 mr-1" />
-                                            End Date
+                                            Return Date
                                         </Label>
                                         <Input
                                             id="endDate"
@@ -501,7 +501,7 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                                         <span className="font-medium">{new Date(formData.startDate).toLocaleDateString()}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-600">End Date:</span>
+                                        <span className="text-gray-600">Return Date:</span>
                                         <span className="font-medium">{new Date(formData.endDate).toLocaleDateString()}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
@@ -579,9 +579,9 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                                     placeholder="Any special requests or notes..."
                                 />
                             </div>
-
+                            <p className="text-sm text-red-600">Note: Once vehicle is booked, you will not be able to cancel it.</p>
                             {/* Terms and Conditions */}
-                            <div className="pt-4">
+                            <div className="">
                                 {insuranceSelected && (
                                 <div className="flex items-center">
                                     <input

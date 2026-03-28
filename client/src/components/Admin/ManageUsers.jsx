@@ -1,5 +1,6 @@
 // ManageUsers.jsx
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Search, Trash2, UserCheck, UserX, Users } from "lucide-react";
 import RemarksModal from "../ui/RemarksModal";
@@ -7,6 +8,7 @@ import RemarksModal from "../ui/RemarksModal";
 const API_BASE = "http://localhost:5001/api/admin";
 
 const ManageUsers = () => {
+    const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(true);
@@ -192,7 +194,19 @@ const ManageUsers = () => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-200">
                                     {filteredUsers.map((user) => (
-                                        <tr key={user.id} className="hover:bg-blue-50 transition duration-150 group">
+                                        <tr
+                                            key={user.id}
+                                            className="hover:bg-blue-50 transition duration-150 group cursor-pointer"
+                                            onClick={() => navigate(`/admin/users/${user.id}`)}
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") {
+                                                    e.preventDefault();
+                                                    navigate(`/admin/users/${user.id}`);
+                                                }
+                                            }}
+                                        >
                                             {/* User Avatar + Name */}
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
@@ -235,10 +249,11 @@ const ManageUsers = () => {
                                             </td>
 
                                             {/* Actions */}
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex justify-center gap-3">
                                                     {/* Ban / Unban */}
                                                     <button
+                                                        type="button"
                                                         onClick={() =>
                                                             user.status === "Active"
                                                                 ? openModal("ban", user.id, user.name)
@@ -252,6 +267,7 @@ const ManageUsers = () => {
 
                                                     {/* Delete */}
                                                     <button
+                                                        type="button"
                                                         onClick={() => openModal("delete", user.id, user.name)}
                                                         className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition duration-150"
                                                         title="Delete user permanently"

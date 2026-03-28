@@ -42,8 +42,13 @@ const ProfileInfo = () => {
 
             const data = await res.json();
 
-            if (res.ok) {
-                setUserData(data.user);
+            if (res.ok && data.user) {
+                setUserData((prev) => ({
+                    ...prev,
+                    ...data.user,
+                    userId: data.user.userId ?? prev?.userId ?? prev?.id,
+                    id: data.user.userId ?? data.user.id ?? prev?.id,
+                }));
                 setIsEditing(false);
                 toast.success("Profile updated successfully!");
             } else {

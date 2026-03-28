@@ -54,7 +54,6 @@ const Settings = () => {
         try {
             const payload = {
                 ...passwords,
-                userId: userData?.userId,   // SEND USER ID
             };
 
             const res = await axios.post(

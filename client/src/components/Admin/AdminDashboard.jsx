@@ -199,7 +199,7 @@ const Dashboard = () => {
                     })}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+                <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mt-8">
                     <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6">
                         <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Bookings</h2>
                         <div className="space-y-4">
@@ -233,41 +233,6 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl shadow-sm p-6">
-                        <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Stats</h2>
-                        <div className="space-y-4">
-                            <div className="space-y-3">
-                                <h3 className="text-sm font-semibold text-gray-700">Booking Status</h3>
-                                {bookingStatusMetrics.map((metric) => {
-                                    const Icon = metric.icon;
-                                    return (
-                                        <div key={metric.title} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                            <div className="flex items-center gap-2">
-                                                <Icon className={`w-4 h-4 ${metric.color}`} />
-                                                <span className="text-sm text-gray-600">{metric.title}</span>
-                                            </div>
-                                            <span className="font-bold text-gray-900">{metric.value}</span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            <div className="space-y-3 mt-4 pt-4 border-t">
-                                <h3 className="text-sm font-semibold text-gray-700">Payment Status</h3>
-                                {paymentMetrics.map((metric) => (
-                                    <div key={metric.title} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                        <span className="text-sm text-gray-600">{metric.title}</span>
-                                        <span className="font-bold text-gray-900">{metric.value}</span>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="mt-4 pt-4 border-t">
-                                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                                    <span className="text-sm text-gray-600">Today's Transactions</span>
-                                    <span className="font-bold text-blue-900">{formatCurrency(stats.todayRevenue || 0)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 {stats.topVendors && stats.topVendors.length > 0 && (

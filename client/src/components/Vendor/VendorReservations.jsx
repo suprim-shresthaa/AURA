@@ -224,6 +224,7 @@ export default function VendorReservations() {
                                                             <p className="text-sm text-gray-500">
                                                                 {booking.userId?.email || 'N/A'}
                                                             </p>
+                                                            <p className="text-sm text-gray-500">{booking.userId?.contact || 'N/A'}</p>
                                                         </div>
                                                     </div>
                                                 </td>

@@ -248,6 +248,7 @@ const Signup = () => {
                             <form onSubmit={handleSignup} className="space-y-3 sm:space-y-4">
                                 <InputField
                                     id="name"
+                                    type="text"
                                     label="Name"
                                     placeholder="Your Name"
                                     value={name}
@@ -259,8 +260,8 @@ const Signup = () => {
                                 />
                                 <InputField
                                     id="email"
-                                    label="Email"
                                     type="email"
+                                    label="Email"
                                     placeholder="Email Address"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}

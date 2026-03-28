@@ -1,89 +1,97 @@
-import { Link, useLocation } from 'react-router-dom';
-import { X, Home, Users, Calendar, Wrench, LogOut, Book, Package } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+    Home,
+    Users,
+    Calendar,
+    Wrench,
+    LogOut,
+    Book,
+    Car,
+    FileText,
+    ArrowLeft,
+    UserCircle,
+} from 'lucide-react';
 import useLogout from '../../hooks/useLogout';
+import { toast } from 'react-toastify';
 
-const Sidebar = ({ isOpen, setIsOpen }) => {
+function isNavActive(pathname, path) {
+    if (path === '/admin/dashboard') {
+        return pathname === '/admin/dashboard' || pathname === '/admin';
+    }
+    return pathname === path || pathname.startsWith(`${path}/`);
+}
+
+const Sidebar = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const logout = useLogout();
-
-    const handleLogout = async () => {
-        try {
-          logout();
-          setIsOpen(false);
-        } catch (error) {
-          console.error("Logout failed:", error);
-        }
-      };
 
     const menuItems = [
         { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/admin/dashboard' },
         { id: 'users', label: 'Manage Users', icon: Users, path: '/admin/users' },
         { id: 'reservations', label: 'Reservations', icon: Calendar, path: '/admin/reservations' },
-        { id: 'applications', label: 'Manage Applications', icon: Book, path: '/admin/applications' },
-        { id: 'spare-parts', label: 'Spare Parts', icon: Wrench, path: '/admin/spare-parts' },
+        { id: 'applications', label: 'Applications', icon: Book, path: '/admin/applications' },
+        { id: 'vehicles', label: 'Manage Vehicles', icon: Car, path: '/admin/vehicles' },
+        { id: 'licenses', label: 'Manage Licenses', icon: FileText, path: '/admin/licenses' },
+        { id: 'spare-parts', label: 'Manage Spare Parts', icon: Wrench, path: '/admin/spare-parts' },
+        { id: 'profile', label: 'My Profile', icon: UserCircle, path: '/profile' },
     ];
 
-    return (
-        <>
-            {/* Mobile overlay */}
-            {isOpen && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-                    onClick={() => setIsOpen(false)}
-                />
-            )}
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/');
+        } catch (error) {
+            toast.error('Logout failed');
+        }
+    };
 
-            {/* Sidebar */}
-            <aside
-                className={`fixed top-0 left-0 h-screen bg-gray-800 transition-transform duration-300 z-50 flex flex-col
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:translate-x-0 lg:static lg:z-auto
-          w-64`}
+    const NavItem = ({ item }) => {
+        const Icon = item.icon;
+        const isActive = isNavActive(location.pathname, item.path);
+
+        return (
+            <Link
+                to={item.path}
+                className={`group relative flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                    isActive
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                        : 'text-gray-300 hover:bg-gray-700'
+                }`}
             >
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-700 flex-shrink-0">
-                    <h2 className="text-xl font-bold text-white">Admin</h2>
-                    <button
-                        onClick={() => setIsOpen(!isOpen)}
-                        className="lg:hidden text-white hover:bg-gray-700 p-2 rounded"
-                    >
-                        <X size={24} />
-                    </button>
+                <Icon size={20} />
+                <span className="text-sm font-medium">{item.label}</span>
+            </Link>
+        );
+    };
+
+    return (
+        <aside className="w-64 shrink-0 min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col">
+            <div className="flex flex-col h-full min-h-0 p-4">
+                <div className="flex items-center mb-6">
+                    <Link to="/" className="text-white hover:text-gray-300 text-sm">
+                        <ArrowLeft className="w-4 h-4 inline-block mr-2" size={20} /> Back to Home
+                    </Link>
                 </div>
 
-                {/* Navigation - Scrollable area */}
-                <nav className="flex-1 overflow-y-auto p-4">
-                    <div className="space-y-2">
-                        {menuItems.map((item) => {
-                            const Icon = item.icon;
-                            const isActive = location.pathname === item.path;
-                            return (
-                                <Link
-                                    key={item.id}
-                                    to={item.path}
-                                    onClick={() => setIsOpen(false)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive
-                                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
-                                            : 'text-gray-300 hover:bg-gray-700'
-                                        }`}
-                                >
-                                    <Icon size={20} className="flex-shrink-0" />
-                                    <span className="truncate">{item.label}</span>
-                                </Link>
-                            );
-                        })}
-                    </div>
+                <h1 className="font-bold text-white text-xl mb-8">Admin Dashboard</h1>
+
+                <nav className="flex-1 space-y-2 overflow-y-auto min-h-0">
+                    {menuItems.map((item) => (
+                        <NavItem key={item.id} item={item} />
+                    ))}
                 </nav>
 
-                {/* Logout - Fixed at bottom */}
-                <div className="p-4 border-t border-gray-700 flex-shrink-0">
-                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-gray-700 rounded-lg transition-all">
-                        <LogOut size={20} className="flex-shrink-0" />
-                        <span className="truncate">Logout</span>
-                    </button>
-                </div>
-            </aside>
-        </>
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 transition-all w-full"
+                >
+                    <LogOut size={20} />
+                    <span className="text-sm font-medium">Logout</span>
+                </button>
+            </div>
+        </aside>
     );
 };
 

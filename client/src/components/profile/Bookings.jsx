@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { 
     Calendar, 
     Search, 
@@ -175,107 +175,122 @@ export default function Bookings() {
                         </div>
                     </div>
                 ) : filteredBookings.length > 0 ? (
-                    <div className="space-y-4">
-                        {filteredBookings.map((booking) => {
-                            const isVehicle = booking.bookingType === 'vehicle' || booking.vehicleId;
-                            const isSparePart = booking.bookingType === 'sparePart' || booking.sparePartId;
-                            const entity = isVehicle ? booking.vehicleId : booking.sparePartId;
-                            const entityImage = isVehicle ? entity?.mainImage : (entity?.images?.[0] || null);
-                            
-                            return (
-                            <div
-                                key={booking._id}
-                                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                            >
-                                <div className="flex flex-col md:flex-row md:items-center gap-4">
-                                    {/* Entity Image and Info */}
-                                    <div className="flex items-center gap-4 flex-1">
-                                        {entityImage && (
-                                            <img
-                                                src={entityImage}
-                                                alt={entity?.name}
-                                                className="w-20 h-20 rounded-lg object-cover"
-                                            />
-                                        )}
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                {isVehicle ? (
-                                                    <Car className="w-4 h-4 text-gray-400" />
-                                                ) : (
-                                                    <Package className="w-4 h-4 text-gray-400" />
-                                                )}
-                                                <h4 className="font-semibold text-gray-900">
-                                                    {entity?.name || (isVehicle ? 'Unknown Vehicle' : 'Unknown Spare Part')}
-                                                </h4>
-                                            </div>
-                                            <p className="text-sm text-gray-500">
-                                                {isVehicle 
-                                                    ? entity?.category || 'N/A'
-                                                    : `${entity?.category || 'N/A'}${entity?.brand ? ` • ${entity.brand}` : ''}`
-                                                }
-                                            </p>
-                                        </div>
-                                    </div>
+                    <div className="overflow-x-auto -mx-6 px-6 md:mx-0 md:px-0 rounded-lg border border-gray-200">
+                        <table className="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Item
+                                    </th>
+                                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                        Rental period
+                                    </th>
+                                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                        Total
+                                    </th>
+                                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                        Status
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 bg-white">
+                                {filteredBookings.map((booking) => {
+                                    const isVehicle = booking.bookingType === 'vehicle' || booking.vehicleId;
+                                    const entity = isVehicle ? booking.vehicleId : booking.sparePartId;
+                                    const entityImage = isVehicle ? entity?.mainImage : (entity?.images?.[0] || null);
 
-                                    {/* Dates */}
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="w-4 h-4 text-gray-400" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-900">
-                                                {formatDate(booking.startDate)}
-                                            </p>
-                                            <p className="text-xs text-gray-500">
-                                                to {formatDate(booking.endDate)}
-                                            </p>
-                                            <p className="text-xs text-gray-500">
-                                                {booking.totalDays} day{booking.totalDays !== 1 ? 's' : ''}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Amount */}
-                                    <div className="flex items-center gap-2">
-                                        <DollarSign className="w-4 h-4 text-gray-400" />
-                                        <div>
-                                            <p className="font-semibold text-gray-900">
-                                                {formatCurrency(booking.totalAmount)}
-                                            </p>
-                                            <p className="text-xs text-gray-500">
-                                                {booking.paymentMethod === 'esewa' ? 'eSewa' : booking.paymentMethod || 'N/A'}
-                                            </p>
-                                            {booking.insuranceSelected && (
-                                                <p className="text-xs text-gray-500 mt-1">Insurance: Rs. {booking.insuranceAmount || 500} (Accidental coverage)</p>
+                                    return (
+                                        <Fragment key={booking._id}>
+                                            <tr className="hover:bg-gray-50 transition-colors">
+                                                <td className="px-4 py-4 align-top">
+                                                    <div className="flex items-center gap-3 min-w-[200px] max-w-xs">
+                                                        {entityImage && (
+                                                            <img
+                                                                src={entityImage}
+                                                                alt={entity?.name || ''}
+                                                                className="w-16 h-16 rounded-lg object-cover shrink-0"
+                                                            />
+                                                        )}
+                                                        <a href={isVehicle ? `/vehicles/${entity?._id}` : `/spare-parts/${entity?._id}`} className="hover:underline">
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                {isVehicle ? (
+                                                                    <Car className="w-4 h-4 text-gray-400 shrink-0" />
+                                                                ) : (
+                                                                    <Package className="w-4 h-4 text-gray-400 shrink-0" />
+                                                                )}
+                                                                <span className="font-semibold text-gray-900">
+                                                                    {entity?.name || (isVehicle ? 'Unknown Vehicle' : 'Unknown Spare Part')}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-sm text-gray-500 mt-0.5">
+                                                                {isVehicle
+                                                                    ? entity?.category || 'N/A'
+                                                                    : `${entity?.category || 'N/A'}${entity?.brand ? ` • ${entity.brand}` : ''}`}
+                                                            </p>
+                                                        </div>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 align-top whitespace-nowrap">
+                                                    <div className="flex items-start gap-2">
+                                                        <Calendar className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                                                        <div>
+                                                            <p className="font-medium text-gray-900">
+                                                                {formatDate(booking.startDate)}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500">
+                                                                to {formatDate(booking.endDate)}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {booking.totalDays} day{booking.totalDays !== 1 ? 's' : ''}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 align-top whitespace-nowrap">
+                                                    <div className="flex items-start gap-2">
+                                                        <DollarSign className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                                                        <div>
+                                                            <p className="font-semibold text-gray-900">
+                                                                {formatCurrency(booking.totalAmount)}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {booking.paymentMethod === 'esewa' ? 'eSewa' : booking.paymentMethod || 'N/A'}
+                                                            </p>
+                                                            {booking.insuranceSelected && (
+                                                                <p className="text-xs text-gray-500 mt-1">Insurance</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 align-top">
+                                                    <div className="flex flex-col gap-2">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            {getStatusIcon(booking.bookingStatus)}
+                                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.bookingStatus)}`}>
+                                                                {booking.bookingStatus}
+                                                            </span>
+                                                        </div>
+                                                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium w-fit ${getPaymentStatusColor(booking.paymentStatus)}`}>
+                                                            Payment: {booking.paymentStatus}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {booking.notes && (
+                                                <tr className="bg-gray-50/80">
+                                                    <td colSpan={4} className="px-4 py-3 text-sm text-gray-600 border-t border-gray-100">
+                                                        <span className="font-medium text-gray-700">Notes:</span>{' '}
+                                                        {booking.notes}
+                                                    </td>
+                                                </tr>
                                             )}
-                                        </div>
-                                    </div>
-
-                                    {/* Status */}
-                                    <div className="flex flex-col gap-2">
-                                        <div className="flex items-center gap-2">
-                                            {getStatusIcon(booking.bookingStatus)}
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.bookingStatus)}`}>
-                                                {booking.bookingStatus}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(booking.paymentStatus)}`}>
-                                                Payment: {booking.paymentStatus}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Notes */}
-                                {booking.notes && (
-                                    <div className="mt-3 pt-3 border-t border-gray-200">
-                                        <p className="text-sm text-gray-600">
-                                            <span className="font-medium">Notes:</span> {booking.notes}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                            );
-                        })}
+                                        </Fragment>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 ) : (
                     <div className="text-center py-12">

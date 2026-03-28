@@ -10,6 +10,7 @@ import {
     Book,
     List,
     LogOutIcon,
+    ArrowLeft,
 } from 'lucide-react';
 import { useContext } from 'react';
 import { AppContent } from '../context/AppContext';
@@ -80,17 +81,23 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
             {/* Sidebar */}
             <div
-                className={`fixed lg:static left-0 top-0 h-[90vh] bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 transition-all duration-300 flex flex-col ${isOpen ? 'w-64' : 'w-0 lg:w-20'
-                    } overflow-hidden`}
+                className={`fixed z-40 h-dvh left-0 top-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 transition-all duration-300 flex flex-col shrink-0 ${isOpen ? 'w-64' : 'w-0 lg:w-20'
+                    } overflow-hidden lg:sticky lg:top-0 lg:self-start`}
             >
-                <div className="flex flex-col h-full p-4">
+                <div className="flex flex-col h-full min-h-0 p-4">
+                    <div className="flex items-center justify-between mb-8 lg:justify-center">
+                    <Link to="/" className="text-white hover:text-gray-300">
+                        <ArrowLeft className="w-4 h-4  inline-block mr-2" size={20} /> Back to Home
+                    </Link>
+                    </div>
                     {/* Header */}
                     <div className="flex items-center justify-between mb-8 lg:justify-center">
+                       
                         <h1
                             className={`font-bold text-white text-xl transition-all duration-200 ${isOpen ? 'block' : 'hidden lg:block'
                                 }`}
                         >
-                            Vendor
+                            Vendor Dashboard
                         </h1>
                         <button
                             onClick={() => setIsOpen(!isOpen)}

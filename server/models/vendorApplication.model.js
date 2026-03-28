@@ -4,8 +4,8 @@ const vendorApplicationSchema = new mongoose.Schema(
     {
         fullName: { type: String, required: true },
         businessName: { type: String },
-        email: { type: String, required: true },
-        phone: { type: String, required: true },
+        email: { type: String, required: true, unique: true },
+        phone: { type: String, required: true, unique: true },
         address: { type: String, required: true },
         businessType: { type: String, enum: ["individual", "company"], required: true },
         govIdType: { type: String, enum: ["citizenship", "license", "passport"], required: true },

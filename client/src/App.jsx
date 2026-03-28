@@ -10,6 +10,7 @@ import AdminDashboard from "./components/Admin/AdminDashboard";
 import VendorApplicationForm from "./components/Vendor/VendorApplicationForm";
 import ManageApplications from "./components/Admin/ManageApplications";
 import ManageUsers from "./components/Admin/ManageUsers";
+import AdminUserDetailsPage from "./components/Admin/AdminUserDetailsPage";
 import ManageReservations from "./components/Admin/ManageReservations";
 import ManageVehicles from "./components/Admin/ManageVehicles";
 import ManageLicenses from "./components/Admin/ManageLicenses";
@@ -40,10 +41,11 @@ import BookingTerms from "./components/BookingTerms";
 function AppContent() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
+  const isVendorRoute = location.pathname.startsWith("/vendor");
 
   return (
     <>
-      {!isAdminRoute && <Navbar />}
+      {!isAdminRoute && !isVendorRoute && <Navbar />}
 
       <div className={`bg-slate-100 min-h-screen flex-1`}>
         <Routes>
@@ -77,6 +79,7 @@ function AppContent() {
 
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="users/:id" element={<AdminUserDetailsPage />} />
             <Route path="users" element={<ManageUsers />} />
             <Route path="reservations" element={<ManageReservations />} />
             <Route path="applications" element={<ManageApplications />} />
@@ -90,7 +93,7 @@ function AppContent() {
         </Routes>
       </div>
 
-      {!isAdminRoute && <Footer />}
+      {!isAdminRoute && !isVendorRoute && <Footer />}
       <ToastContainer
         position="top-right"
         autoClose={3000}

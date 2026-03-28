@@ -358,7 +358,7 @@ export default function VendorDashboard() {
 
                     {/* Quick Stats Summary */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+                        {/* <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="p-2 bg-green-100 rounded-lg">
                                     <CheckCircle className="w-5 h-5 text-green-600" />
@@ -366,7 +366,7 @@ export default function VendorDashboard() {
                                 <h4 className="font-semibold text-gray-900">Completed Bookings</h4>
                             </div>
                             <p className="text-2xl font-bold text-gray-900">{stats.completedBookings || 0}</p>
-                        </div>
+                        </div> */}
 
                         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
                             <div className="flex items-center gap-3 mb-2">

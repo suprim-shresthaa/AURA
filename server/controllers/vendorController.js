@@ -16,8 +16,45 @@ export const submitVendorApplication = async (req, res) => {
             businessType,
             govIdType,
             govIdNumber,
-            userId, // <-- Now receiving from frontend
         } = req.body;
+
+        const userId = req.userId;
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "User ID is required. Please log in.",
+            });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found.",
+            });
+        }
+
+        if (user.role === "vendor") {
+            return res.status(400).json({
+                success: false,
+                message: "You are already registered as a vendor.",
+            });
+        }
+
+        const existingApplication = await vendorApplicationModel.findOne({
+            user: userId,
+            status: { $in: ["pending", "approved"] },
+        });
+        if (existingApplication) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    existingApplication.status === "pending"
+                        ? "A vendor application is already submitted and pending review."
+                        : "Your vendor application was already approved.",
+            });
+        }
 
         // 1. Validate required file
         if (!req.file) {
@@ -29,22 +66,6 @@ export const submitVendorApplication = async (req, res) => {
 
         // 2. Get Cloudinary URL
         const idDocumentUrl = req.file.path;
-
-        // 3. Validate userId
-        if (!userId) {
-            return res.status(400).json({
-                success: false,
-                message: "User ID is required. Please log in.",
-            });
-        }
-
-        // Optional: Validate that userId is a valid ObjectId
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid User ID format.",
-            });
-        }
 
         // 4. Create new application with user reference
         const newApplication = new vendorApplicationModel({

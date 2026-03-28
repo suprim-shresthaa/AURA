@@ -1035,3 +1035,30 @@ export const getAllUsers = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+/**
+ * Get a single user by ID (admin) — full profile, licenses, ban info (no password).
+ */
+export const getUserByIdAdmin = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: "Invalid user id" });
+        }
+
+        const user = await User.findById(id)
+            .select("-password")
+            .populate("banInfo.bannedBy", "name email")
+            .populate("banInfo.unbannedBy", "name email")
+            .populate("licenses.approvedBy", "name email");
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        console.error("Error fetching user (admin):", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

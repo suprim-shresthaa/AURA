@@ -12,7 +12,8 @@ import {
     rejectLicense,
     getAllSparePartsAdmin,
     toggleSparePartAvailability,
-    getAllUsers
+    getAllUsers,
+    getUserByIdAdmin
 } from "../controllers/adminController.js";
 import requireAdmin from "../middlewares/adminAuth.js";
 import { banUser, deleteUser, unbanUser } from "../controllers/adminController.js";
@@ -42,6 +43,7 @@ router.get("/spare-parts", requireAdmin, getAllSparePartsAdmin);
 router.put("/spare-parts/:id/availability", requireAdmin, toggleSparePartAvailability);
 
 // Admin actions on users
+router.get("/users/:id", requireAdmin, getUserByIdAdmin);
 router.post('/ban/:id', requireAdmin, banUser);
 router.post('/unban/:id', requireAdmin, unbanUser);
 router.delete('/:id', requireAdmin, deleteUser);

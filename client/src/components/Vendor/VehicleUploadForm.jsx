@@ -351,9 +351,12 @@ export default function VehicleUploadForm() {
                                 <input
                                     type="number"
                                     name="mileage"
-                                    placeholder="e.g., 45000"
+                                    placeholder="e.g., 20"
                                     value={formData.mileage}
-                                    onChange={handleChange}
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(/\D/g, '').slice(0, 2);
+                                        setFormData({ ...formData, mileage: value });
+                                    }}
                                     min="0"
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                     required

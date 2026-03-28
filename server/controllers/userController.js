@@ -75,14 +75,18 @@ export const updateProfile = async (req, res) => {
             user.name = name.trim();
         }
         if (contact !== undefined) {
-            // Validate contact number format (10 digits)
-            if (!/^[0-9]{10}$/.test(contact)) {
+            const trimmed =
+                typeof contact === "string" ? contact.trim() : String(contact ?? "");
+            if (trimmed === "") {
+                user.contact = undefined;
+            } else if (!/^[0-9]{10}$/.test(trimmed)) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Contact must be a valid 10-digit number'
+                    message: "Contact must be a valid 10-digit number",
                 });
+            } else {
+                user.contact = trimmed;
             }
-            user.contact = contact;
         }
         if (address !== undefined) {
             user.address = address.trim();
@@ -159,7 +163,8 @@ export const updateProfileImage = async (req, res) => {
 };
 
 export const changePassword = async (req, res) => {
-    const { userId, oldPassword, newPassword } = req.body;
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.userId;
 
     try {
         if (!userId || !oldPassword || !newPassword) {
@@ -178,14 +183,8 @@ export const changePassword = async (req, res) => {
             });
         }
 
-        console.log("Received:", req.body);
-
-        // MUST explicitly select password
+        // MUST explicitly select password (authenticated user only)
         const user = await User.findById(userId).select("+password");
-
-        console.log("User found:", user);
-        console.log("Old Password:", oldPassword);
-        console.log("User Password:", user?.password);
 
         if (!user) {
             return res.status(404).json({

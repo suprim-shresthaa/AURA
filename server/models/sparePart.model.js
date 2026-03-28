@@ -10,7 +10,7 @@ const sparePartSchema = new mongoose.Schema(
         category: {
             type: String,
             required: true,
-            enum: ["Engine", "Electrical", "Tires", "Filters", "Body", "Accessories", "Brakes", "Suspension"],
+            enum: ["Electrical", "Tires", "Filters", "Body", "Accessories", "Brakes", "Suspension"],
             required: true
         },
         brand: {

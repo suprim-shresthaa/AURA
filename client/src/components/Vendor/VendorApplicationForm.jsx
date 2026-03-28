@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { Building2, Mail, Phone, MapPin, IdCard, FileUp, Briefcase } from "lucide-react";
 import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppContent } from '../context/AppContext'
-import { toast } from "sonner"
+import { toast } from "react-toastify";
+import Navbar from "../Navbar";
 
 const VendorApplicationForm = () => {
+    const navigate = useNavigate();
     const { userData } = useContext(AppContent)
     const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({
@@ -18,10 +21,6 @@ const VendorApplicationForm = () => {
         govIdNumber: userData?.govIdNumber,
         idDocument: null,
     });
-
-    
-    console.log(userData?.userId);
-
     const handleChange = (e) => {
         const { name, value, files } = e.target;
         if (files) {
@@ -44,10 +43,9 @@ const VendorApplicationForm = () => {
         });
 
         // Append userId from context
-        if (userData?.userId) {
-            data.append("userId", userData.userId);
-        } else {
-            alert("User not authenticated. Please log in.");
+        if (!userData?.userId) {
+            toast.error("Please log in to submit a vendor application.");
+            setSubmitting(false);
             return;
         }
     
@@ -67,7 +65,7 @@ const VendorApplicationForm = () => {
             }
         } catch (err) {
             console.log(err);
-            toast.error("Submission failed!");
+            // toast.error("Submission failed!");
         } finally {
             setSubmitting(false);
         }
@@ -76,8 +74,10 @@ const VendorApplicationForm = () => {
 
 
     return (
-        <div className="min-h-screen  py-12 px-4">
-            <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden">
+        <div className="min-h-screen">
+
+            <Navbar />
+            <div className="max-w-4xl mt-10 mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-8 text-center">
                     <div className="flex justify-center mb-3">
@@ -158,10 +158,14 @@ const VendorApplicationForm = () => {
                             <div className="relative">
                                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                                 <input
-                                    type="text"
+                                    type="number"
                                     name="phone"
                                     value={formData.phone}
-                                    onChange={handleChange}
+                                    maxLength={10}
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                        setFormData({ ...formData, phone: value });
+                                    }}
                                     placeholder="Enter your phone number"
                                     className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition"
                                     required
