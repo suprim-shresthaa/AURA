@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Package, Box, ArrowRight, CheckCircle, XCircle } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { Package, ArrowRight, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function SparePartCard({ part }) {
@@ -11,13 +11,11 @@ export default function SparePartCard({ part }) {
         category,
         brand,
         rentPrice,
-        stock,
         images,
-        isAvailable,
+        pickupLocation,
     } = part;
 
     const imageUrl = images && images.length > 0 ? images[0] : null;
-    const isInStock = isAvailable && stock > 0;
     const link = `/spare-parts/${_id}`;
 
     return (
@@ -59,17 +57,16 @@ export default function SparePartCard({ part }) {
                     </Link>
                 </h3>
 
-                <p className="text-gray-600 text-sm">
-                    {brand}
+                <p className="text-gray-600 text-sm flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <span className="line-clamp-1">{pickupLocation?.address + ", " + pickupLocation?.city || "Location not specified"}</span>
                 </p>
             </CardContent>
 
             {/* Card Footer */}
             <CardFooter className="px-6 gap-3 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                <div className="flex flex-col">
-                    <p className="text-sm font-bold text-gray-900">
-                        {rentPrice && `Rent Price: Rs. ${rentPrice?.toLocaleString()}`}<br />
-                    </p>
+            <div className="flex flex-col">
+                    <p className="text-xl font-bold text-gray-900">{rentPrice}<span className="text-sm text-gray-500">/day</span></p>
                 </div>
                 <Link 
                     className={`${buttonVariants({ variant: 'default', size: 'sm' })} group/btn transition-all duration-300 hover:scale-105`} 

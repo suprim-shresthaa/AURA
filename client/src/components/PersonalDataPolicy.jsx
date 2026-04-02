@@ -1,6 +1,6 @@
 import React from "react";
 
-const PrivacyPolicy = () => {
+const PersonalDataPolicy = () => {
   return (
     <div className="space-y-6 max-w-3xl mx-auto p-4 pb-16 text-gray-800">
       <h1 className="text-2xl font-bold text-gray-900">Privacy Policy</h1>
@@ -68,4 +68,4 @@ const PrivacyPolicy = () => {
   );
 };
 
-export default PrivacyPolicy;
+export default PersonalDataPolicy;

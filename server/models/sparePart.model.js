@@ -10,8 +10,7 @@ const sparePartSchema = new mongoose.Schema(
         category: {
             type: String,
             required: true,
-            enum: ["Electrical", "Tires", "Filters", "Body", "Accessories", "Brakes", "Suspension"],
-            required: true
+            enum: ["Electrical", "Tires", "Body", "Accessories", "Brakes"],
         },
         brand: {
             type: String,
@@ -22,12 +21,6 @@ const sparePartSchema = new mongoose.Schema(
             type: Number,
             required: true,
             min: 0
-        },
-        stock: {
-            type: Number,
-            required: true,
-            min: 0,
-            default: 0
         },
         compatibleVehicles: {
             type: String,
@@ -45,9 +38,14 @@ const sparePartSchema = new mongoose.Schema(
             type: Boolean,
             default: true
         },
+
+        pickupLocation: {
+            address: { type: String, required: true, trim: true },
+            city: { type: String, required: true, trim: true },
+        },
         status: {
             type: String,
-            enum: ["Active", "Inactive", "OutOfStock"],
+            enum: ["Active", "Inactive"],
             default: "Active"
         }
     },

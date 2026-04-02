@@ -2,7 +2,6 @@ import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "@/lib/axiosInstance";
 import { AppContent } from "./context/AppContext";
-import { toast } from "react-toastify";
 import {
     Package,
     Box,
@@ -11,10 +10,20 @@ import {
     ArrowLeft,
     Phone,
     Mail,
-    Calendar
+    Calendar,
+    MapPin,
+    Headphones,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import BookingModal from "./BookingModal";
+
+const SUPPORT_EMAIL =
+    import.meta.env.VITE_SUPPORT_EMAIL || "support@aura.example.com";
+const SUPPORT_PHONE =
+    import.meta.env.VITE_SUPPORT_PHONE || "+1 (000) 000-0000";
+const SUPPORT_ADDRESS =
+    import.meta.env.VITE_SUPPORT_ADDRESS ||
+    "AURA Support, Kathmandu, Nepal";
 
 export default function SparePartDetailsPage() {
     const { id } = useParams();
@@ -80,7 +89,7 @@ export default function SparePartDetailsPage() {
     }
 
     const allImages = sparePart.images && sparePart.images.length > 0 ? sparePart.images : [];
-    const isInStock = sparePart.isAvailable && sparePart.stock > 0;
+    const isListedAvailable = sparePart.isAvailable && sparePart.status === "Active";
     const hasRentPrice = sparePart.rentPrice && sparePart.rentPrice > 0;
 
     const InfoItem = ({ icon: Icon, label, value }) => (
@@ -180,13 +189,53 @@ export default function SparePartDetailsPage() {
                                 </p>
                             </div>
                         )}
+
+                        {/* Contact Admin — same pattern as Contact Vendor on VehicleDetailsPage */}
+                        <div className="bg-white rounded-lg shadow-sm p-5">
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Admin</h2>
+                            <div className="flex items-start gap-4">
+                                <div
+                                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-gray-200 bg-primary/10"
+                                    aria-hidden
+                                >
+                                    <Headphones className="h-8 w-8 text-primary" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-lg font-semibold text-gray-900">AURA Support</p>
+                                    <div className="mt-2 space-y-1">
+                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                            <Mail className="h-4 w-4 shrink-0" />
+                                            <a
+                                                href={`mailto:${SUPPORT_EMAIL}`}
+                                                className="truncate text-primary hover:underline"
+                                            >
+                                                {SUPPORT_EMAIL}
+                                            </a>
+                                        </div>
+                                        {/* <div className="flex items-center gap-2 text-sm text-gray-600">
+                                            <Phone className="h-4 w-4 shrink-0" />
+                                            <a
+                                                href={`tel:${SUPPORT_PHONE.replace(/[^\d+]/g, "")}`}
+                                                className="hover:text-gray-900"
+                                            >
+                                                {SUPPORT_PHONE}
+                                            </a>
+                                        </div> */}
+                                        <div className="flex items-start gap-2 text-sm text-gray-600">
+                                            <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+                                            <span>{SUPPORT_ADDRESS}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Right Column - Details Sidebar */}
                     <div className="space-y-4">
                         {/* Pricing Card */}
                         {hasRentPrice && (
-                            <div className="bg-blue-600 rounded-lg shadow-sm p-5 text-white">
+                            <div className="bg-primary rounded-lg shadow-sm p-5 text-white">
                                 <p className="text-sm opacity-90 mb-2">Pricing</p>
                                 <div className="mb-2">
                                     <p className="text-xs opacity-80">Rent (per day)</p>
@@ -212,17 +261,27 @@ export default function SparePartDetailsPage() {
                                     value={sparePart.brand}
                                 />
                                 <InfoItem
-                                    icon={Box}
-                                    label="Stock Available"
-                                    value={sparePart.stock}
-                                />
-                                <InfoItem
-                                    icon={isInStock ? CheckCircle : XCircle}
+                                    icon={isListedAvailable ? CheckCircle : XCircle}
                                     label="Status"
-                                    value={isInStock ? "Available" : "Out of Stock"}
+                                    value={isListedAvailable ? "Available" : "Unavailable"}
                                 />
                             </div>
                         </div>
+
+                        {sparePart.pickupLocation?.address && sparePart.pickupLocation?.city && (
+                            <div className="bg-white rounded-lg shadow-sm p-5">
+                                <h2 className="text-lg font-semibold text-gray-900 mb-3">Pickup Location</h2>
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg">
+                                        <MapPin className="w-5 h-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-900 font-medium">{sparePart.pickupLocation.address}</p>
+                                        <p className="text-gray-600 text-sm mt-0.5">{sparePart.pickupLocation.city}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Action Buttons */}
                         <div className="space-y-3">
@@ -230,12 +289,12 @@ export default function SparePartDetailsPage() {
                             {hasRentPrice && (
                                 <Button
                                     onClick={() => setShowBookingModal(true)}
-                                    disabled={!isInStock || !canBook || !isLoggedin}
+                                    disabled={!isListedAvailable || !canBook || !isLoggedin}
                                     size="lg"
                                     className="w-full h-12 cursor-pointer bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Calendar className="w-4 h-4 mr-2" />
-                                    {!canBook ? "Recently Updated - Booking Disabled" : !isLoggedin ? "Login to Book" : isInStock ? "Book Now" : "Out of Stock"}
+                                    {!canBook ? "Recently Updated - Booking Disabled" : !isLoggedin ? "Login to Book" : isListedAvailable ? "Book Now" : "Unavailable"}
                                 </Button>
                             )}
                         </div>

@@ -61,7 +61,8 @@ const ManageSpareParts = () => {
             part.name?.toLowerCase().includes(search) ||
             part.category?.toLowerCase().includes(search) ||
             part.description?.toLowerCase().includes(search) ||
-            part.brand?.toLowerCase().includes(search)
+            part.brand?.toLowerCase().includes(search) ||
+            part.pickupLocation?.city?.toLowerCase().includes(search)
         );
     });
 
@@ -210,7 +211,8 @@ const ManageSpareParts = () => {
                                     <tr className="bg-slate-50 border-b border-slate-200">
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Part Details</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Brand</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Price/Stock</th>
+                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Rent / day</th>
+                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Location</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Created</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Status</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Actions</th>
@@ -242,10 +244,10 @@ const ManageSpareParts = () => {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="space-y-1">
-                                                    <p className="font-semibold text-slate-900">{formatCurrency(part.rentPrice)}</p>
-                                                    <p className="text-sm text-slate-600">Stock: {part.stock}</p>
-                                                </div>
+                                                <p className="font-semibold text-slate-900">{formatCurrency(part.rentPrice)}</p>
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-600 text-sm">
+                                                {part.pickupLocation?.city || "—"}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <p className="text-sm text-slate-600">{formatDate(part.createdAt)}</p>
@@ -264,8 +266,6 @@ const ManageSpareParts = () => {
                                                         variant="outline"
                                                         className={part.status === "Active" 
                                                             ? "text-emerald-600 border-emerald-200" 
-                                                            : part.status === "OutOfStock"
-                                                            ? "text-red-600 border-red-200"
                                                             : "text-gray-600 border-gray-200"
                                                         }
                                                     >

@@ -1,8 +1,35 @@
 import SparePart from "../models/sparePart.model.js";
 
+/** Multipart may send nested pickup as an object or as flat keys like pickupLocation[address]. */
+function normalizePickupLocation(body) {
+    const pl = body.pickupLocation;
+    if (pl && typeof pl === "object" && !Array.isArray(pl)) {
+        const address = pl.address != null ? String(pl.address).trim() : "";
+        const city = pl.city != null ? String(pl.city).trim() : "";
+        if (address || city) return { address, city };
+    }
+    const a = body["pickupLocation[address]"];
+    const c = body["pickupLocation[city]"];
+    if (a != null || c != null) {
+        return {
+            address: a != null ? String(a).trim() : "",
+            city: c != null ? String(c).trim() : "",
+        };
+    }
+    return null;
+}
+
+function hasPickupInBody(body) {
+    return (
+        body.pickupLocation != null ||
+        body["pickupLocation[address]"] !== undefined ||
+        body["pickupLocation[city]"] !== undefined
+    );
+}
+
 export const createSparePart = async (req, res) => {
     try {
-        const { name, category, brand, rentPrice, stock, compatibleVehicles, description } = req.body;
+        const { name, category, brand, rentPrice, compatibleVehicles, description } = req.body;
 
         if (!req.files?.images || req.files.images.length === 0) {
             return res.status(400).json({ success: false, message: "At least one image is required." });
@@ -17,18 +44,29 @@ export const createSparePart = async (req, res) => {
             });
         }
 
+        const pickup = normalizePickupLocation(req.body);
+        if (!pickup?.address || !pickup?.city) {
+            return res.status(400).json({
+                success: false,
+                message: "Pickup address and city are required."
+            });
+        }
+
         const images = req.files.images.map(file => file.path);
 
         const sparePartData = {
             name: name.trim(),
             category,
             brand: brand.trim(),
-            stock: parseInt(stock),
             compatibleVehicles: compatibleVehicles?.trim() || "",
             description: description?.trim() || "",
             images,
-            isAvailable: parseInt(stock) > 0,
-            status: parseInt(stock) > 0 ? "Active" : "OutOfStock"
+            isAvailable: true,
+            status: "Active",
+            pickupLocation: {
+                address: pickup.address,
+                city: pickup.city,
+            },
         };
 
         sparePartData.rentPrice = parseFloat(rentPrice);
@@ -70,7 +108,7 @@ export const searchSpareParts = async (req, res) => {
             brand,
             minPrice,
             maxPrice,
-            inStock
+            available
         } = req.query;
 
         // Build query
@@ -101,12 +139,8 @@ export const searchSpareParts = async (req, res) => {
             query.rentPrice = { $gte: parseFloat(minPrice || 0), $lte: parseFloat(maxPrice || Infinity) };
         }
 
-        // Stock filter
-        if (inStock !== undefined) {
-            if (inStock === "true" || inStock === true) {
-                query.stock = { $gt: 0 };
-                query.isAvailable = true;
-            }
+        if (available !== undefined && (available === "true" || available === true)) {
+            query.isAvailable = true;
         }
 
         const spareParts = await SparePart.find(query).sort({ createdAt: -1 });
@@ -148,9 +182,27 @@ export const updateSparePart = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = { ...req.body };
+        delete updateData.pickupLocation;
+        delete updateData["pickupLocation[address]"];
+        delete updateData["pickupLocation[city]"];
+        delete updateData.stock;
 
         if (req.files?.images && req.files.images.length > 0) {
             updateData.images = req.files.images.map(file => file.path);
+        }
+
+        if (hasPickupInBody(req.body)) {
+            const pickup = normalizePickupLocation(req.body);
+            if (!pickup?.address || !pickup?.city) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Pickup address and city are required."
+                });
+            }
+            updateData.pickupLocation = {
+                address: pickup.address,
+                city: pickup.city,
+            };
         }
 
         // Handle price fields (rental-only: rentPrice required)
@@ -175,10 +227,12 @@ export const updateSparePart = async (req, res) => {
             });
         }
 
-        if (updateData.stock !== undefined) {
-            updateData.stock = parseInt(updateData.stock);
-            updateData.isAvailable = updateData.stock > 0;
-            updateData.status = updateData.stock > 0 ? "Active" : "OutOfStock";
+        const finalPickup = updateData.pickupLocation || sparePart.pickupLocation;
+        if (!finalPickup?.address?.trim() || !finalPickup?.city?.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Pickup address and city are required."
+            });
         }
 
         const updatedSparePart = await SparePart.findByIdAndUpdate(id, updateData, { new: true });

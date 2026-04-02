@@ -9,7 +9,6 @@ const SparePartsListing = () => {
     const [category, setCategory] = useState('all');
     const [brand, setBrand] = useState('all');
     const [priceRange, setPriceRange] = useState('all');
-    const [inStock, setInStock] = useState('all');
     const [spareParts, setSpareParts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [allBrands, setAllBrands] = useState([]);
@@ -61,7 +60,6 @@ const SparePartsListing = () => {
                     category: category !== 'all' ? category : undefined,
                     brand: brand !== 'all' ? brand : undefined,
                     priceRange: priceRange !== 'all' ? priceRange : undefined,
-                    inStock: inStock !== 'all' ? inStock : undefined
                 };
 
                 // Handle price ranges
@@ -93,7 +91,7 @@ const SparePartsListing = () => {
         }, 300);
 
         return () => clearTimeout(timeoutId);
-    }, [searchTerm, category, brand, priceRange, inStock]);
+    }, [searchTerm, category, brand, priceRange]);
 
     if (loading && spareParts.length === 0) {
         return (

@@ -37,7 +37,7 @@ import PaymentCallback from "./components/PaymentCallback";
 import "./App.css"; 
 import InsuranceTerms from "./components/InsuranceTerms";
 import BookingTerms from "./components/BookingTerms";
-import PrivacyPolicy from "./components/PrivacyPolicy";
+import PersonalDataPolicy from "./components/PersonalDataPolicy";
 import TermsOfService from "./components/TermsOfService";
 import ContactUs from "./components/ContactUs";
 
@@ -55,7 +55,7 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path='/insurance-terms' element={<InsuranceTerms />} />
           <Route path='/booking-terms' element={<BookingTerms />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/privacy-policy" element={<PersonalDataPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/login" element={<Login />} />

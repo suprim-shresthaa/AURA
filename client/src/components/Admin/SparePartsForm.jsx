@@ -4,13 +4,13 @@ import axiosInstance from "@/lib/axiosInstance";
 import { fetchSparePartById, updateSparePart } from "@/data/api";
 import Loading from "@/components/Loading";
 import {
-    Package, Tag, DollarSign, Box, Car, FileText,
-    ImagePlus, Plus, Loader2, CheckCircle, XCircle
+    Package, Tag, DollarSign, Car, FileText,
+    ImagePlus, Plus, Loader2, CheckCircle, XCircle, MapPin
 } from "lucide-react";
 
 const categories = [
-    "Engine", "Electrical", "Tires", "Filters",
-    "Body", "Accessories", "Brakes", "Suspension"
+    "Electrical", "Tires",,
+    "Body", "Accessories", "Brakes"
 ];
 
 const SparePartsForm = () => {
@@ -19,8 +19,9 @@ const SparePartsForm = () => {
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
-        name: "", category: "", brand: "", rentPrice: "", stock: "",
-        compatibleVehicles: "", description: "", images: []
+        name: "", category: "", brand: "", rentPrice: "",
+        compatibleVehicles: "", description: "", images: [],
+        pickupLocation: { address: "", city: "" },
     });
 
     const [imagePreviews, setImagePreviews] = useState([]);
@@ -44,10 +45,13 @@ const SparePartsForm = () => {
                     category: part.category || "",
                     brand: part.brand || "",
                     rentPrice: part.rentPrice != null ? String(part.rentPrice) : "",
-                    stock: part.stock != null ? String(part.stock) : "",
                     compatibleVehicles: part.compatibleVehicles || "",
                     description: part.description || "",
                     images: [],
+                    pickupLocation: {
+                        address: part.pickupLocation?.address || "",
+                        city: part.pickupLocation?.city || "",
+                    },
                 });
                 setExistingImageUrls(Array.isArray(part.images) ? part.images : []);
             } catch (err) {
@@ -63,6 +67,14 @@ const SparePartsForm = () => {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handlePickupChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            pickupLocation: { ...prev.pickupLocation, [name]: value },
+        }));
     };
 
     const handleImageUpload = (e) => {
@@ -85,6 +97,14 @@ const SparePartsForm = () => {
             return;
         }
 
+        const addr = formData.pickupLocation.address?.trim();
+        const city = formData.pickupLocation.city?.trim();
+        if (!addr || !city) {
+            setError("Pickup address and city are required.");
+            setLoading(false);
+            return;
+        }
+
         const data = new FormData();
         data.append("name", formData.name);
         data.append("category", formData.category);
@@ -92,9 +112,10 @@ const SparePartsForm = () => {
         if (formData.rentPrice) {
             data.append("rentPrice", formData.rentPrice);
         }
-        data.append("stock", formData.stock);
         data.append("compatibleVehicles", formData.compatibleVehicles);
         data.append("description", formData.description);
+        data.append("pickupLocation[address]", addr);
+        data.append("pickupLocation[city]", city);
 
         formData.images.forEach((img) => data.append("images", img));
 
@@ -109,8 +130,9 @@ const SparePartsForm = () => {
                 });
                 setSuccess(true);
                 setFormData({
-                    name: "", category: "", brand: "", rentPrice: "", stock: "",
-                    compatibleVehicles: "", description: "", images: []
+                    name: "", category: "", brand: "", rentPrice: "",
+                    compatibleVehicles: "", description: "", images: [],
+                    pickupLocation: { address: "", city: "" },
                 });
                 setImagePreviews([]);
                 setTimeout(() => setSuccess(false), 5000);
@@ -197,14 +219,6 @@ const SparePartsForm = () => {
                                     <p className="text-xs text-gray-500 mt-1">Price per day for renting this part</p>
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        <Box size={16} className="inline mr-2" /> Stock Quantity *
-                                    </label>
-                                    <input type="number" name="stock" required value={formData.stock} onChange={handleChange}
-                                        className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none" />
-                                </div>
-
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                                         <Car size={16} className="inline mr-2" /> Compatible Vehicles
@@ -212,6 +226,40 @@ const SparePartsForm = () => {
                                     <input type="text" name="compatibleVehicles" value={formData.compatibleVehicles} onChange={handleChange}
                                         className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none"
                                         placeholder="Toyota Corolla 2018-2023, Honda Civic 2020+" />
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                                        <MapPin size={20} className="text-indigo-600" />
+                                        Pickup Location
+                                    </h3>
+                                    <p className="text-sm text-gray-500 mb-3">Where renters collect this part</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Address *</label>
+                                            <input
+                                                type="text"
+                                                name="address"
+                                                required
+                                                value={formData.pickupLocation.address}
+                                                onChange={handlePickupChange}
+                                                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none"
+                                                placeholder="Full pickup address"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">City *</label>
+                                            <input
+                                                type="text"
+                                                name="city"
+                                                required
+                                                value={formData.pickupLocation.city}
+                                                onChange={handlePickupChange}
+                                                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none"
+                                                placeholder="e.g., Kathmandu"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div className="md:col-span-2">

@@ -75,18 +75,7 @@ export const updateProfile = async (req, res) => {
             user.name = name.trim();
         }
         if (contact !== undefined) {
-            const trimmed =
-                typeof contact === "string" ? contact.trim() : String(contact ?? "");
-            if (trimmed === "") {
-                user.contact = undefined;
-            } else if (!/^[0-9]{10}$/.test(trimmed)) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Contact must be a valid 10-digit number",
-                });
-            } else {
-                user.contact = trimmed;
-            }
+            user.contact = contact.trim();
         }
         if (address !== undefined) {
             user.address = address.trim();

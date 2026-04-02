@@ -101,10 +101,13 @@ const createBookingFromPaymentData = async (bookingData, userId) => {
         }
 
         bookingDataToCreate.sparePartId = sparePartId;
-        bookingDataToCreate.pickupLocation = {
-            address: "Store Location",
-            city: "Kathmandu"
-        };
+        bookingDataToCreate.pickupLocation =
+            sparePart.pickupLocation?.address && sparePart.pickupLocation?.city
+                ? sparePart.pickupLocation
+                : {
+                    address: "Store Location",
+                    city: "Kathmandu"
+                };
     } else {
         throw new Error("Either vehicleId or sparePartId must be provided");
     }
@@ -212,14 +215,13 @@ export const initiateEsewaPayment = async (req, res) => {
                 });
             }
 
-            if (!sparePart.isAvailable || sparePart.stock <= 0) {
+            if (!sparePart.isAvailable || sparePart.status !== "Active") {
                 return res.status(400).json({
                     success: false,
-                    message: "Spare part is out of stock"
+                    message: "Spare part is not available"
                 });
             }
 
-            // Check for overlapping bookings
             const overlappingBookings = await Booking.find({
                 sparePartId,
                 bookingStatus: { $in: ["pending", "confirmed", "active"] },
@@ -231,9 +233,7 @@ export const initiateEsewaPayment = async (req, res) => {
                 ]
             });
 
-            // Check if stock is sufficient
-            const bookedQuantity = overlappingBookings.length;
-            if (sparePart.stock <= bookedQuantity) {
+            if (overlappingBookings.length > 0) {
                 return res.status(400).json({
                     success: false,
                     message: "Spare part is not available for the selected dates"
