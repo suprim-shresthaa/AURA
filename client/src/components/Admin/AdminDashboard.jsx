@@ -6,10 +6,6 @@ import {
     Car,
     TrendingUp,
     DollarSign,
-    CreditCard,
-    CheckCircle,
-    Clock,
-    XCircle,
 } from "lucide-react";
 import { fetchAdminStats } from "@/data/api";
 import Loading from "@/components/Loading";
@@ -96,6 +92,14 @@ const Dashboard = () => {
             trend: `${stats.totalVehicles || 0} total vehicles`
         },
         {
+            title: "Available Spare Parts",
+            value: stats.availableSpareParts || 0,
+            icon: Wrench,
+            color: "from-yellow-500 to-yellow-600",
+            lightBg: "bg-yellow-50",
+            trend: `${stats.availableSpareParts || 0} available spare parts`
+        },
+        {
             title: "Total Transactions",
             value: formatCurrency(stats.totalRevenue || 0),
             icon: DollarSign,
@@ -105,64 +109,6 @@ const Dashboard = () => {
         },
     ];
 
-    const bookingStatusMetrics = [
-        {
-            title: "Confirmed",
-            value: stats.confirmedBookings || 0,
-            icon: CheckCircle,
-            color: "text-emerald-600",
-            bg: "bg-emerald-50"
-        },
-        {
-            title: "Active",
-            value: stats.activeBookings || 0,
-            icon: Clock,
-            color: "text-blue-600",
-            bg: "bg-blue-50"
-        },
-        {
-            title: "Pending",
-            value: stats.pendingBookings || 0,
-            icon: Clock,
-            color: "text-amber-600",
-            bg: "bg-amber-50"
-        },
-        {
-            title: "Completed",
-            value: stats.completedBookings || 0,
-            icon: CheckCircle,
-            color: "text-green-600",
-            bg: "bg-green-50"
-        },
-        {
-            title: "Cancelled",
-            value: stats.cancelledBookings || 0,
-            icon: XCircle,
-            color: "text-red-600",
-            bg: "bg-red-50"
-        },
-    ];
-
-    const paymentMetrics = [
-        {
-            title: "Paid",
-            value: stats.paidBookings || 0,
-            color: "text-emerald-600",
-            bg: "bg-emerald-50"
-        },
-        {
-            title: "Pending Payments",
-            value: stats.pendingPayments || 0,
-            color: "text-amber-600",
-            bg: "bg-amber-50"
-        },
-        {
-            title: "Refunded",
-            value: stats.refundedPayments || 0,
-            color: "text-gray-600",
-            bg: "bg-gray-50"
-        },
-    ];
 
     return (
         <div className="p-8 min-h-screen">
@@ -172,7 +118,7 @@ const Dashboard = () => {
                     <p className="text-sm text-gray-600 mt-1">Overview of system statistics and activity</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                     {metrics.map((metric) => {
                         const Icon = metric.icon;
                         return (

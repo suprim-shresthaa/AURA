@@ -8,6 +8,8 @@ import {
     RefreshCw,
     Package,
     DollarSign,
+    Pencil,
+    Trash,
 } from "lucide-react";
 import { fetchAllSpareParts, toggleSparePartAvailability, deleteSparePart } from "@/data/api";
 import Loading from "@/components/Loading";
@@ -211,7 +213,7 @@ const ManageSpareParts = () => {
                                     <tr className="bg-slate-50 border-b border-slate-200">
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Part Details</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Brand</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Rent / day</th>
+                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Price</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Location</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Created</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Status</th>
@@ -223,13 +225,12 @@ const ManageSpareParts = () => {
                                         <tr key={part._id} className="hover:bg-blue-50 transition duration-150">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
-                                                        <Wrench size={20} className="text-orange-600" />
+                                                    <div className="w-20 h-20 rounded-lg flex items-center justify-center">
+                                                        <img src={part.images[0]} alt={part.name} className="w-full h-full object-contain" />
                                                     </div>
                                                     <div>
                                                         <p className="font-medium text-slate-900">{part.name}</p>
                                                         <p className="text-sm text-slate-600">{part.category}</p>
-                                                        <p className="text-xs text-slate-500 max-w-xs truncate">{part.description}</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -253,7 +254,7 @@ const ManageSpareParts = () => {
                                                 <p className="text-sm text-slate-600">{formatDate(part.createdAt)}</p>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="space-y-1">
+                                                <div className="space-y-1 space-x-2">
                                                     <Badge 
                                                         className={part.isAvailable 
                                                             ? "bg-emerald-100 text-emerald-700" 
@@ -262,40 +263,6 @@ const ManageSpareParts = () => {
                                                     >
                                                         {part.isAvailable ? "Available" : "Unavailable"}
                                                     </Badge>
-                                                    <Badge 
-                                                        variant="outline"
-                                                        className={part.status === "Active" 
-                                                            ? "text-emerald-600 border-emerald-200" 
-                                                            : "text-gray-600 border-gray-200"
-                                                        }
-                                                    >
-                                                        {part.status}
-                                                    </Badge>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="flex flex-wrap gap-2">
-                                                        <Button variant="outline" size="sm" asChild>
-                                                            <Link to={`/spare-parts/${part._id}`}>View</Link>
-                                                        </Button>
-                                                        <Button variant="outline" size="sm" asChild>
-                                                            <Link to={`/admin/edit-spare-parts/${part._id}`}>Edit</Link>
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="text-red-600 hover:text-red-700"
-                                                            onClick={() => handleDelete(part._id)}
-                                                            disabled={deletingId === part._id}
-                                                        >
-                                                            {deletingId === part._id ? (
-                                                                <RefreshCw size={16} className="animate-spin" />
-                                                            ) : (
-                                                                "Delete"
-                                                            )}
-                                                        </Button>
-                                                    </div>
                                                     <Button
                                                         onClick={() => handleToggleAvailability(part._id, part.isAvailable)}
                                                         disabled={updatingAvailability[part._id]}
@@ -316,6 +283,41 @@ const ManageSpareParts = () => {
                                                         )}
                                                         {part.isAvailable ? "Disable" : "Enable"}
                                                     </Button>
+                                                    {/* <Badge 
+                                                        variant="outline"
+                                                        className={part.status === "Active" 
+                                                            ? "text-emerald-600 border-emerald-200" 
+                                                            : "text-gray-600 border-gray-200"
+                                                        }
+                                                    >
+                                                        {part.status}
+                                                    </Badge> */}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <Button variant="outline" size="sm" asChild>
+                                                            <Link to={`/spare-parts/${part._id}`}><Eye size={16} /></Link>
+                                                        </Button>
+                                                        <Button variant="outline" size="sm" asChild>
+                                                            <Link to={`/admin/edit-spare-parts/${part._id}`}><Pencil size={16} /></Link>
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="text-red-600 hover:text-red-700"
+                                                            onClick={() => handleDelete(part._id)}
+                                                            disabled={deletingId === part._id}
+                                                        >
+                                                            {deletingId === part._id ? (
+                                                                <RefreshCw size={16} className="animate-spin" />
+                                                            ) : (
+                                                                <Trash size={16} />
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                   
                                                 </div>
                                             </td>
                                         </tr>

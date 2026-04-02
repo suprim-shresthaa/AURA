@@ -31,6 +31,7 @@ export const getAdminStats = async (req, res) => {
         const pendingBookings = allBookings.filter(b => b.bookingStatus === "pending").length;
         const completedBookings = allBookings.filter(b => b.bookingStatus === "completed").length;
         const cancelledBookings = allBookings.filter(b => b.bookingStatus === "cancelled").length;
+        const availableSpareParts = await SparePart.find({ isAvailable: true });
 
         // Payment statistics
         const paidBookings = allBookings.filter(b => b.paymentStatus === "paid");
@@ -129,6 +130,7 @@ export const getAdminStats = async (req, res) => {
                 pendingBookings,
                 completedBookings,
                 cancelledBookings,
+                availableSpareParts: availableSpareParts.length,
                 
                 // Payment stats
                 totalRevenue,

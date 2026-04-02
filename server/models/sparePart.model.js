@@ -40,8 +40,8 @@ const sparePartSchema = new mongoose.Schema(
         },
 
         pickupLocation: {
-            address: { type: String, required: true, trim: true },
-            city: { type: String, required: true, trim: true },
+            address: { type: String, required: false, trim: true },
+            city: { type: String, required: false, trim: true },
         },
         status: {
             type: String,
