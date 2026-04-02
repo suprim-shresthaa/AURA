@@ -297,7 +297,7 @@ const SparePartsForm = () => {
                                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-400 transition-all bg-gray-50">
                                     <input
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/jpeg, image/png"
                                         multiple
                                         id="images"
                                         className="hidden"

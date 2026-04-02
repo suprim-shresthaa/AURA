@@ -433,7 +433,7 @@ export default function VehicleUploadForm() {
                                 <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 transition cursor-pointer bg-gray-50">
                                     <input
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/jpeg, image/png"
                                         onChange={handleMainImage}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         required={!isEditMode}
@@ -459,7 +459,7 @@ export default function VehicleUploadForm() {
                                 <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 transition cursor-pointer bg-gray-50">
                                     <input
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/jpeg, image/png"
                                         onChange={handleBluebookImage}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         required={!isEditMode}
@@ -483,7 +483,7 @@ export default function VehicleUploadForm() {
                                 <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 transition cursor-pointer bg-gray-50">
                                     <input
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/jpeg, image/png"
                                         multiple
                                         onChange={handleExtraImages}
                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
