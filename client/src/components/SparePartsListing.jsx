@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '@/lib/axiosInstance';
-import { Search, Package } from 'lucide-react';
+import { Search, Package, RotateCcw } from 'lucide-react';
 import SparePartCard from './SparePartCard';
 import { PageHeader } from './ui/PageHeader';
 
@@ -15,14 +15,12 @@ const SparePartsListing = () => {
 
     const categories = [
         'all',
-        'Engine',
         'Electrical',
         'Tires',
         'Filters',
         'Body',
         'Accessories',
         'Brakes',
-        'Suspension'
     ];
 
     // Fetch all spare parts and brands on mount
@@ -104,6 +102,13 @@ const SparePartsListing = () => {
         );
     }
 
+    const resetFilters = () => {
+        setSearchTerm('');
+        setCategory('all');
+        setBrand('all');
+        setPriceRange('all');
+    };
+
     return (
         <div className="min-h-screen">
                 {/* Header */}
@@ -160,8 +165,16 @@ const SparePartsListing = () => {
                             <option value="low">Under Rs. 1,000</option>
                             <option value="medium">Rs. 1,000 - 5,000</option>
                             <option value="high">Rs. 5,000+</option>
-                        </select>
+                        </select>  
+                         <button
+                            onClick={resetFilters}
+                            className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-200 cursor-pointer"
+                        >
+                            <RotateCcw className="w-4 h-4" />
+                            Reset Filters
+                        </button>
                     </div>
+                 
                 </div>
 
                 {/* Results Count */}

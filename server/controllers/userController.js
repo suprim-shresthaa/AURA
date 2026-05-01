@@ -162,6 +162,13 @@ export const changePassword = async (req, res) => {
                 message: "Missing required fields."
             });
         }
+        // old and new password should not be same
+        if (oldPassword === newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Old and new password should not be same."
+            });
+        }
 
         // Validate password strength
         const passwordValidation = validatePassword(newPassword);

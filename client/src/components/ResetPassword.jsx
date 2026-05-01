@@ -3,6 +3,7 @@ import { Mail, Lock, Check, X, ArrowLeft } from "lucide-react";
 import InputField from "./InputField";
 import { AppContent } from "./context/AppContext";
 import { message } from "antd";
+import { toast } from "react-toastify";
 import Loading from "./Loading";
 import { Link } from "react-router-dom";
 
@@ -247,6 +248,7 @@ const ResetPassword = () => {
             if (!response.ok) throw new Error(data.message || "Password reset failed");
 
             setSuccess("Password reset successfully! Redirecting to login...");
+            toast.success("Password reset successfully! Redirecting to login...");
             message.success("Password reset successfully! Redirecting to login...");
             setError("");
             setTimeout(() => (window.location.href = "/login"), 2000);
@@ -439,6 +441,7 @@ const ResetPassword = () => {
                             <form onSubmit={handleResetPassword} className="space-y-3 sm:space-y-4">
                                 <InputField
                                     id="newPassword"
+                                    required
                                     label="New Password"
                                     type={isPasswordShown ? "text" : "password"}
                                     placeholder="Enter New Password"
@@ -452,7 +455,6 @@ const ResetPassword = () => {
                                     icon={<Lock className="w-5 h-5 text-gray-400" />}
                                     isPasswordShown={isPasswordShown}
                                     togglePasswordVisibility={() => setIsPasswordShown((prev) => !prev)}
-                                    required
                                     autoComplete="new-password"
                                     className="text-sm sm:text-base"
                                     error={error}
@@ -483,7 +485,6 @@ const ResetPassword = () => {
                                     type="submit"
                                     size="lg"
                                     className="w-full h-12 bg-primary text-white rounded-lg cursor-pointer"
-                                    disabled={!isValidPassword || isLoading}
                                 >
                                     {isLoading ? "Resetting Password..." : "Reset Password"}
                                 </button>

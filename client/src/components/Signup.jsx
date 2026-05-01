@@ -182,10 +182,11 @@ const Signup = () => {
 
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || "Verification failed");
-
+            toast.success("Email verified! Redirecting...");
             message.success("Email verified! Redirecting...");
             setTimeout(() => (window.location.href = "/login"), 1500);
         } catch (error) {
+            toast.error(error.message || "Invalid OTP. Try again.");
             message.error(error.message || "Invalid OTP. Try again.");
         } finally {
             setIsLoading(false);
@@ -260,6 +261,7 @@ const Signup = () => {
                                     type="text"
                                     label="Name"
                                     placeholder="Your Name"
+                                    required
                                     value={name}
                                     onChange={(e) => {
                                         // Allow only letters and spaces
@@ -268,7 +270,6 @@ const Signup = () => {
 
                                             }}
                                     icon={<User className="w-5 h-5 text-gray-400" />}
-                                    required
                                     autoComplete="name"
                                     className="text-sm sm:text-base"
                                     />
@@ -289,6 +290,9 @@ const Signup = () => {
                                     id="contact"
                                     label="Contact"
                                     type="tel"
+                                    minLength={10}
+                                    maxLength={10}
+                                    pattern="[0-9]*"
                                     placeholder="10-digit Contact Number"
                                     value={contact}
                                     onChange={(e) => {
@@ -351,7 +355,6 @@ const Signup = () => {
                                     type="submit"
                                     size="lg"
                                     className="w-full bg-primary text-white rounded-lg py-3 cursor-pointer h-12"
-                                    disabled={!isValidPassword || !contact || contact.length !== 10 || !address || address.trim().length === 0 || isLoading}
                                 >
                                     {isLoading ? "Creating your account..." : "Create Account"}
                                 </button>
@@ -420,7 +423,7 @@ const Signup = () => {
                                 text={isLoading ? "Verifying..." : "Verify Email"}
                                 onClick={handleVerify}
                                 disabled={isLoading || timeLeft <= 0}
-                                className="w-full h-10 bg-primary hover:bg-primary-700 text-white rounded-lg sm:h-12 mb-3 sm:mb-4 text-sm sm:text-base"
+                                className="w-full h-10 cursor-pointer bg-primary hover:bg-primary-700 text-white rounded-lg sm:h-12 mb-3 sm:mb-4 text-sm sm:text-base"
                             >
                                 {isLoading ? "Verifying..." : "Verify Email"}
                             </button>

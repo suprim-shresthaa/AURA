@@ -1,9 +1,8 @@
 import { Link } from "react-router-dom";
 import { footerLinks, socialLinks } from "@/data/mockdata";
-import { Facebook, Instagram, Twitter } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
 
 const iconMap = {
-  twitter: Twitter,
   instagram: Instagram,
   facebook: Facebook,
 };

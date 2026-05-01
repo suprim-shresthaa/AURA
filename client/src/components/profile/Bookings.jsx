@@ -9,10 +9,12 @@ import {
     AlertCircle,
     Car,
     DollarSign,
-    Package
+    Package,
+    Download
 } from 'lucide-react';
 import axiosInstance from '@/lib/axiosInstance';
 import { toast } from 'react-toastify';
+import { generateBookingVoucher } from '@/lib/voucherGenerator';
 
 export default function Bookings() {
     const [loading, setLoading] = useState(true);
@@ -125,6 +127,16 @@ export default function Bookings() {
         return `Rs. ${amount?.toLocaleString('en-NP') || '0'}`;
     };
 
+    const handleDownloadVoucher = (booking) => {
+        try {
+            generateBookingVoucher(booking);
+            toast.success('Voucher downloaded');
+        } catch (error) {
+            console.error('Error generating voucher:', error);
+            toast.error('Failed to generate voucher');
+        }
+    };
+
     return (
         <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-200">
@@ -190,6 +202,9 @@ export default function Bookings() {
                                     </th>
                                     <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
                                         Status
+                                    </th>
+                                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                        Voucher
                                     </th>
                                 </tr>
                             </thead>
@@ -277,10 +292,20 @@ export default function Bookings() {
                                                         </span>
                                                     </div>
                                                 </td>
+                                                <td className="px-4 py-4 align-top">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDownloadVoucher(booking)}
+                                                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                                    >
+                                                        <Download size={14} />
+                                                        Download
+                                                    </button>
+                                                </td>
                                             </tr>
                                             {booking.notes && (
                                                 <tr className="bg-gray-50/80">
-                                                    <td colSpan={4} className="px-4 py-3 text-sm text-gray-600 border-t border-gray-100">
+                                                    <td colSpan={5} className="px-4 py-3 text-sm text-gray-600 border-t border-gray-100">
                                                         <span className="font-medium text-gray-700">Notes:</span>{' '}
                                                         {booking.notes}
                                                     </td>

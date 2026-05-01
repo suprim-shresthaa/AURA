@@ -182,21 +182,6 @@ export const createBooking = async (req, res) => {
                 });
             }
 
-            // Check if spare part was updated within the last 2 days
-            if (sparePart.updatedAt) {
-                const TWO_DAYS = 1000 * 60 * 60 * 24 * 2;
-                const updatedAtTime = new Date(sparePart.updatedAt).getTime();
-                const currentTime = Date.now();
-                const isRecentlyUpdated = updatedAtTime > currentTime - TWO_DAYS;
-                
-                if (isRecentlyUpdated) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "This spare part was recently updated. Please wait 2 days before booking."
-                    });
-                }
-            }
-
             // Check for overlapping bookings for this spare part (single unit — same as vehicles)
             const overlappingBookings = await Booking.find({
                 sparePartId,
@@ -403,7 +388,8 @@ export const checkAvailability = async (req, res) => {
             // Get all existing bookings to show unavailable dates
             const allBookings = await Booking.find({
                 vehicleId,
-                bookingStatus: { $in: ["pending", "confirmed", "active"] }
+                bookingStatus: { $in: ["pending", "confirmed", "active"] },
+                endDate: { $gte: today }
             }).select("startDate endDate").sort({ startDate: 1 });
 
             const bookedRanges = allBookings.map(booking => ({
@@ -474,7 +460,8 @@ export const checkAvailability = async (req, res) => {
             // Get all existing bookings to show unavailable dates
             const allBookings = await Booking.find({
                 sparePartId,
-                bookingStatus: { $in: ["pending", "confirmed", "active"] }
+                bookingStatus: { $in: ["pending", "confirmed", "active"] },
+                endDate: { $gte: today }
             }).select("startDate endDate").sort({ startDate: 1 });
 
             const bookedRanges = allBookings.map(booking => ({

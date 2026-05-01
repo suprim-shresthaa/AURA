@@ -10,12 +10,14 @@ import {
     AlertCircle,
     User,
     Car,
-    DollarSign
+    DollarSign,
+    Download
 } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { AppContent } from '../context/AppContext';
 import axiosInstance from '@/lib/axiosInstance';
 import { toast } from 'react-toastify';
+import { generateBookingVoucher } from '@/lib/voucherGenerator';
 
 export default function VendorReservations() {
     const navigate = useNavigate();
@@ -105,6 +107,16 @@ export default function VendorReservations() {
         return `Rs. ${amount?.toLocaleString('en-NP') || '0'}`;
     };
 
+    const handleDownloadVoucher = (booking) => {
+        try {
+            generateBookingVoucher(booking);
+            toast.success('Voucher downloaded');
+        } catch (error) {
+            console.error('Error generating voucher:', error);
+            toast.error('Failed to generate voucher');
+        }
+    };
+
     return (
         <div className="flex min-h-screen bg-gray-50">
             <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
@@ -190,6 +202,9 @@ export default function VendorReservations() {
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Status
                                             </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Voucher
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
@@ -262,6 +277,16 @@ export default function VendorReservations() {
                                                             {booking.bookingStatus}
                                                         </span>
                                                     </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDownloadVoucher(booking)}
+                                                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                                    >
+                                                        <Download size={14} />
+                                                        Download
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}

@@ -52,16 +52,6 @@ export default function SparePartDetailsPage() {
         fetchSparePart();
     }, [id]);
 
-    useEffect(() => {
-        if (sparePart) {
-            const TWO_DAYS = 1000 * 60 * 60 * 24 * 2;
-            const updatedAtTime = new Date(sparePart.updatedAt).getTime();
-            const currentTime = Date.now();
-            // Disable booking if updatedAt is less than 2 days from current date
-            const isRecentlyUpdated = updatedAtTime > currentTime - TWO_DAYS;
-            setCanBook(!isRecentlyUpdated); // Allow booking only if NOT recently updated (2+ days old)
-        }
-    }, [sparePart?.updatedAt]);
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -205,12 +195,9 @@ export default function SparePartDetailsPage() {
                                     <div className="mt-2 space-y-1">
                                         <div className="flex items-center gap-2 text-sm text-gray-600">
                                             <Mail className="h-4 w-4 shrink-0" />
-                                            <a
-                                                href={`mailto:${SUPPORT_EMAIL}`}
-                                                className="truncate text-primary hover:underline"
-                                            >
+                                            <p>
                                                 {SUPPORT_EMAIL}
-                                            </a>
+                                            </p>
                                         </div>
                                         <div className="flex items-center gap-2 text-sm text-gray-600">
                                             <Phone className="h-4 w-4 shrink-0" />
@@ -286,16 +273,27 @@ export default function SparePartDetailsPage() {
                         {/* Action Buttons */}
                         <div className="space-y-3">
                             {/* Book Button - Show if rentPrice exists */}
-                            {hasRentPrice && (
+                            {!isLoggedin ? (
+                                <button
+                                    onClick={() => navigate("/login")}
+                                    className="w-full h-12 bg-primary text-white font-semibold py-3 rounded-xl cursor-pointer"
+                                >
+                                    Login to Book
+                                </button>
+                            ) : (
+                                <>
+                                {hasRentPrice && (
                                 <Button
                                     onClick={() => setShowBookingModal(true)}
-                                    disabled={!isListedAvailable || !canBook || !isLoggedin}
+                                    disabled={!isListedAvailable}
                                     size="lg"
                                     className="w-full h-12 cursor-pointer bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Calendar className="w-4 h-4 mr-2" />
-                                    {!canBook ? "Recently Updated - Booking Disabled" : !isLoggedin ? "Login to Book" : isListedAvailable ? "Book Now" : "Unavailable"}
+                                    {isListedAvailable ? "Book Now" : "Unavailable"}
                                 </Button>
+                                )}
+                                </>
                             )}
                         </div>
                     </div>

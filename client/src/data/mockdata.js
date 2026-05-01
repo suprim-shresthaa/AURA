@@ -23,8 +23,7 @@ export const footerLinks = [
 ];
 
 export const socialLinks = [
-  { label: "Twitter", href: "#", icon: "twitter" },
-  { label: "Instagram", href: "#", icon: "instagram" },
-  { label: "Facebook", href: "#", icon: "facebook" },
+  { label: "Instagram", href: "https://www.instagram.com/aura.official.np/#", icon: "instagram" },
+  { label: "Facebook", href: "https://www.facebook.com/profile.php?id=61559202219223", icon: "facebook" },
 ];
 

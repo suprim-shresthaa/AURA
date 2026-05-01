@@ -96,6 +96,31 @@ const emailTemplates = {
     <p>You can update your application details and apply again at any time.</p>
   </div>
   `,
+  vendorApplicationSubmittedVendor: (vendorName) => `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #f59e0b;">Vendor Application Received</h2>
+    <p>Dear ${vendorName},</p>
+    <p>We have successfully received your vendor application.</p>
+    <p>Our admin team will review it and notify you once a decision is made.</p>
+    <p style="color: #64748b; font-size: 14px;">This is an automated message. Please do not reply directly to this email.</p>
+  </div>
+  `,
+  vendorApplicationSubmittedAdmin: (vendorName, vendorEmail, businessType) => `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #f59e0b;">New Vendor Application Submitted</h2>
+    <p>Dear Admin,</p>
+    <p>A new vendor application has been submitted and is pending review.</p>
+    <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
+      <h3 style="margin: 0 0 10px 0; font-size: 18px;">Application Details:</h3>
+      <p><strong>Name:</strong> ${vendorName}</p>
+      <p><strong>Email:</strong> ${vendorEmail}</p>
+      <p><strong>Business Type:</strong> ${businessType || "N/A"}</p>
+      <p><strong>Submitted On:</strong> ${new Date().toLocaleString()}</p>
+    </div>
+    <p>Please review the application from the admin dashboard.</p>
+    <p style="color: #64748b; font-size: 14px;">This is an automated notification. Please do not reply directly to this email.</p>
+  </div>
+  `,
   // License notifications
   licenseUploaded: (userName, vehicleTypes) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -339,6 +364,14 @@ const sendEmail = async (email, type, data) => {
         'vendor-rejected': {
             subject: 'Vendor Rejected',
             template: emailTemplates.vendorRejected(data.vendorName, data.rejectionReason)
+        },
+        'vendor-application-submitted-vendor': {
+            subject: 'Vendor Application Submitted',
+            template: emailTemplates.vendorApplicationSubmittedVendor(data.vendorName)
+        },
+        'vendor-application-submitted-admin': {
+            subject: 'New Vendor Application Submitted',
+            template: emailTemplates.vendorApplicationSubmittedAdmin(data.vendorName, data.vendorEmail, data.businessType)
         },
         // License notifications
         'license-uploaded': {

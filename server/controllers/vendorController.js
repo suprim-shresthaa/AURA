@@ -46,13 +46,10 @@ export const submitVendorApplication = async (req, res) => {
             user: userId,
             status: { $in: ["pending", "approved"] },
         });
-        if (existingApplication) {
+        if (existingApplication?.status === "approved") {
             return res.status(400).json({
                 success: false,
-                message:
-                    existingApplication.status === "pending"
-                        ? "A vendor application is already submitted and pending review."
-                        : "Your vendor application was already approved.",
+                message: "Your vendor application was already approved.",
             });
         }
 
@@ -67,8 +64,7 @@ export const submitVendorApplication = async (req, res) => {
         // 2. Get Cloudinary URL
         const idDocumentUrl = req.file.path;
 
-        // 4. Create new application with user reference
-        const newApplication = new vendorApplicationModel({
+        const applicationPayload = {
             fullName,
             businessName: businessName || undefined,
             email,
@@ -78,15 +74,37 @@ export const submitVendorApplication = async (req, res) => {
             govIdType,
             govIdNumber,
             idDocumentUrl,
-            user: userId, // <-- Link to User
+        };
+
+        const isResubmission = Boolean(existingApplication);
+        const application = isResubmission
+            ? Object.assign(existingApplication, applicationPayload)
+            : new vendorApplicationModel({
+                ...applicationPayload,
+                user: userId, // Link to User
+            });
+
+        await application.save();
+
+        await sendEmail(email, "vendor-application-submitted-vendor", {
+            vendorName: fullName,
         });
 
-        await newApplication.save();
+        const adminEmail = process.env.SENDER_EMAIL;
+        if (adminEmail) {
+            await sendEmail(adminEmail, "vendor-application-submitted-admin", {
+                vendorName: fullName,
+                vendorEmail: email,
+                businessType,
+            });
+        }
 
-        res.status(201).json({
+        res.status(isResubmission ? 200 : 201).json({
             success: true,
-            message: "Vendor application submitted successfully!",
-            data: newApplication,
+            message: isResubmission
+                ? "Vendor application updated successfully!"
+                : "Vendor application submitted successfully!",
+            data: application,
         });
     } catch (error) {
         console.error("Error submitting vendor application:", error);

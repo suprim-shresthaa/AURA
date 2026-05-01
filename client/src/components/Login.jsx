@@ -37,19 +37,20 @@ const Login = () => {
                 setIsLoggedin(true);
                 setUserData(data.user);
                 localStorage.setItem("user", JSON.stringify(data.user));
-
                 message.success("Login successful!");
+                toast.success("Login successful!");
                 navigate("/");
-                window.location.reload();
             }
+         
+
+
         } catch (error) {
+            setIsLoading(false);
             if(error.response.data.message === "Account is banned") {
                 setAccountBannedInfo("Your account has been banned. Please check email for details.");
             }else{
             toast.error(error.response?.data?.message || "Login failed");
         }
-        } finally {
-            setIsLoading(false);
         }
     };
 

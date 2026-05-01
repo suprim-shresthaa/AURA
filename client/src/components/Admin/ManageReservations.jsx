@@ -11,8 +11,11 @@ import {
     Car,
     Wrench,
     DollarSign,
+    Download,
 } from "lucide-react";
 import { fetchAllReservations } from "@/data/api";
+import { generateBookingVoucher } from "@/lib/voucherGenerator";
+import { toast } from "react-toastify";
 
 const ManageReservations = () => {
     const [reservations, setReservations] = useState([]);
@@ -130,6 +133,16 @@ const ManageReservations = () => {
         return null;
     };
 
+    const handleDownloadVoucher = (reservation) => {
+        try {
+            generateBookingVoucher(reservation);
+            toast.success("Voucher downloaded");
+        } catch (error) {
+            console.error("Error generating voucher:", error);
+            toast.error("Failed to generate voucher");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="bg-white border-b border-gray-200 p-4">
@@ -211,6 +224,9 @@ const ManageReservations = () => {
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Status
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Voucher
                                         </th>
                                     </tr>
                                 </thead>
@@ -298,6 +314,16 @@ const ManageReservations = () => {
                                                             {reservation.bookingStatus || "unknown"}
                                                         </span>
                                                     </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDownloadVoucher(reservation)}
+                                                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                                    >
+                                                        <Download size={14} />
+                                                        Download
+                                                    </button>
                                                 </td>
                                             </tr>
                                         );
