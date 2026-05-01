@@ -66,7 +66,7 @@ export default function SparePartCard({ part }) {
             {/* Card Footer */}
             <CardFooter className="px-6 gap-3 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between">
             <div className="flex flex-col">
-                    <p className="text-xl font-bold text-gray-900">{rentPrice}<span className="text-sm text-gray-500">/day</span></p>
+                    <p className="text-xl font-bold text-gray-900">Rs. {rentPrice}<span className="text-sm text-gray-500">/day</span></p>
                 </div>
                 <Link 
                     className={`${buttonVariants({ variant: 'default', size: 'sm' })} group/btn transition-all duration-300 hover:scale-105`} 

@@ -18,9 +18,9 @@ import { Button } from "./ui/button";
 import BookingModal from "./BookingModal";
 
 const SUPPORT_EMAIL =
-    import.meta.env.VITE_SUPPORT_EMAIL || "support@aura.example.com";
+    import.meta.env.VITE_SUPPORT_EMAIL || "auraofficial.com";
 const SUPPORT_PHONE =
-    import.meta.env.VITE_SUPPORT_PHONE || "+1 (000) 000-0000";
+    import.meta.env.VITE_SUPPORT_PHONE || "014242736";
 const SUPPORT_ADDRESS =
     import.meta.env.VITE_SUPPORT_ADDRESS ||
     "AURA Support, Kathmandu, Nepal";
@@ -212,7 +212,7 @@ export default function SparePartDetailsPage() {
                                                 {SUPPORT_EMAIL}
                                             </a>
                                         </div>
-                                        {/* <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <div className="flex items-center gap-2 text-sm text-gray-600">
                                             <Phone className="h-4 w-4 shrink-0" />
                                             <a
                                                 href={`tel:${SUPPORT_PHONE.replace(/[^\d+]/g, "")}`}
@@ -220,7 +220,7 @@ export default function SparePartDetailsPage() {
                                             >
                                                 {SUPPORT_PHONE}
                                             </a>
-                                        </div> */}
+                                        </div> 
                                         <div className="flex items-start gap-2 text-sm text-gray-600">
                                             <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
                                             <span>{SUPPORT_ADDRESS}</span>

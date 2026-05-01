@@ -5,7 +5,7 @@ export const navLinks = [
 ];
 
 export const heroContent = {
-  title: "Rent a Vehicle or Find Spare Parts",
+  title: "Rent a Vehicle or Spare Parts",
   subtitle:
     "Explore a wide selection of cars, motorbikes, scooters, and spare parts for your needs. Book online, verify, and pay securely.",
   backgroundImage:

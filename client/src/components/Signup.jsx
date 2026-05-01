@@ -256,17 +256,23 @@ const Signup = () => {
 
                             <form onSubmit={handleSignup} className="space-y-3 sm:space-y-4">
                                 <InputField
-                                    id="name"
+                                     id="name"
                                     type="text"
                                     label="Name"
                                     placeholder="Your Name"
                                     value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    onChange={(e) => {
+                                        // Allow only letters and spaces
+                                    const lettersOnly = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+                                    setName(lettersOnly );
+
+                                            }}
                                     icon={<User className="w-5 h-5 text-gray-400" />}
                                     required
                                     autoComplete="name"
                                     className="text-sm sm:text-base"
-                                />
+                                    />
+
                                 <InputField
                                     id="email"
                                     type="email"
