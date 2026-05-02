@@ -32,6 +32,13 @@ const vehicleSchema = new mongoose.Schema(
             required: true
         },
 
+        /** Fuel included with rental vs renter pays */
+        rentalFuel: {
+            type: String,
+            enum: ["with", "without"],
+            default: "without",
+        },
+
         transmission: {
             type: String,
             enum: ["Manual", "Automatic"],

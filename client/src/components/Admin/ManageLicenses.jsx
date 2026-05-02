@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FileText, CheckCircle, XCircle, Eye, AlertCircle, User, Car } from "lucide-react";
+import {
+  FileText,
+  CheckCircle,
+  XCircle,
+  Eye,
+  AlertCircle,
+  User,
+  Car,
+} from "lucide-react";
 import axiosInstance from "@/lib/axiosInstance";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,18 +19,21 @@ const ManageLicenses = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedLicenseGroup, setSelectedLicenseGroup] = useState(null);
-  const [actionDialog, setActionDialog] = useState({ open: false, action: null });
+  const [actionDialog, setActionDialog] = useState({
+    open: false,
+    action: null,
+  });
   const [dialogLoading, setDialogLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
   // Group licenses by license ID (same ID = same license entry with multiple vehicle types)
   const groupedLicenses = useMemo(() => {
     const groups = new Map();
-    
+
     licenses.forEach((license) => {
       // Group by license ID since backend expands licenses with multiple vehicleTypes
       const licenseId = license._id;
-      
+
       if (!groups.has(licenseId)) {
         groups.set(licenseId, {
           key: licenseId,
@@ -37,27 +48,30 @@ const ManageLicenses = () => {
           approvedBy: license.approvedBy,
           approvedAt: license.approvedAt,
           vehicleTypes: [], // Collect all vehicle types for this license
-          licenses: [] // Array of expanded license objects (for reference)
+          licenses: [], // Array of expanded license objects (for reference)
         });
       }
-      
+
       const group = groups.get(licenseId);
-      
+
       // Add vehicle type if not already added
-      if (license.vehicleType && !group.vehicleTypes.includes(license.vehicleType)) {
+      if (
+        license.vehicleType &&
+        !group.vehicleTypes.includes(license.vehicleType)
+      ) {
         group.vehicleTypes.push(license.vehicleType);
       }
-      
+
       // Add expanded license entry if not already added
       const existingLicense = group.licenses.find(
-        l => l._id === license._id && l.vehicleType === license.vehicleType
+        (l) => l._id === license._id && l.vehicleType === license.vehicleType,
       );
-      
+
       if (!existingLicense) {
         group.licenses.push(license);
       }
     });
-    
+
     return Array.from(groups.values());
   }, [licenses]);
 
@@ -101,17 +115,17 @@ const ManageLicenses = () => {
     try {
       // Get the license ID (since it's a single license entry with multiple vehicle types)
       const licenseId = selectedLicenseGroup._id;
-      
+
       if (actionDialog.action === "approve") {
         // Approve the license (single API call since it's one license entry)
         try {
-          const response = await axiosInstance.post(`/admin/licenses/${licenseId}/approve`);
-          
+          const response = await axiosInstance.post(
+            `/admin/licenses/${licenseId}/approve`,
+          );
+
           if (response.data?.success) {
             // Remove all expanded licenses with this ID
-            setLicenses((prev) =>
-              prev.filter((l) => l._id !== licenseId)
-            );
+            setLicenses((prev) => prev.filter((l) => l._id !== licenseId));
             closeActionDialog();
           } else {
             alert("Failed to approve license. Please try again.");
@@ -125,18 +139,19 @@ const ManageLicenses = () => {
           setDialogLoading(false);
           return;
         }
-        
+
         // Reject the license (single API call since it's one license entry)
         try {
-          const response = await axiosInstance.post(`/admin/licenses/${licenseId}/reject`, {
-            rejectionReason: rejectionReason.trim(),
-          });
-          
+          const response = await axiosInstance.post(
+            `/admin/licenses/${licenseId}/reject`,
+            {
+              rejectionReason: rejectionReason.trim(),
+            },
+          );
+
           if (response.data?.success) {
             // Remove all expanded licenses with this ID
-            setLicenses((prev) =>
-              prev.filter((l) => l._id !== licenseId)
-            );
+            setLicenses((prev) => prev.filter((l) => l._id !== licenseId));
             closeActionDialog();
           } else {
             alert("Failed to reject license. Please try again.");
@@ -147,7 +162,9 @@ const ManageLicenses = () => {
       }
     } catch (err) {
       console.error("Action failed:", err);
-      alert(`Failed to ${actionDialog.action} licenses. ${err.response?.data?.message || ""}`);
+      alert(
+        `Failed to ${actionDialog.action} licenses. ${err.response?.data?.message || ""}`,
+      );
     } finally {
       setDialogLoading(false);
     }
@@ -164,9 +181,12 @@ const ManageLicenses = () => {
   if (error) {
     return (
       <div className="p-8 min-h-screen">
-        <div className="max-w-7xl mx-auto">
+        <div className="mx-auto">
           <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-6 flex items-start gap-4">
-            <AlertCircle className="text-red-600 flex-shrink-0 mt-1" size={24} />
+            <AlertCircle
+              className="text-red-600 flex-shrink-0 mt-1"
+              size={24}
+            />
             <div>
               <h3 className="font-semibold text-red-900 text-lg">Error</h3>
               <p className="text-red-700 mt-1">{error}</p>
@@ -179,10 +199,14 @@ const ManageLicenses = () => {
 
   return (
     <div className="p-8 min-h-screen">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Manage License Verifications</h1>
-          <p className="text-gray-600">Review and approve/reject pending user licenses</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Manage License Verifications
+          </h1>
+          <p className="text-gray-600">
+            Review and approve/reject pending user licenses
+          </p>
         </div>
 
         {groupedLicenses.length === 0 ? (
@@ -190,17 +214,22 @@ const ManageLicenses = () => {
             <CardContent className="pt-6">
               <div className="text-center py-12">
                 <FileText className="mx-auto text-gray-400 mb-4" size={48} />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Pending Licenses</h3>
-                <p className="text-gray-600">All licenses have been reviewed.</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No Pending Licenses
+                </h3>
+                <p className="text-gray-600">
+                  All licenses have been reviewed.
+                </p>
               </div>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-6">
             {groupedLicenses.map((group) => {
-              const vehicleTypes = group.vehicleTypes || group.licenses.map((l) => l.vehicleType);
+              const vehicleTypes =
+                group.vehicleTypes || group.licenses.map((l) => l.vehicleType);
               const isMultipleTypes = vehicleTypes.length > 1;
-              
+
               return (
                 <Card key={group.key} className="overflow-hidden">
                   <CardHeader>
@@ -224,7 +253,8 @@ const ManageLicenses = () => {
                             {group.userEmail}
                           </span>
                           <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded">
-                            Uploaded: {new Date(group.uploadedAt).toLocaleDateString()}
+                            Uploaded:{" "}
+                            {new Date(group.uploadedAt).toLocaleDateString()}
                           </span>
                         </div>
                       </div>
@@ -236,18 +266,26 @@ const ManageLicenses = () => {
                   <CardContent>
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">User Information</h4>
+                        <h4 className="font-semibold text-gray-900 mb-3">
+                          User Information
+                        </h4>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Name:</span>
-                            <span className="font-medium">{group.userName}</span>
+                            <span className="font-medium">
+                              {group.userName}
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Email:</span>
-                            <span className="font-medium">{group.userEmail}</span>
+                            <span className="font-medium">
+                              {group.userEmail}
+                            </span>
                           </div>
                           <div className="flex justify-between items-start">
-                            <span className="text-gray-600">Vehicle Type{isMultipleTypes ? "s" : ""}:</span>
+                            <span className="text-gray-600">
+                              Vehicle Type{isMultipleTypes ? "s" : ""}:
+                            </span>
                             <div className="flex flex-wrap gap-1 justify-end max-w-[60%]">
                               {vehicleTypes.map((type) => (
                                 <span
@@ -270,10 +308,14 @@ const ManageLicenses = () => {
                       </div>
 
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">License Document</h4>
+                        <h4 className="font-semibold text-gray-900 mb-3">
+                          License Document
+                        </h4>
                         {isMultipleTypes && (
                           <p className="text-xs text-gray-500 mb-2">
-                            This license image is used for {vehicleTypes.length} vehicle type{vehicleTypes.length > 1 ? "s" : ""}: {vehicleTypes.join(", ")}
+                            This license image is used for {vehicleTypes.length}{" "}
+                            vehicle type{vehicleTypes.length > 1 ? "s" : ""}:{" "}
+                            {vehicleTypes.join(", ")}
                           </p>
                         )}
                         <div className="relative">
@@ -301,14 +343,16 @@ const ManageLicenses = () => {
                         className="text-red-600 border-red-300 hover:bg-red-50"
                       >
                         <XCircle className="mr-2 h-4 w-4" />
-                        Reject {isMultipleTypes ? `All (${vehicleTypes.length})` : ""}
+                        Reject{" "}
+                        {isMultipleTypes ? `All (${vehicleTypes.length})` : ""}
                       </Button>
                       <Button
                         onClick={() => openActionDialog(group, "approve")}
                         className="bg-green-600 hover:bg-green-700 text-white"
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Approve {isMultipleTypes ? `All (${vehicleTypes.length})` : ""}
+                        Approve{" "}
+                        {isMultipleTypes ? `All (${vehicleTypes.length})` : ""}
                       </Button>
                     </div>
                   </CardContent>
@@ -325,15 +369,11 @@ const ManageLicenses = () => {
         onConfirm={handleAction}
         title="Approve License"
         message={
-          selectedLicenseGroup ? (
-            selectedLicenseGroup.vehicleTypes.length > 1 ? (
-              `Are you sure you want to approve the license for ${selectedLicenseGroup.userName}? They will be able to rent vehicles of types: ${selectedLicenseGroup.vehicleTypes.join(", ")}.`
-            ) : (
-              `Are you sure you want to approve the ${selectedLicenseGroup.vehicleTypes[0]} license for ${selectedLicenseGroup.userName}? They will be able to rent ${selectedLicenseGroup.vehicleTypes[0]} vehicles.`
-            )
-          ) : (
-            "Approve license?"
-          )
+          selectedLicenseGroup
+            ? selectedLicenseGroup.vehicleTypes.length > 1
+              ? `Are you sure you want to approve the license for ${selectedLicenseGroup.userName}? They will be able to rent vehicles of types: ${selectedLicenseGroup.vehicleTypes.join(", ")}.`
+              : `Are you sure you want to approve the ${selectedLicenseGroup.vehicleTypes[0]} license for ${selectedLicenseGroup.userName}? They will be able to rent ${selectedLicenseGroup.vehicleTypes[0]} vehicles.`
+            : "Approve license?"
         }
         confirmText="Approve"
         cancelText="Cancel"
@@ -353,12 +393,13 @@ const ManageLicenses = () => {
                 selectedLicenseGroup.vehicleTypes.length > 1 ? (
                   <>
                     Are you sure you want to reject the license for{" "}
-                    {selectedLicenseGroup.userName}? This will reject licenses for:{" "}
-                    {selectedLicenseGroup.vehicleTypes.join(", ")}.
+                    {selectedLicenseGroup.userName}? This will reject licenses
+                    for: {selectedLicenseGroup.vehicleTypes.join(", ")}.
                   </>
                 ) : (
                   <>
-                    Are you sure you want to reject the {selectedLicenseGroup.vehicleTypes[0]} license for{" "}
+                    Are you sure you want to reject the{" "}
+                    {selectedLicenseGroup.vehicleTypes[0]} license for{" "}
                     {selectedLicenseGroup.userName}?
                   </>
                 )
@@ -392,4 +433,3 @@ const ManageLicenses = () => {
 };
 
 export default ManageLicenses;
-

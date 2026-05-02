@@ -33,9 +33,14 @@ const ManageApplications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState({ id: null, action: null });
-  const [actionDialog, setActionDialog] = useState({ open: false, action: null, app: null });
+  const [actionDialog, setActionDialog] = useState({
+    open: false,
+    action: null,
+    app: null,
+  });
   const [dialogLoading, setDialogLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const summary = useMemo(() => {
     return applications.reduce(
@@ -46,6 +51,11 @@ const ManageApplications = () => {
       { pending: 0, approved: 0, rejected: 0 },
     );
   }, [applications]);
+
+  const filteredApplications = useMemo(() => {
+    if (statusFilter === "all") return applications;
+    return applications.filter((app) => app.status === statusFilter);
+  }, [applications, statusFilter]);
 
   useEffect(() => {
     fetchApplications();
@@ -106,9 +116,14 @@ const ManageApplications = () => {
   const confirmAction = async () => {
     if (!actionDialog.app || !actionDialog.action) return;
 
-    const reason = actionDialog.action === "reject" ? rejectionReason.trim() : undefined;
+    const reason =
+      actionDialog.action === "reject" ? rejectionReason.trim() : undefined;
     setDialogLoading(true);
-    const success = await handleStatusChange(actionDialog.app._id, actionDialog.action, reason);
+    const success = await handleStatusChange(
+      actionDialog.app._id,
+      actionDialog.action,
+      reason,
+    );
     setDialogLoading(false);
 
     if (success) {
@@ -119,7 +134,9 @@ const ManageApplications = () => {
   const renderStatusBadge = (status) => {
     const token = statusTokens[status] ?? statusTokens.pending;
     return (
-      <span className={`px-2 py-1 rounded text-xs font-semibold ${token.className}`}>
+      <span
+        className={`px-2 py-1 rounded text-xs font-semibold ${token.className}`}
+      >
         {token.label}
       </span>
     );
@@ -143,7 +160,7 @@ const ManageApplications = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto py-8">
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Manage Vendor Applications</CardTitle>
@@ -155,7 +172,9 @@ const ManageApplications = () => {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {Object.entries(summary).map(([key, value]) => (
               <div key={key} className="rounded-lg border bg-muted/40 p-4">
-                <span className="text-xs uppercase text-muted-foreground">{key}</span>
+                <span className="text-xs uppercase text-muted-foreground">
+                  {key}
+                </span>
                 <p className="text-2xl font-semibold">{value}</p>
               </div>
             ))}
@@ -164,6 +183,26 @@ const ManageApplications = () => {
       </Card>
 
       <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            Showing {filteredApplications.length} of {applications.length}{" "}
+            applications
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {["all", "pending", "approved", "rejected"].map((status) => (
+              <Button
+                key={status}
+                size="sm"
+                variant={statusFilter === status ? "default" : "outline"}
+                onClick={() => setStatusFilter(status)}
+              >
+                {status === "all"
+                  ? "All"
+                  : (statusTokens[status]?.label ?? status)}
+              </Button>
+            ))}
+          </div>
+        </div>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -175,6 +214,12 @@ const ManageApplications = () => {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
                 Contact
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                Address
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                Gov ID Number
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
                 ID
@@ -192,17 +237,23 @@ const ManageApplications = () => {
           </thead>
 
           <tbody className="divide-y divide-gray-200 bg-white">
-            {applications.map((app) => {
+            {filteredApplications.map((app) => {
               const disabled = app.status !== "pending";
               const isProcessing = processing.id === app._id;
-              const isProcessingApprove = isProcessing && processing.action === "approve";
-              const isProcessingReject = isProcessing && processing.action === "reject";
+              const isProcessingApprove =
+                isProcessing && processing.action === "approve";
+              const isProcessingReject =
+                isProcessing && processing.action === "reject";
 
               return (
                 <tr key={app._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">{app.fullName}</div>
-                    <div className="text-xs capitalize text-gray-500">{app.businessType}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {app.fullName}
+                    </div>
+                    <div className="text-xs capitalize text-gray-500">
+                      {app.businessType}
+                    </div>
                   </td>
 
                   <td className="px-6 py-4">{app.businessName || "N/A"}</td>
@@ -210,6 +261,14 @@ const ManageApplications = () => {
                   <td className="px-6 py-4">
                     <div className="text-sm">{app.email}</div>
                     <div className="text-sm text-gray-500">{app.phone}</div>
+                  </td>
+
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    {app.address || "N/A"}
+                  </td>
+
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    {app.govIdNumber || "N/A"}
                   </td>
 
                   <td className="px-6 py-4">
@@ -226,14 +285,18 @@ const ManageApplications = () => {
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {format(new Date(app.createdAt), "MMM d, yyyy")}
                     <br />
-                    <span className="text-xs">{format(new Date(app.createdAt), "h:mm a")}</span>
+                    <span className="text-xs">
+                      {format(new Date(app.createdAt), "h:mm a")}
+                    </span>
                   </td>
 
                   <td className="px-6 py-4">
                     <div className="space-y-1">
                       {renderStatusBadge(app.status)}
                       {app.status === "rejected" && app.rejectionReason && (
-                        <p className="text-xs text-red-600">Reason: {app.rejectionReason}</p>
+                        <p className="text-xs text-red-600">
+                          Reason: {app.rejectionReason}
+                        </p>
                       )}
                     </div>
                   </td>
@@ -271,6 +334,16 @@ const ManageApplications = () => {
                 </tr>
               );
             })}
+            {filteredApplications.length === 0 && (
+              <tr>
+                <td
+                  className="px-6 py-8 text-center text-sm text-gray-500"
+                  colSpan={9}
+                >
+                  No applications found for this status.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -292,11 +365,16 @@ const ManageApplications = () => {
         cancelText="Cancel"
         type={actionDialog.action === "approve" ? "info" : "danger"}
         loading={dialogLoading}
-        confirmDisabled={actionDialog.action === "reject" && !rejectionReason.trim()}
+        confirmDisabled={
+          actionDialog.action === "reject" && !rejectionReason.trim()
+        }
       >
         {actionDialog.action === "reject" && (
           <div className="mt-4 space-y-2">
-            <label className="text-sm font-medium text-gray-700" htmlFor="rejectionReason">
+            <label
+              className="text-sm font-medium text-gray-700"
+              htmlFor="rejectionReason"
+            >
               Rejection reason
             </label>
             <textarea
@@ -307,7 +385,9 @@ const ManageApplications = () => {
               rows={4}
               placeholder="Explain why the application is being rejected..."
             />
-            <p className="text-xs text-gray-500">The applicant will receive this reason via email.</p>
+            <p className="text-xs text-gray-500">
+              The applicant will receive this reason via email.
+            </p>
           </div>
         )}
       </ConfirmationModal>

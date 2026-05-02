@@ -6,437 +6,503 @@ import { Search, Trash2, UserCheck, UserX, Users, Archive } from "lucide-react";
 import RemarksModal from "../ui/RemarksModal";
 
 const ManageUsers = () => {
-    const navigate = useNavigate();
-    const [users, setUsers] = useState([]);
-    const [deletedUsers, setDeletedUsers] = useState([]);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const [users, setUsers] = useState([]);
+  const [deletedUsers, setDeletedUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    // Modal state
-    const [modal, setModal] = useState({
-        isOpen: false,
-        type: null, // "ban" | "unban" | "delete"
-        userId: null,
-        userName: null,
-    });
+  // Modal state
+  const [modal, setModal] = useState({
+    isOpen: false,
+    type: null, // "ban" | "unban" | "delete"
+    userId: null,
+    userName: null,
+  });
 
-    const loadLists = async (options = { showLoading: true }) => {
-        const showLoading = options.showLoading !== false;
-        try {
-            if (showLoading) setLoading(true);
-            setError(null);
+  const loadLists = async (options = { showLoading: true }) => {
+    const showLoading = options.showLoading !== false;
+    try {
+      if (showLoading) setLoading(true);
+      setError(null);
 
-            const [activeRes, deletedRes] = await Promise.all([
-                axiosInstance.get("/admin/all-users"),
-                axiosInstance.get("/admin/deleted-users"),
-            ]);
+      const [activeRes, deletedRes] = await Promise.all([
+        axiosInstance.get("/admin/all-users"),
+        axiosInstance.get("/admin/deleted-users"),
+      ]);
 
-            const apiUsers = activeRes.data.data || [];
-            const mapped = apiUsers.map((u) => ({
-                id: u._id,
-                name: u.name || "Unknown User",
-                email: u.email || "No email",
-                role: u.role
-                    ? u.role.charAt(0).toUpperCase() + u.role.slice(1).toLowerCase()
-                    : "User",
-                status: u.banInfo?.isBanned ? "Banned" : "Active",
-                image: u.image || null,
-            }));
-            setUsers(mapped);
+      const apiUsers = activeRes.data.data || [];
+      const mapped = apiUsers.map((u) => ({
+        id: u._id,
+        name: u.name || "Unknown User",
+        email: u.email || "No email",
+        role: u.role
+          ? u.role.charAt(0).toUpperCase() + u.role.slice(1).toLowerCase()
+          : "User",
+        status: u.banInfo?.isBanned ? "Banned" : "Active",
+        image: u.image || null,
+      }));
+      setUsers(mapped);
 
-            const del = deletedRes.data.data || [];
-            setDeletedUsers(
-                del.map((u) => ({
-                    id: u._id || u.originalUserId,
-                    name: u.name || "Unknown",
-                    email: u.email || "",
-                    role: u.role
-                        ? u.role.charAt(0).toUpperCase() + u.role.slice(1).toLowerCase()
-                        : "User",
-                    image: u.image || null,
-                    deletedAt: u.deletedAt,
-                }))
-            );
-        } catch (err) {
-            setError(err.response?.data?.message || err.message || "Failed to load users");
-            console.error(err);
-        } finally {
-            if (showLoading) setLoading(false);
-        }
-    };
+      const del = deletedRes.data.data || [];
+      setDeletedUsers(
+        del.map((u) => ({
+          id: u._id || u.originalUserId,
+          name: u.name || "Unknown",
+          email: u.email || "",
+          role: u.role
+            ? u.role.charAt(0).toUpperCase() + u.role.slice(1).toLowerCase()
+            : "User",
+          image: u.image || null,
+          deletedAt: u.deletedAt,
+        })),
+      );
+    } catch (err) {
+      setError(
+        err.response?.data?.message || err.message || "Failed to load users",
+      );
+      console.error(err);
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        loadLists();
-    }, []);
+  useEffect(() => {
+    loadLists();
+  }, []);
 
-    const filteredUsers = users.filter(
-        (u) =>
-            u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  // Open modal
+  const openModal = (type, userId, userName) => {
+    setModal({ isOpen: true, type, userId, userName });
+  };
+
+  // Close modal
+  const closeModal = () => {
+    setModal({ isOpen: false, type: null, userId: null, userName: null });
+  };
+
+  // Perform actions
+  const performBan = async (userId, reason) => {
+    await axiosInstance.post(`/admin/ban/${userId}`, { reason });
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, status: "Banned" } : u)),
     );
+  };
 
-    // Open modal
-    const openModal = (type, userId, userName) => {
-        setModal({ isOpen: true, type, userId, userName });
-    };
+  const performUnban = async (userId, reason = "") => {
+    await axiosInstance.post(`/admin/unban/${userId}`, { reason });
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, status: "Active" } : u)),
+    );
+  };
 
-    // Close modal
-    const closeModal = () => {
-        setModal({ isOpen: false, type: null, userId: null, userName: null });
-    };
+  const performDelete = async (userId, reason) => {
+    await axiosInstance.delete(`/admin/${userId}`, { data: { reason } });
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    await loadLists({ showLoading: false });
+  };
 
-    // Perform actions
-    const performBan = async (userId, reason) => {
-        await axiosInstance.post(`/admin/ban/${userId}`, { reason });
-        setUsers((prev) =>
-            prev.map((u) => (u.id === userId ? { ...u, status: "Banned" } : u))
-        );
-    };
+  // Unified submit handler for modal
+  const handleModalSubmit = async (remarks) => {
+    if (!modal.userId) return;
 
-    const performUnban = async (userId, reason = "") => {
-        await axiosInstance.post(`/admin/unban/${userId}`, { reason });
-        setUsers((prev) =>
-            prev.map((u) => (u.id === userId ? { ...u, status: "Active" } : u))
-        );
-    };
-
-    const performDelete = async (userId, reason) => {
-        await axiosInstance.delete(`/admin/${userId}`, { data: { reason } });
-        setUsers((prev) => prev.filter((u) => u.id !== userId));
-        await loadLists({ showLoading: false });
-    };
-
-    // Unified submit handler for modal
-    const handleModalSubmit = async (remarks) => {
-        if (!modal.userId) return;
-
-        try {
-            if (modal.type === "ban") {
-                await performBan(modal.userId, remarks);
-            } else if (modal.type === "unban") {
-                await performUnban(modal.userId, remarks);
-            } else if (modal.type === "delete") {
-                await performDelete(modal.userId, remarks);
-            }
-            closeModal();
-        } catch (err) {
-            alert(err.response?.data?.message || "Operation failed. Please try again.");
-            console.error(err);
-        }
-    };
-
-    // Determine modal props
-    const getModalProps = () => {
-        switch (modal.type) {
-            case "ban":
-                return {
-                    title: `Ban ${modal.userName}`,
-                    description: "This user will no longer be able to log in. Please provide a reason for banning.",
-                    actionType: "ban",
-                    placeholder: "e.g. Spam, harassment, violation of terms...",
-                    submitText: "Ban User",
-                };
-            case "unban":
-                return {
-                    title: `Unban ${modal.userName}`,
-                    description: "This user will regain access to their account. You may add an optional note.",
-                    actionType: "approve",
-                    placeholder: "Optional note (e.g. appeal accepted, false positive)",
-                    submitText: "Unban User",
-                };
-            case "delete":
-                return {
-                    title: `Remove ${modal.userName}`,
-                    description:
-                        "Their account will be closed and their vehicle listings removed. A copy is kept for admins. They can register again with the same email.",
-                    actionType: "ban", // red style
-                    placeholder: "Reason for removal (optional)...",
-                    submitText: "Remove account",
-                };
-            default:
-                return {};
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
-                <div className="text-slate-600 animate-pulse">Loading users...</div>
-            </div>
-        );
+    try {
+      if (modal.type === "ban") {
+        await performBan(modal.userId, remarks);
+      } else if (modal.type === "unban") {
+        await performUnban(modal.userId, remarks);
+      } else if (modal.type === "delete") {
+        await performDelete(modal.userId, remarks);
+      }
+      closeModal();
+    } catch (err) {
+      alert(
+        err.response?.data?.message || "Operation failed. Please try again.",
+      );
+      console.error(err);
     }
+  };
 
-    if (error) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
-                <div className="text-red-600 bg-red-50 px-6 py-4 rounded-lg">
-                    <strong>Error:</strong> {error}
-                </div>
-            </div>
-        );
+  // Determine modal props
+  const getModalProps = () => {
+    switch (modal.type) {
+      case "ban":
+        return {
+          title: `Ban ${modal.userName}`,
+          description:
+            "This user will no longer be able to log in. Please provide a reason for banning.",
+          actionType: "ban",
+          placeholder: "e.g. Spam, harassment, violation of terms...",
+          submitText: "Ban User",
+        };
+      case "unban":
+        return {
+          title: `Unban ${modal.userName}`,
+          description:
+            "This user will regain access to their account. You may add an optional note.",
+          actionType: "approve",
+          placeholder: "Optional note (e.g. appeal accepted, false positive)",
+          submitText: "Unban User",
+        };
+      case "delete":
+        return {
+          title: `Remove ${modal.userName}`,
+          description:
+            "Their account will be closed and their vehicle listings removed. A copy is kept for admins. They can register again with the same email.",
+          actionType: "ban", // red style
+          placeholder: "Reason for removal (optional)...",
+          submitText: "Remove account",
+        };
+      default:
+        return {};
     }
+  };
 
-    const modalProps = getModalProps();
-
+  if (loading) {
     return (
-        <>
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-8">
-                <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <div className="text-slate-600 animate-pulse">Loading users...</div>
+      </div>
+    );
+  }
 
-                    {/* Search */}
-                    <div className="mb-6">
-                        <div className="relative max-w-md">
-                            <Search className="absolute left-4 top-3.5 text-slate-400" size={20} />
-                            <input
-                                type="text"
-                                placeholder="Search by name or email..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 text-slate-900 placeholder-slate-500"
-                            />
-                        </div>
-                    </div>
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <div className="text-red-600 bg-red-50 px-6 py-4 rounded-lg">
+          <strong>Error:</strong> {error}
+        </div>
+      </div>
+    );
+  }
 
-                    {/* Table */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-200"> 
-                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">ID</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">User</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Email</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Role</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Status</th>
-                                        <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-200">
-                                    {filteredUsers.map((user) => (
-                                        <tr
-                                            key={user.id}
-                                            className="hover:bg-blue-50 transition duration-150 group cursor-pointer"
-                                            onClick={() => navigate(`/admin/users/${user.id}`)}
-                                            role="button"
-                                            tabIndex={0}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter" || e.key === " ") {
-                                                    e.preventDefault();
-                                                    navigate(`/admin/users/${user.id}`);
-                                                }
-                                            }}
-                                        >
-                                            {/* id */}
-                                            <td className="px-6 py-4">{user.id}</td>
-                                            {/* User Avatar + Name */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="shrink-0">
-                                                        {user.image ? (
-                                                            <img
-                                                                src={user.image}
-                                                                alt={user.name}
-                                                                className="w-10 h-10 rounded-full object-cover border border-slate-200"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
-                                                                <span className="text-slate-500 text-sm font-medium">
-                                                                    {user.name.charAt(0).toUpperCase()}
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="font-medium text-slate-900">{user.name}</div>
-                                                </div>
-                                            </td>
+  const modalProps = getModalProps();
 
-                                            <td className="px-6 py-4 text-slate-600 text-sm">{user.email}</td>
+  return (
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-8">
+        <div className="mx-auto">
+          {/* Search */}
+          <div className="mb-6">
+            <div className="relative max-w-md">
+              <Search
+                className="absolute left-4 top-3.5 text-slate-400"
+                size={20}
+              />
+              <input
+                type="text"
+                placeholder="Search by name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 text-slate-900 placeholder-slate-500"
+              />
+            </div>
+          </div>
 
-                                            <td className="px-6 py-4">
-                                                <span className="inline-flex px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium">
-                                                    {user.role}
-                                                </span>
-                                            </td>
-
-                                            <td className="px-6 py-4">
-                                                <span
-                                                    className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${user.status === "Active"
-                                                        ? "bg-emerald-100 text-emerald-700"
-                                                        : "bg-red-100 text-red-700"
-                                                        }`}
-                                                >
-                                                    {user.status}
-                                                </span>
-                                            </td>
-
-                                            {/* Actions */}
-                                            <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                                                <div className="flex justify-center gap-3">
-                                                    {/* Ban / Unban */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            user.status === "Active"
-                                                                ? openModal("ban", user.id, user.name)
-                                                                : openModal("unban", user.id, user.name)
-                                                        }
-                                                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition duration-150"
-                                                        title={user.status === "Active" ? "Ban user" : "Unban user"}
-                                                    >
-                                                        {user.status === "Active" ? <UserX size={18} /> : <UserCheck size={18} />}
-                                                    </button>
-
-                                                    {/* Delete */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openModal("delete", user.id, user.name)}
-                                                        className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition duration-150"
-                                                        title="Remove account (archived for admins)"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-
-                                    {/* Empty State */}
-                                    {filteredUsers.length === 0 && (
-                                        <tr>
-                                            <td colSpan="5" className="px-6 py-12 text-center">
-                                                <div className="flex flex-col items-center gap-2">
-                                                    <Users size={32} className="text-slate-400" />
-                                                    <span className="text-slate-500 text-sm">No users found</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Footer Stats */}
-                        {filteredUsers.length > 0 && (
-                            <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between items-center">
-                                <span className="text-sm text-slate-600">
-                                    Showing <span className="font-semibold text-slate-900">{filteredUsers.length}</span> of{" "}
-                                    <span className="font-semibold text-slate-900">{users.length}</span> users
+          {/* Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                      ID
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                      User
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                      Email
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                      Role
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {filteredUsers.map((user) => (
+                    <tr
+                      key={user.id}
+                      className="hover:bg-blue-50 transition duration-150 group cursor-pointer"
+                      onClick={() => navigate(`/admin/users/${user.id}`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          navigate(`/admin/users/${user.id}`);
+                        }
+                      }}
+                    >
+                      {/* id */}
+                      <td className="px-6 py-4">{user.id}</td>
+                      {/* User Avatar + Name */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="shrink-0">
+                            {user.image ? (
+                              <img
+                                src={user.image}
+                                alt={user.name}
+                                className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
+                                <span className="text-slate-500 text-sm font-medium">
+                                  {user.name.charAt(0).toUpperCase()}
                                 </span>
-                                <span className="text-sm text-slate-600">
-                                    Active:{" "}
-                                    <span className="font-semibold text-emerald-600">
-                                        {users.filter((u) => u.status === "Active").length}
-                                    </span>{" "}
-                                    | Banned:{" "}
-                                    <span className="font-semibold text-red-600">
-                                        {users.filter((u) => u.status === "Banned").length}
-                                    </span>
-                                </span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Removed accounts (archived) */}
-                    <div className="mt-10">
-                        <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                            <Archive size={20} className="text-slate-500" />
-                            Removed accounts
-                        </h2>
-                        <p className="text-sm text-slate-500 mb-4">
-                            These users no longer have a login. The same email can register again. Open a row for full details (same as active users).
-                        </p>
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-slate-50 border-b border-slate-200">
-                                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">User</th>
-                                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Email</th>
-                                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Role</th>
-                                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Removed</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-200">
-                                        {deletedUsers.map((user) => (
-                                            <tr
-                                                key={String(user.id)}
-                                                className="hover:bg-slate-50 transition duration-150 cursor-pointer"
-                                                onClick={() => navigate(`/admin/users/${user.id}`)}
-                                                role="button"
-                                                tabIndex={0}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter" || e.key === " ") {
-                                                        e.preventDefault();
-                                                        navigate(`/admin/users/${user.id}`);
-                                                    }
-                                                }}
-                                            >
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="shrink-0">
-                                                            {user.image ? (
-                                                                <img
-                                                                    src={user.image}
-                                                                    alt={user.name}
-                                                                    className="w-10 h-10 rounded-full object-cover border border-slate-200 opacity-90"
-                                                                />
-                                                            ) : (
-                                                                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
-                                                                    <span className="text-slate-500 text-sm font-medium">
-                                                                        {user.name.charAt(0).toUpperCase()}
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="font-medium text-slate-700">{user.name}</div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-slate-600 text-sm">{user.email}</td>
-                                                <td className="px-6 py-4">
-                                                    <span className="inline-flex px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
-                                                        {user.role}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">
-                                                    {user.deletedAt
-                                                        ? new Date(user.deletedAt).toLocaleString(undefined, {
-                                                              dateStyle: "medium",
-                                                              timeStyle: "short",
-                                                          })
-                                                        : "—"}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {deletedUsers.length === 0 && (
-                                            <tr>
-                                                <td colSpan="4" className="px-6 py-8 text-center text-slate-500 text-sm">
-                                                    No removed accounts yet.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="font-medium text-slate-900">
+                            {user.name}
+                          </div>
                         </div>
-                    </div>
-                </div>
+                      </td>
+
+                      <td className="px-6 py-4 text-slate-600 text-sm">
+                        {user.email}
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <span className="inline-flex px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium">
+                          {user.role}
+                        </span>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                            user.status === "Active"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {user.status}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td
+                        className="px-6 py-4"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex justify-center gap-3">
+                          {/* Ban / Unban */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              user.status === "Active"
+                                ? openModal("ban", user.id, user.name)
+                                : openModal("unban", user.id, user.name)
+                            }
+                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition duration-150"
+                            title={
+                              user.status === "Active"
+                                ? "Ban user"
+                                : "Unban user"
+                            }
+                          >
+                            {user.status === "Active" ? (
+                              <UserX size={18} />
+                            ) : (
+                              <UserCheck size={18} />
+                            )}
+                          </button>
+
+                          {/* Delete */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openModal("delete", user.id, user.name)
+                            }
+                            className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition duration-150"
+                            title="Remove account (archived for admins)"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* Empty State */}
+                  {filteredUsers.length === 0 && (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <Users size={32} className="text-slate-400" />
+                          <span className="text-slate-500 text-sm">
+                            No users found
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
 
-            {/* Remarks Modal */}
-            <RemarksModal
-                isOpen={modal.isOpen}
-                onClose={closeModal}
-                onSubmit={handleModalSubmit}
-                title={modalProps.title}
-                description={modalProps.description}
-                actionType={modalProps.actionType}
-                placeholder={modalProps.placeholder}
-                submitText={modalProps.submitText}
-                maxLength={500}
-            />
-        </>
-    );
+            {/* Footer Stats */}
+            {filteredUsers.length > 0 && (
+              <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between items-center">
+                <span className="text-sm text-slate-600">
+                  Showing{" "}
+                  <span className="font-semibold text-slate-900">
+                    {filteredUsers.length}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-semibold text-slate-900">
+                    {users.length}
+                  </span>{" "}
+                  users
+                </span>
+                <span className="text-sm text-slate-600">
+                  Active:{" "}
+                  <span className="font-semibold text-emerald-600">
+                    {users.filter((u) => u.status === "Active").length}
+                  </span>{" "}
+                  | Banned:{" "}
+                  <span className="font-semibold text-red-600">
+                    {users.filter((u) => u.status === "Banned").length}
+                  </span>
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Removed accounts (archived) */}
+          <div className="mt-10">
+            <h2 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+              <Archive size={20} className="text-slate-500" />
+              Removed accounts
+            </h2>
+            <p className="text-sm text-slate-500 mb-4">
+              These users no longer have a login. The same email can register
+              again. Open a row for full details (same as active users).
+            </p>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                        User
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                        Email
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                        Role
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                        Removed
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {deletedUsers.map((user) => (
+                      <tr
+                        key={String(user.id)}
+                        className="hover:bg-slate-50 transition duration-150 cursor-pointer"
+                        onClick={() => navigate(`/admin/users/${user.id}`)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            navigate(`/admin/users/${user.id}`);
+                          }
+                        }}
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="shrink-0">
+                              {user.image ? (
+                                <img
+                                  src={user.image}
+                                  alt={user.name}
+                                  className="w-10 h-10 rounded-full object-cover border border-slate-200 opacity-90"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
+                                  <span className="text-slate-500 text-sm font-medium">
+                                    {user.name.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="font-medium text-slate-700">
+                              {user.name}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-600 text-sm">
+                          {user.email}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-500">
+                          {user.deletedAt
+                            ? new Date(user.deletedAt).toLocaleString(
+                                undefined,
+                                {
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                },
+                              )
+                            : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                    {deletedUsers.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan="4"
+                          className="px-6 py-8 text-center text-slate-500 text-sm"
+                        >
+                          No removed accounts yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Remarks Modal */}
+      <RemarksModal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        onSubmit={handleModalSubmit}
+        title={modalProps.title}
+        description={modalProps.description}
+        actionType={modalProps.actionType}
+        placeholder={modalProps.placeholder}
+        submitText={modalProps.submitText}
+        maxLength={500}
+      />
+    </>
+  );
 };
 
 export default ManageUsers;

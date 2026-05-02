@@ -286,6 +286,17 @@ const AdminVehicleDetailsPage = () => {
               <div className="space-y-0">
                 <InfoItem icon={Calendar} label="Model Year" value={vehicle.modelYear} />
                 <InfoItem icon={Fuel} label="Fuel Type" value={vehicle.fuelType} />
+                <InfoItem
+                  icon={Fuel}
+                  label="Rental fuel"
+                  value={
+                    vehicle.rentalFuel === "with"
+                      ? "With fuel (included)"
+                      : vehicle.rentalFuel === "without"
+                        ? "Without fuel"
+                        : "—"
+                  }
+                />
                 <InfoItem icon={Settings} label="Transmission" value={vehicle.transmission} />
                 <InfoItem icon={Users} label="Seats" value={vehicle.seatingCapacity} />
                 {vehicle.mileage && (

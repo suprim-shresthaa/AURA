@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, AlertCircle, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import axiosInstance from "@/lib/axiosInstance";
+import { generateBookingVoucher } from "@/lib/voucherGenerator";
+import { toast } from "react-toastify";
 
 const PaymentCallback = () => {
     const [searchParams] = useSearchParams();
@@ -53,7 +55,19 @@ const PaymentCallback = () => {
         }
     };
 
-    console.log("Booking Details:", bookingDetails);
+    const handleDownloadVoucher = () => {
+        if (!bookingDetails) {
+            toast.error("Booking details are still loading. Please wait a moment and try again.");
+            return;
+        }
+        try {
+            generateBookingVoucher(bookingDetails);
+            toast.success("Voucher downloaded");
+        } catch (error) {
+            console.error("Error generating voucher:", error);
+            toast.error("Could not generate voucher. Try again from My Bookings.");
+        }
+    };
 
     const renderContent = () => {
         switch (status) {
@@ -106,7 +120,23 @@ const PaymentCallback = () => {
                                 </CardContent>
                             </Card>
                         )}
-                        <div className="flex gap-4 justify-center">
+                        <div className="flex flex-wrap gap-3 justify-center items-center">
+                            {bookingId && (
+                                <Button
+                                    variant="outline"
+                                    className="gap-2"
+                                    disabled={!bookingDetails}
+                                    onClick={handleDownloadVoucher}
+                                    title={
+                                        bookingDetails
+                                            ? "Download PDF booking voucher"
+                                            : "Loading booking details…"
+                                    }
+                                >
+                                    <Download className="h-4 w-4" />
+                                    {bookingDetails ? "Download voucher" : "Preparing voucher…"}
+                                </Button>
+                            )}
                             <Button onClick={() => navigate("/profile/bookings")}>
                                 View My Bookings
                             </Button>

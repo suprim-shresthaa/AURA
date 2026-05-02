@@ -210,6 +210,17 @@ export default function VehicleDetailsPage() {
                                     value={vehicle.fuelType}
                                 />
                                 <InfoItem
+                                    icon={Fuel}
+                                    label="Rental fuel"
+                                    value={
+                                        vehicle.rentalFuel === "with"
+                                            ? "With fuel (included)"
+                                            : vehicle.rentalFuel === "without"
+                                              ? "Without fuel"
+                                              : "—"
+                                    }
+                                />
+                                <InfoItem
                                     icon={Settings}
                                     label="Transmission"
                                     value={vehicle.transmission}

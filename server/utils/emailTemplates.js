@@ -80,6 +80,21 @@ const emailTemplates = {
     </div>
 
   `,
+  accountDeleted: (userName, reason, adminEmail) => `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #ef4444;">Account Deletion Notice</h2>
+    <p>Dear ${userName},</p>
+    <p>Your AURA account has been deleted by an administrator.</p>
+    <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
+      <h3 style="margin: 0 0 10px 0; font-size: 18px;">Deletion Details:</h3>
+      <p><strong>Reason:</strong> ${reason || "Administrative action"}</p>
+      <p><strong>Contact:</strong> ${adminEmail || "Support team"}</p>
+      <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+    </div>
+    <p>If you believe this action was made in error, please contact support.</p>
+    <p style="color: #64748b; font-size: 14px;">This is an automated message. Please do not reply directly to this email.</p>
+  </div>
+  `,
   vendorApproved: (vendorName) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
     <h2 style="color: #10b981;">Vendor Approved</h2>
@@ -185,6 +200,24 @@ const emailTemplates = {
      
     </div>
     <p>Please review the vehicle in the admin dashboard and approve or reject it accordingly.</p>
+    <p style="color: #64748b; font-size: 14px;">This is an automated notification. Please do not reply directly to this email.</p>
+  </div>
+  `,
+  vehicleUpdated: (vendorName, vehicleName, link) => `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <h2 style="color: #f59e0b;">Vehicle Listing Updated</h2>
+    <p>Dear Admin,</p>
+    <p>A vendor has updated a vehicle listing. It requires verification again before it can appear on the marketplace.</p>
+     <p style="margin-top: 16px;">
+        <a href="${link}" style="display: inline-block; background-color: #f59e0b; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold;">Review Vehicle</a>
+      </p>
+    <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
+      <h3 style="margin: 0 0 10px 0; font-size: 18px;">Vehicle Details:</h3>
+      <p><strong>Vendor:</strong> ${vendorName}</p>
+      <p><strong>Vehicle Name:</strong> ${vehicleName}</p>
+      <p><strong>Updated:</strong> ${new Date().toLocaleString()}</p>
+    </div>
+    <p>Please review the changes and approve or reject the listing accordingly.</p>
     <p style="color: #64748b; font-size: 14px;">This is an automated notification. Please do not reply directly to this email.</p>
   </div>
   `,
@@ -357,6 +390,10 @@ const sendEmail = async (email, type, data) => {
             subject: 'Account Access Restored',
             template: emailTemplates.unbanNotification(data.userName, data.adminEmail)
         },
+        'account-deleted': {
+            subject: 'Account Deletion Notice',
+            template: emailTemplates.accountDeleted(data.userName, data.reason, data.adminEmail)
+        },
         'vendor-approved': {
             subject: 'Vendor Approved',
             template: emailTemplates.vendorApproved(data.vendorName)
@@ -390,6 +427,10 @@ const sendEmail = async (email, type, data) => {
         'vehicle-uploaded': {
             subject: 'New Vehicle Upload - Action Required',
             template: emailTemplates.vehicleUploaded(data.vendorName, data.vehicleName, data.link)
+        },
+        'vehicle-updated': {
+            subject: 'Vehicle Listing Updated - Review Required',
+            template: emailTemplates.vehicleUpdated(data.vendorName, data.vehicleName, data.link)
         },
         'vehicle-approved': {
             subject: 'Vehicle Approved',

@@ -187,7 +187,7 @@ export default function VendorDashboard() {
                 {/* Main Content */}
                 <div className="flex-1 overflow-auto p-6">
                     {/* Statistics Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
                         <StatsCard
                             title="Total Vehicles"
                             value={stats.totalVehicles || 0}
@@ -203,10 +203,17 @@ export default function VendorDashboard() {
                             color="bg-green-600"
                         />
                         <StatsCard
+                            title="Today's Earnings"
+                            value={formatCurrency(stats.todayEarnings ?? 0)}
+                            subtitle="Paid vehicle bookings made today"
+                            icon={DollarSign}
+                            color="bg-emerald-600"
+                        />
+                        <StatsCard
                             title="Monthly Earnings"
                             value={formatCurrency(stats.monthlyEarnings || 0)}
-                            subtitle={`Total: ${formatCurrency(stats.totalEarnings || 0)}`}
-                            icon={DollarSign}
+                            subtitle={`All-time total: ${formatCurrency(stats.totalEarnings || 0)}`}
+                            icon={TrendingUp}
                             color="bg-purple-600"
                         />
                         <StatsCard
@@ -386,6 +393,17 @@ export default function VendorDashboard() {
                                 <h4 className="font-semibold text-gray-900">Total Revenue</h4>
                             </div>
                             <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalEarnings || 0)}</p>
+                        </div>
+
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-emerald-100 rounded-lg">
+                                    <Clock className="w-5 h-5 text-emerald-600" />
+                                </div>
+                                <h4 className="font-semibold text-gray-900">Today's Earnings</h4>
+                            </div>
+                            <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.todayEarnings ?? 0)}</p>
+                            <p className="text-xs text-gray-500 mt-1">Based on payment date (today)</p>
                         </div>
                     </div>
                 </div>

@@ -12,7 +12,10 @@ const ManageVehicles = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedVehicle, setSelectedVehicle] = useState(null);
-  const [actionDialog, setActionDialog] = useState({ open: false, action: null });
+  const [actionDialog, setActionDialog] = useState({
+    open: false,
+    action: null,
+  });
   const [dialogLoading, setDialogLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
@@ -56,10 +59,12 @@ const ManageVehicles = () => {
     try {
       if (actionDialog.action === "approve") {
         const response = await axiosInstance.post(
-          `/admin/vehicles/${selectedVehicle._id}/approve`
+          `/admin/vehicles/${selectedVehicle._id}/approve`,
         );
         if (response.data?.success) {
-          setVehicles((prev) => prev.filter((v) => v._id !== selectedVehicle._id));
+          setVehicles((prev) =>
+            prev.filter((v) => v._id !== selectedVehicle._id),
+          );
           closeActionDialog();
         } else {
           alert("Failed to approve vehicle.");
@@ -72,10 +77,12 @@ const ManageVehicles = () => {
         }
         const response = await axiosInstance.post(
           `/admin/vehicles/${selectedVehicle._id}/reject`,
-          { rejectionReason: rejectionReason.trim() }
+          { rejectionReason: rejectionReason.trim() },
         );
         if (response.data?.success) {
-          setVehicles((prev) => prev.filter((v) => v._id !== selectedVehicle._id));
+          setVehicles((prev) =>
+            prev.filter((v) => v._id !== selectedVehicle._id),
+          );
           closeActionDialog();
         } else {
           alert("Failed to reject vehicle.");
@@ -83,7 +90,9 @@ const ManageVehicles = () => {
       }
     } catch (err) {
       console.error("Action failed:", err);
-      alert(`Failed to ${actionDialog.action} vehicle. ${err.response?.data?.message || ""}`);
+      alert(
+        `Failed to ${actionDialog.action} vehicle. ${err.response?.data?.message || ""}`,
+      );
     } finally {
       setDialogLoading(false);
     }
@@ -102,7 +111,10 @@ const ManageVehicles = () => {
       <div className="p-8 min-h-screen">
         <div className="max-w-7xl mx-auto">
           <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-6 flex items-start gap-4">
-            <AlertCircle className="text-red-600 flex-shrink-0 mt-1" size={24} />
+            <AlertCircle
+              className="text-red-600 flex-shrink-0 mt-1"
+              size={24}
+            />
             <div>
               <h3 className="font-semibold text-red-900 text-lg">Error</h3>
               <p className="text-red-700 mt-1">{error}</p>
@@ -115,17 +127,23 @@ const ManageVehicles = () => {
 
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Manage Vehicle Verifications</h1>
-          <p className="text-gray-600">Review and approve/reject pending vehicle listings</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Manage Vehicle Verifications
+          </h1>
+          <p className="text-gray-600">
+            Review and approve/reject pending vehicle listings
+          </p>
         </div>
 
         {vehicles.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="text-center py-12">
               <Car className="mx-auto text-gray-400 mb-4" size={48} />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Pending Vehicles</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No Pending Vehicles
+              </h3>
               <p className="text-gray-600">All vehicles have been reviewed.</p>
             </div>
           </div>
@@ -135,18 +153,35 @@ const ManageVehicles = () => {
               <table className="w-full">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Vehicle</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Vendor</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Category</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Price/Day</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Location</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Status</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">Actions</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                      Vehicle
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                      Vendor
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                      Category
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                      Price/Day
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                      Location
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {vehicles.map((vehicle) => (
-                    <tr key={vehicle._id} className="hover:bg-blue-50 transition duration-150 group">
+                    <tr
+                      key={vehicle._id}
+                      className="hover:bg-blue-50 transition duration-150 group"
+                    >
                       {/* Vehicle Info */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -158,7 +193,9 @@ const ManageVehicles = () => {
                             />
                           </div>
                           <div>
-                            <div className="font-medium text-slate-900">{vehicle.name}</div>
+                            <div className="font-medium text-slate-900">
+                              {vehicle.name}
+                            </div>
                             <div className="text-sm text-slate-500">
                               {vehicle.modelYear} • {vehicle.fuelType}
                             </div>
@@ -172,7 +209,9 @@ const ManageVehicles = () => {
                           <div className="font-medium text-slate-900 text-sm">
                             {vehicle.vendorId?.name || "N/A"}
                           </div>
-                          <div className="text-xs text-slate-500">{vehicle.vendorId?.email || "N/A"}</div>
+                          <div className="text-xs text-slate-500">
+                            {vehicle.vendorId?.email || "N/A"}
+                          </div>
                         </div>
                       </td>
 
@@ -185,7 +224,9 @@ const ManageVehicles = () => {
 
                       {/* Price */}
                       <td className="px-6 py-4">
-                        <span className="font-semibold text-slate-900">Rs. {vehicle.rentPerDay}</span>
+                        <span className="font-semibold text-slate-900">
+                          Rs. {vehicle.rentPerDay}
+                        </span>
                         <span className="text-slate-500 text-sm">/day</span>
                       </td>
 
@@ -207,7 +248,9 @@ const ManageVehicles = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => navigate(`/admin/vehicles/${vehicle._id}`)}
+                            onClick={() =>
+                              navigate(`/admin/vehicles/${vehicle._id}`)
+                            }
                             className="text-blue-600 border-blue-300 hover:bg-blue-50"
                             title="View Details"
                           >
@@ -242,7 +285,11 @@ const ManageVehicles = () => {
             {vehicles.length > 0 && (
               <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between items-center">
                 <span className="text-sm text-slate-600">
-                  Showing <span className="font-semibold text-slate-900">{vehicles.length}</span> pending vehicle{vehicles.length !== 1 ? 's' : ''}
+                  Showing{" "}
+                  <span className="font-semibold text-slate-900">
+                    {vehicles.length}
+                  </span>{" "}
+                  pending vehicle{vehicles.length !== 1 ? "s" : ""}
                 </span>
               </div>
             )}
@@ -296,4 +343,3 @@ const ManageVehicles = () => {
 };
 
 export default ManageVehicles;
-

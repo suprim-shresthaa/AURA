@@ -15,7 +15,8 @@ export const getAdminStats = async (req, res) => {
         // Get all bookings
         const allBookings = await Booking.find()
             .populate("userId", "name email")
-            .populate("vehicleId", "name vendorId")
+            .populate("vehicleId", "name vendorId category")
+            .populate("sparePartId", "name category brand")
             .sort({ createdAt: -1 });
 
         // Get all vehicles
@@ -38,31 +39,69 @@ export const getAdminStats = async (req, res) => {
         const pendingPayments = allBookings.filter(b => b.paymentStatus === "pending");
         const refundedPayments = allBookings.filter(b => b.paymentStatus === "refunded");
 
-        // Total revenue (only from paid bookings)
-        const totalRevenue = paidBookings.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+        const paidBookingKind = (b) => {
+            if (b.bookingType === "sparePart") return "spare";
+            if (b.bookingType === "vehicle") return "vehicle";
+            if (b.sparePartId) return "spare";
+            return "vehicle";
+        };
+
+        const isVehiclePaidBooking = (b) => paidBookingKind(b) === "vehicle";
+        const isSparePartPaidBooking = (b) => paidBookingKind(b) === "spare";
+
+        const paidVehicleBookings = paidBookings.filter(isVehiclePaidBooking);
+        const paidSparePartBookings = paidBookings.filter(isSparePartPaidBooking);
+
+        const sumPaidAmount = (list) =>
+            list.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+
+        const totalVehicleRevenue = sumPaidAmount(paidVehicleBookings);
+        const totalSparePartRevenue = sumPaidAmount(paidSparePartBookings);
+
+        // Total revenue (paid vehicle + spare part bookings)
+        const totalRevenue = totalVehicleRevenue + totalSparePartRevenue;
 
         // Monthly revenue (current month)
         const currentMonth = new Date();
         currentMonth.setDate(1);
         currentMonth.setHours(0, 0, 0, 0);
-        const monthlyRevenue = paidBookings
-            .filter(b => new Date(b.createdAt) >= currentMonth)
-            .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+        const paidThisMonth = paidBookings.filter(
+            b => new Date(b.createdAt) >= currentMonth,
+        );
+        const monthlyVehicleRevenue = sumPaidAmount(
+            paidThisMonth.filter(isVehiclePaidBooking),
+        );
+        const monthlySparePartRevenue = sumPaidAmount(
+            paidThisMonth.filter(isSparePartPaidBooking),
+        );
+        const monthlyRevenue =
+            monthlyVehicleRevenue + monthlySparePartRevenue;
 
         // Today's revenue
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const todayRevenue = paidBookings
-            .filter(b => {
-                const bookingDate = new Date(b.createdAt);
-                bookingDate.setHours(0, 0, 0, 0);
-                return bookingDate.getTime() === today.getTime();
-            })
-            .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+        const paidToday = paidBookings.filter(b => {
+            const bookingDate = new Date(b.createdAt);
+            bookingDate.setHours(0, 0, 0, 0);
+            return bookingDate.getTime() === today.getTime();
+        });
+        const todayVehicleRevenue = sumPaidAmount(
+            paidToday.filter(isVehiclePaidBooking),
+        );
+        const todaySparePartRevenue = sumPaidAmount(
+            paidToday.filter(isSparePartPaidBooking),
+        );
+        const todayRevenue =
+            todayVehicleRevenue + todaySparePartRevenue;
 
-        // eSewa payment statistics
+        // eSewa payment statistics (split by booking type)
         const esewaPayments = paidBookings.filter(b => b.paymentMethod === "esewa");
-        const esewaRevenue = esewaPayments.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+        const esewaVehiclePayments = esewaPayments.filter(isVehiclePaidBooking);
+        const esewaSparePartPayments = esewaPayments.filter(isSparePartPaidBooking);
+        const esewaVehicleRevenue = sumPaidAmount(esewaVehiclePayments);
+        const esewaSparePartRevenue = sumPaidAmount(esewaSparePartPayments);
+        const esewaRevenue =
+            esewaVehicleRevenue + esewaSparePartRevenue;
         const successfulEsewaPayments = esewaPayments.filter(b => b.esewaTransactionUuid).length;
 
         // Revenue by month (last 6 months)
@@ -76,26 +115,30 @@ export const getAdminStats = async (req, res) => {
             const nextMonth = new Date(monthDate);
             nextMonth.setMonth(nextMonth.getMonth() + 1);
             
-            const monthRevenue = paidBookings
-                .filter(b => {
-                    const bookingDate = new Date(b.createdAt);
-                    return bookingDate >= monthDate && bookingDate < nextMonth;
-                })
-                .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
-            
+            const inMonthPaid = paidBookings.filter(b => {
+                const bookingDate = new Date(b.createdAt);
+                return bookingDate >= monthDate && bookingDate < nextMonth;
+            });
+
+            const monthVehiclePaid = inMonthPaid.filter(isVehiclePaidBooking);
+            const monthSparePaid = inMonthPaid.filter(isSparePartPaidBooking);
+            const monthVehicleRev = sumPaidAmount(monthVehiclePaid);
+            const monthSpareRev = sumPaidAmount(monthSparePaid);
+
             monthlyBreakdown.push({
                 month: monthDate.toLocaleString('default', { month: 'short', year: 'numeric' }),
-                revenue: monthRevenue,
-                bookings: paidBookings.filter(b => {
-                    const bookingDate = new Date(b.createdAt);
-                    return bookingDate >= monthDate && bookingDate < nextMonth;
-                }).length
+                revenue: monthVehicleRev + monthSpareRev,
+                vehicleRevenue: monthVehicleRev,
+                sparePartRevenue: monthSpareRev,
+                bookings: inMonthPaid.length,
+                vehicleBookings: monthVehiclePaid.length,
+                sparePartBookings: monthSparePaid.length,
             });
         }
 
-        // Top vendors by revenue
+        // Top vendors by revenue (vehicle rentals only)
         const vendorRevenue = {};
-        paidBookings.forEach(booking => {
+        paidVehicleBookings.forEach(booking => {
             const vendorId = booking.vehicleId?.vendorId?.toString();
             if (vendorId) {
                 if (!vendorRevenue[vendorId]) {
@@ -139,10 +182,19 @@ export const getAdminStats = async (req, res) => {
                 paidBookings: paidBookings.length,
                 pendingPayments: pendingPayments.length,
                 refundedPayments: refundedPayments.length,
+
+                totalVehicleRevenue,
+                totalSparePartRevenue,
+                monthlyVehicleRevenue,
+                monthlySparePartRevenue,
+                todayVehicleRevenue,
+                todaySparePartRevenue,
                 
                 // eSewa stats
                 esewaPayments: esewaPayments.length,
                 esewaRevenue,
+                esewaVehicleRevenue,
+                esewaSparePartRevenue,
                 successfulEsewaPayments,
                 
                 // System stats
@@ -1009,6 +1061,8 @@ export const deleteUser = async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
+        
+
         // Prevent deleting admins
         if (user.role === 'admin') {
             return res.status(403).json({ success: false, message: 'Cannot delete an admin user' });
@@ -1016,6 +1070,18 @@ export const deleteUser = async (req, res) => {
 
         const reason = typeof req.body?.reason === "string" ? req.body.reason : "";
 
+
+         // Notify the user by email about account deletion (best-effort)
+         try {
+            await sendEmail(user.email, 'account-deleted', {
+                userName: user.name,
+                reason,
+                adminEmail: process.env.SENDER_EMAIL
+            });
+        } catch (emailErr) {
+            console.error('Failed to send account-deleted email to user:', emailErr);
+        }
+        
         // Remove this user's vehicle listings (vendor inventory)
         await Vehicle.deleteMany({ vendorId: id });
 
@@ -1029,6 +1095,7 @@ export const deleteUser = async (req, res) => {
         delete snapshot.resetOtp;
         delete snapshot.resetOtpExpireAt;
 
+
         await DeletedUser.create({
             originalUserId: user._id,
             email: user.email,
@@ -1039,16 +1106,7 @@ export const deleteUser = async (req, res) => {
 
         await User.findByIdAndDelete(id);
 
-        // Notify the user by email about account deletion (best-effort)
-        try {
-            await sendEmail(user.email, 'account-deleted', {
-                userName: user.name,
-                reason,
-                adminEmail: process.env.SENDER_EMAIL
-            });
-        } catch (emailErr) {
-            console.error('Failed to send account-deleted email to user:', emailErr);
-        }
+       
 
         return res.status(200).json({
             success: true,

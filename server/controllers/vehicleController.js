@@ -1,4 +1,5 @@
 import Vehicle from "../models/vehicle.model.js";
+import Booking from "../models/booking.model.js";
 import mongoose from "mongoose";
 import User from "../models/user.model.js";
 import { upload } from "../config/cloudinary.js";
@@ -15,6 +16,7 @@ export const createVehicle = async (req, res) => {
             condition,
             description,
             fuelType,
+            rentalFuel,
             transmission,
             seatingCapacity,
             mileage,
@@ -34,13 +36,18 @@ export const createVehicle = async (req, res) => {
 
         const requiredFields = {
             name, category, modelYear, condition,
-            fuelType, transmission, seatingCapacity, mileage, rentPerDay, address, city
+            fuelType, rentalFuel, transmission, seatingCapacity, mileage, rentPerDay, address, city
         };
 
         for (const [key, value] of Object.entries(requiredFields)) {
             if (!value || value === "") {
                 return res.status(400).json({ success: false, message: `${key} is required.` });
             }
+        }
+
+        const normalizedRentalFuel = String(rentalFuel).trim().toLowerCase();
+        if (!["with", "without"].includes(normalizedRentalFuel)) {
+            return res.status(400).json({ success: false, message: "rentalFuel must be \"with\" or \"without\"." });
         }
 
         if (!req.files?.mainImage?.[0] || !req.files?.bluebook?.[0]) {
@@ -59,6 +66,7 @@ export const createVehicle = async (req, res) => {
             condition,
             description: description?.trim() || "",
             fuelType,
+            rentalFuel: normalizedRentalFuel,
             transmission,
             seatingCapacity: parseInt(seatingCapacity),
             mileage: parseInt(mileage),
@@ -238,13 +246,44 @@ export const getVehiclesByVendor = async (req, res) => {
 export const deleteVehicle = async (req, res) => {
     try {
         const { id } = req.params;
+        const { vendorId } = req.query;
+
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({ success: false, message: "Invalid vehicle ID." });
         }
-        const deletedVehicle = await Vehicle.findByIdAndDelete(id);
-        if (!deletedVehicle) {
+
+        const vehicle = await Vehicle.findById(id);
+        if (!vehicle) {
             return res.status(404).json({ success: false, message: "Vehicle not found." });
         }
+
+        if (vendorId) {
+            if (!mongoose.Types.ObjectId.isValid(vendorId)) {
+                return res.status(400).json({ success: false, message: "Valid vendorId is required." });
+            }
+            if (vehicle.vendorId.toString() !== vendorId) {
+                return res.status(403).json({ success: false, message: "You don't have permission to delete this vehicle." });
+            }
+        }
+
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const blockingBooking = await Booking.findOne({
+            vehicleId: id,
+            bookingStatus: { $nin: ["cancelled", "completed"] },
+            endDate: { $gte: startOfToday },
+        }).select("_id");
+
+        if (blockingBooking) {
+            return res.status(409).json({
+                success: false,
+                message:
+                    "This vehicle cannot be deleted because it still has an active or upcoming reservation in the booking period. Wait until the rental ends or cancel the booking first.",
+            });
+        }
+
+        await Vehicle.findByIdAndDelete(id);
         res.status(200).json({ success: true, message: "Vehicle deleted successfully." });
     } catch (error) {
         console.error("Error deleting vehicle:", error);
@@ -298,6 +337,7 @@ export const updateVehicle = async (req, res) => {
             condition,
             description,
             fuelType,
+            rentalFuel,
             transmission,
             seatingCapacity,
             mileage,
@@ -322,13 +362,18 @@ export const updateVehicle = async (req, res) => {
         // Validation
         const requiredFields = {
             name, category, modelYear, condition,
-            fuelType, transmission, seatingCapacity, mileage, rentPerDay, address, city
+            fuelType, rentalFuel, transmission, seatingCapacity, mileage, rentPerDay, address, city
         };
 
         for (const [key, value] of Object.entries(requiredFields)) {
             if (!value || value === "") {
                 return res.status(400).json({ success: false, message: `${key} is required.` });
             }
+        }
+
+        const normalizedRentalFuel = String(rentalFuel).trim().toLowerCase();
+        if (!["with", "without"].includes(normalizedRentalFuel)) {
+            return res.status(400).json({ success: false, message: "rentalFuel must be \"with\" or \"without\"." });
         }
 
         // Handle images - use existing if not provided, otherwise use new uploads
@@ -353,6 +398,7 @@ export const updateVehicle = async (req, res) => {
         vehicle.condition = condition;
         vehicle.description = description?.trim() || "";
         vehicle.fuelType = fuelType;
+        vehicle.rentalFuel = normalizedRentalFuel;
         vehicle.transmission = transmission;
         vehicle.seatingCapacity = parseInt(seatingCapacity);
         vehicle.mileage = parseInt(mileage);
@@ -365,20 +411,37 @@ export const updateVehicle = async (req, res) => {
         vehicle.bluebook = bluebook;
         vehicle.images = images;
 
-        // Reset verification status to pending when vehicle is updated
-        if (vehicle.verificationStatus === "rejected") {
-            vehicle.verificationStatus = "pending";
-            vehicle.rejectionReason = "";
-            vehicle.verifiedBy = null;
-            vehicle.verifiedAt = null;
-        }
+        vehicle.verificationStatus = "pending";
+        vehicle.status = "Inactive";
+        vehicle.rejectionReason = "";
+        vehicle.verifiedBy = null;
+        vehicle.verifiedAt = null;
 
         await vehicle.save();
 
+        try {
+            const vendor = await User.findById(vendorId).select("name email");
+            const adminEmail = process.env.SENDER_EMAIL;
+
+            if (adminEmail && vendor) {
+                await sendEmail(adminEmail, "vehicle-updated", {
+                    vendorName: vendor.name,
+                    vehicleName: name.trim(),
+                    link: `${process.env.FRONTEND_URL}/admin/vehicles/${vehicle._id}`,
+                });
+            }
+        } catch (emailError) {
+            console.error(
+                "Error sending vehicle update notification to admin:",
+                emailError,
+            );
+        }
+
         return res.status(200).json({
             success: true,
-            message: "Vehicle updated successfully!",
-            data: vehicle
+            message:
+                "Vehicle updated successfully. It has been queued for admin review again.",
+            data: vehicle,
         });
 
     } catch (error) {
