@@ -144,7 +144,13 @@ const Signup = () => {
 
     if (value && index < 5) {
       document.getElementById(`otp-${index + 1}`)?.focus();
-    } else if (event.key === "Backspace" && !value && index > 0) {
+    } else if (event?.key === "Backspace" && !value && index > 0) {
+      document.getElementById(`otp-${index - 1}`)?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, event) => {
+    if (event.key === "Backspace" && !otp[index] && index > 0) {
       document.getElementById(`otp-${index - 1}`)?.focus();
     }
   };
@@ -436,14 +442,14 @@ const Signup = () => {
                   <InputField
                     key={idx}
                     id={`otp-${idx}`}
-                    type="text"
+                    type="tel"
                     required
                     inputMode="numeric"
                     pattern="[0-9]*"
                     maxLength={1}
                     value={digit}
                     onChange={(e) => handleOtpChange(idx, e.target.value, e)}
-                    onKeyDown={(e) => handleOtpChange(idx, e.target.value, e)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                     className="w-10 h-10 sm:w-14 sm:h-14 text-lg sm:text-2xl font-bold text-center border-2 rounded-lg"
                     disabled={isLoading}
                   />

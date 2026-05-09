@@ -13,6 +13,7 @@ import { AppContent } from "../context/AppContext";
 import axiosInstance from "@/lib/axiosInstance";
 import { toast } from "react-toastify";
 import InputField from "../InputField";
+import { Input } from "../ui/input";
 
 export default function VehicleUploadForm() {
   const { id } = useParams();
@@ -85,7 +86,9 @@ export default function VehicleUploadForm() {
         // Set preview images from existing URLs
         if (vehicle.mainImage) setMainPreview(vehicle.mainImage);
         if (vehicle.bluebook) setBluebookPreview(vehicle.bluebook);
-        setExistingImageUrls(Array.isArray(vehicle.images) ? vehicle.images : []);
+        setExistingImageUrls(
+          Array.isArray(vehicle.images) ? vehicle.images : [],
+        );
       }
     } catch (err) {
       console.error("Error fetching vehicle:", err);
@@ -342,13 +345,14 @@ export default function VehicleUploadForm() {
                     Vehicle Name *
                   </label>
                   <div className="relative">
-                    <InputField
+                    <input
                       type="text"
                       required
                       name="name"
                       placeholder="e.g., Toyota Corolla"
                       value={formData.name}
                       onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     />
                   </div>
                 </div>
