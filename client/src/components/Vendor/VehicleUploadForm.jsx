@@ -590,7 +590,7 @@ export default function VehicleUploadForm() {
                       onChange={handleMainImage}
                       onError={(err) => handleImageError(err, "mainImage")}
                       className="hidden"
-                      required={!isEditMode}
+                      required={true}
                       disabled={loading}
                     />
                     <label htmlFor="mainImage" className="cursor-pointer">
@@ -631,7 +631,7 @@ export default function VehicleUploadForm() {
                       onChange={handleBluebookImage}
                       onError={(err) => handleImageError(err, "bluebook")}
                       className="hidden"
-                      required={!isEditMode}
+                      required={true}
                       disabled={loading}
                     />
                     <label htmlFor="bluebook" className="cursor-pointer">

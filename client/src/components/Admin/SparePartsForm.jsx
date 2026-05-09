@@ -393,7 +393,7 @@ const SparePartsForm = () => {
                     multiple
                     className="hidden"
                     id="images"
-                    required={!isEdit}
+                    required={true}
                     onChange={handleImageUpload}
                     maxSize={MAX_IMAGE_SIZE}
                     maxFiles={MAX_IMAGE_COUNT}
