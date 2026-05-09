@@ -44,7 +44,6 @@ export const submitVendorApplication = async (req, res) => {
 
         const existingApplication = await vendorApplicationModel.findOne({
             user: userId,
-            status: { $in: ["pending", "approved"] },
         });
         if (existingApplication?.status === "approved") {
             return res.status(400).json({
@@ -78,11 +77,14 @@ export const submitVendorApplication = async (req, res) => {
 
         const isResubmission = Boolean(existingApplication);
         const application = isResubmission
-            ? Object.assign(existingApplication, applicationPayload)
+            ? Object.assign(existingApplication, applicationPayload, {
+                  status: "pending",
+                  rejectionReason: undefined,
+              })
             : new vendorApplicationModel({
-                ...applicationPayload,
-                user: userId, // Link to User
-            });
+                  ...applicationPayload,
+                  user: userId, // Link to User
+              });
 
         await application.save();
 

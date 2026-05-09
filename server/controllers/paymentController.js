@@ -395,58 +395,139 @@ export const esewaPaymentCallback = async (req, res) => {
                     booking.esewaTransactionCode = transaction_code || null;
                     await booking.save();
                     
-                    // Send confirmation emails to both user and vendor
-                    try {
-                        // Populate booking to get user and vehicle details
-                        await booking.populate('userId vehicleId');
-                        
-                        // Get vendor details
-                        const vendor = await User.findById(booking.vehicleId.vendorId);
-                        
-                        // Format dates for email
-                        const formatDate = (date) => {
-                            return new Date(date).toLocaleDateString('en-US', { 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
-                            });
-                        };
-                        
-                        // Format pickup location
-                        const pickupLocationStr = booking.pickupLocation 
-                            ? `${booking.pickupLocation.street}, ${booking.pickupLocation.city}, ${booking.pickupLocation.state}`
-                            : 'N/A';
-                        
-                        // Send email to user
-                        await sendEmail(booking.userId.email, 'booking-confirmation-user', {
-                            userName: booking.userId.name,
-                            vehicleName: booking.vehicleId.name,
-                            startDate: formatDate(booking.startDate),
-                            endDate: formatDate(booking.endDate),
-                            totalAmount: booking.totalAmount,
-                            totalDays: booking.totalDays,
-                            pickupLocation: pickupLocationStr,
-                            bookingId: booking._id.toString(),
-                            vendorContact: vendor?.contact || 'N/A'
+                    // Confirmation emails — load user/vendor/spare docs explicitly (populate alone can miss email / wrong branch).
+                    const formatDate = (date) => {
+                        return new Date(date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
                         });
-                        
-                        // Send email to vendor
-                        if (vendor && vendor.email) {
-                            await sendEmail(vendor.email, 'booking-confirmation-vendor', {
-                                vendorName: vendor.name,
-                                vehicleName: booking.vehicleId.name,
-                                userName: booking.userId.name,
-                                userContact: booking.userId.contact || 'N/A',
-                                startDate: formatDate(booking.startDate),
-                                endDate: formatDate(booking.endDate),
-                                totalAmount: booking.totalAmount,
-                                totalDays: booking.totalDays,
-                                pickupLocation: pickupLocationStr,
-                                bookingId: booking._id.toString()
+                    };
+
+                    const formatPickupLocationStr = (loc) => {
+                        if (!loc || typeof loc !== 'object') return 'N/A';
+                        const line = [loc.street || loc.address, loc.city, loc.state]
+                            .filter(Boolean)
+                            .join(', ');
+                        return line || 'N/A';
+                    };
+
+                    const pickupLocationStr = formatPickupLocationStr(booking.pickupLocation);
+                    const bookingIdStr = booking._id.toString();
+
+                    try {
+                        const userRecordId = booking.userId?._id ?? booking.userId;
+                        const userDoc = await User.findById(userRecordId).select('name email contact');
+                        const userEmail = userDoc?.email?.trim();
+                        console.log("user doc: ", userDoc)
+
+                        if (!userDoc || !userEmail) {
+                            console.error('Booking confirmation: user has no reachable email', {
+                                bookingId: bookingIdStr,
+                                userRecordId: String(userRecordId)
                             });
                         }
+
+                        /** Spare part rentals have sparePartId; do not rely on bookingType alone. */
+                        const isSparePartBooking = Boolean(booking.sparePartId);
+
+                        const sendSafe = async (label, fn) => {
+                            try {
+                                await fn();
+                            } catch (err) {
+                                console.error(`Booking confirmation email failed (${label}):`, err?.message || err);
+                            }
+                        };
+
+                        const dateStart = formatDate(booking.startDate);
+                        const dateEnd = formatDate(booking.endDate);
+                        const { totalAmount, totalDays } = booking;
+
+                        if (isSparePartBooking) {
+                            const spareDoc = await SparePart.findById(booking.sparePartId).select('name');
+                            const spareName = spareDoc?.name?.trim() || 'Spare part';
+
+                            const userPayload = {
+                                userName: userDoc?.name || 'Customer',
+                                sparePartName: spareName,
+                                startDate: dateStart,
+                                endDate: dateEnd,
+                                totalAmount,
+                                totalDays,
+                                pickupLocation: pickupLocationStr,
+                                bookingId: bookingIdStr
+                            };
+                            console.log(userPayload);
+                            if (userEmail) {
+                                console.log(userEmail);
+                                await sendSafe('user-spare-part', () =>
+                                    sendEmail(userEmail, 'booking-confirmation-user-spare', userPayload)
+                                );
+                            }
+
+                            const adminEmail = process.env.SENDER_EMAIL?.trim();
+                            if (adminEmail) {
+                                await sendSafe('admin-spare-part', () =>
+                                    sendEmail(adminEmail, 'booking-confirmation-admin-spare', {
+                                        customerName: userDoc?.name || 'Customer',
+                                        customerEmail: userEmail || 'N/A',
+                                        customerContact: userDoc?.contact || 'N/A',
+                                        sparePartName: spareName,
+                                        startDate: dateStart,
+                                        endDate: dateEnd,
+                                        totalAmount,
+                                        totalDays,
+                                        pickupLocation: pickupLocationStr,
+                                        bookingId: bookingIdStr
+                                    })
+                                );
+                            }
+                        } else {
+                            const vehicleDoc = await Vehicle.findById(booking.vehicleId).select('name vendorId');
+                            if (!vehicleDoc) {
+                                console.error('Booking confirmation: vehicle missing for booking', bookingIdStr);
+                            } else {
+                                const vendor = await User.findById(vehicleDoc.vendorId).select('name email contact');
+
+                                const userPayloadVehicle = {
+                                    userName: userDoc?.name || 'Customer',
+                                    vehicleName: vehicleDoc.name,
+                                    startDate: dateStart,
+                                    endDate: dateEnd,
+                                    totalAmount,
+                                    totalDays,
+                                    pickupLocation: pickupLocationStr,
+                                    bookingId: bookingIdStr,
+                                    vendorContact: vendor?.contact || 'N/A'
+                                };
+
+                                if (userEmail) {
+                                    await sendSafe('user-vehicle', () =>
+                                        sendEmail(userEmail, 'booking-confirmation-user', userPayloadVehicle)
+                                    );
+                                }
+
+                                const vendorMail = vendor?.email?.trim();
+                                if (vendorMail) {
+                                    await sendSafe('vendor-vehicle', () =>
+                                        sendEmail(vendorMail, 'booking-confirmation-vendor', {
+                                            vendorName: vendor?.name || 'Vendor',
+                                            vehicleName: vehicleDoc.name,
+                                            userName: userDoc?.name || 'Customer',
+                                            userContact: userDoc?.contact || 'N/A',
+                                            startDate: dateStart,
+                                            endDate: dateEnd,
+                                            totalAmount,
+                                            totalDays,
+                                            pickupLocation: pickupLocationStr,
+                                            bookingId: bookingIdStr
+                                        })
+                                    );
+                                }
+                            }
+                        }
                     } catch (emailError) {
-                        console.error('Error sending booking confirmation emails:', emailError);
+                        console.error('Error preparing booking confirmation emails:', emailError);
                     }
                     
                     // Remove from temporary storage

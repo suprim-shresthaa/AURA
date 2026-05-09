@@ -1,4 +1,4 @@
-import React, { useContext, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   User,
   Settings,
@@ -15,11 +15,22 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { AppContent } from "../context/AppContext";
 
+/** Same default as server `user.model` — Google avatars need referrerPolicy + fallback (hotlink / 429). */
+const DEFAULT_PROFILE_IMAGE =
+  "https://res.cloudinary.com/dxigipf0k/image/upload/v1741190518/wy6ytirqcswljhf3c13v.png";
+
 const Sidebar = ({ userData }) => {
   const { setIsLoggedin, backendUrl, setUserData } = useContext(AppContent);
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [avatarSrc, setAvatarSrc] = useState(
+    () => userData?.image || DEFAULT_PROFILE_IMAGE,
+  );
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setAvatarSrc(userData?.image || DEFAULT_PROFILE_IMAGE);
+  }, [userData?.image]);
 
   //only show licenses if user is a regular user
   const showLicenses = userData?.role === "user";
@@ -78,6 +89,7 @@ const Sidebar = ({ userData }) => {
           ...prev,
           image: response.data.image,
         }));
+        setAvatarSrc(response.data.image || DEFAULT_PROFILE_IMAGE);
         toast.success("Profile picture updated!");
       } else {
         toast.error(response.data.message || "Failed to update image.");
@@ -90,16 +102,22 @@ const Sidebar = ({ userData }) => {
     }
   };
 
-  // if user image loaded fully then only show userData.image else show default avatar sometimes from google image i got 429 error in this case use default avatar
-
   return (
     <div className="bg-white shadow rounded-lg sticky top-6">
       {/* Profile Header */}
       <div className="p-6 text-center">
         <div className="relative mx-auto w-32 h-32">
           <img
-            src={userData?.image || "/default-avatar.png"}
+            src={avatarSrc}
             alt={userData?.name}
+            referrerPolicy="no-referrer"
+            onError={() =>
+              setAvatarSrc((prev) =>
+                prev === DEFAULT_PROFILE_IMAGE
+                  ? prev
+                  : DEFAULT_PROFILE_IMAGE,
+              )
+            }
             className="w-full h-full rounded-full object-cover border-4 border-amber-400"
           />
           <button

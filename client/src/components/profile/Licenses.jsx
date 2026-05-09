@@ -59,11 +59,11 @@ const Licenses = () => {
       if (response.data?.success) {
         setLicenses(response.data.data || []);
       }
+      setLoading(false);
     } catch (err) {
       console.error("Error fetching licenses:", err);
       setError("Failed to load licenses. Please try again.");
     } finally {
-      setLoading(false);
     }
   };
 

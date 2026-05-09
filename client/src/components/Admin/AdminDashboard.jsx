@@ -5,7 +5,6 @@ import {
   Wrench,
   Car,
   Activity,
-  DollarSign,
   Clock3,
   CheckCircle2,
   Package,
@@ -107,10 +106,7 @@ const Dashboard = () => {
   }
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount || 0);
+    return `Rs. ${amount || 0}`;
   };
 
   const metrics = [
@@ -300,11 +296,10 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-8">
+        <div className="grid grid-cols-1  gap-6 mt-8">
           <div className="xl:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
               <div className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-indigo-600" />
                 <h2 className="text-lg font-bold text-gray-900">
                   Monthly Revenue Trend
                 </h2>
@@ -378,7 +373,7 @@ const Dashboard = () => {
                     );
                   })}
                 </div>
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="mt-4 grid grid-cols-1 gap-2">
                   {monthlyData.map((item) => {
                     const vRev = item.vehicleRevenue ?? item.revenue ?? 0;
                     const sRev = item.sparePartRevenue ?? 0;
@@ -416,54 +411,6 @@ const Dashboard = () => {
               </p>
             )}
           </div>
-
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Activity className="w-5 h-5 text-blue-600" />
-              <h2 className="text-lg font-bold text-gray-900">
-                Booking Status Mix
-              </h2>
-            </div>
-
-            <div className="flex items-center justify-center">
-              <div className="relative">
-                <div
-                  className="w-40 h-40 rounded-full"
-                  style={bookingDonutStyle}
-                />
-                <div className="absolute inset-5 bg-white rounded-full flex flex-col items-center justify-center">
-                  <p className="text-xs text-gray-500">Total</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {totalBookingStates}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 space-y-2">
-              {bookingStatusItems.map((item) => {
-                const pct = totalBookingStates
-                  ? ((item.value / totalBookingStates) * 100).toFixed(1)
-                  : "0.0";
-                return (
-                  <div
-                    key={item.key}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-2.5 h-2.5 rounded-full ${item.dot}`}
-                      />
-                      <span className="text-gray-700">{item.label}</span>
-                    </div>
-                    <span className="font-medium text-gray-900">
-                      {item.value} ({pct}%)
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
@@ -486,12 +433,6 @@ const Dashboard = () => {
                 value={stats.pendingPayments || 0}
                 max={paymentStatusMax}
                 colorClass="bg-amber-500"
-              />
-              <HorizontalBar
-                label="Refunded"
-                value={stats.refundedPayments || 0}
-                max={paymentStatusMax}
-                colorClass="bg-red-500"
               />
             </div>
           </div>
@@ -565,10 +506,17 @@ const Dashboard = () => {
                       key={booking._id || index}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                     >
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {booking.userId?.name || "Unknown User"}
-                        </p>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={booking.userId?.image}
+                            alt="User"
+                            className="w-10 h-10 rounded-full"
+                          />
+                          <p className="font-medium text-gray-900">
+                            {booking.userId?.name || "Unknown User"}
+                          </p>
+                        </div>
                         <p className="text-sm text-gray-600">
                           <span
                             className={`inline-flex mr-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${spare ? "bg-teal-100 text-teal-800" : "bg-indigo-100 text-indigo-800"}`}

@@ -89,16 +89,24 @@ const ProfileInfo = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* NAME */}
           <div>
+            Full Name
             {isEditing ? (
               <InputField
                 id="name"
-                label="Full Name"
                 type="text"
                 required
                 name="name"
                 placeholder="Your Full Name"
                 value={formData.name}
-                onChange={handleChange}
+                onChange={(e) => {
+                  // Allow only letters and spaces
+                  const lettersOnly = e.target.value.replace(
+                    /[^a-zA-Z\s]/g,
+                    "",
+                  );
+                  const value = lettersOnly.slice(0, 50);
+                  setFormData({ ...formData, name: value });
+                }}
                 icon={<User className="w-5 h-5 text-gray-400" />}
               />
             ) : (
@@ -119,19 +127,22 @@ const ProfileInfo = () => {
 
           {/* PHONE */}
           <div>
+            Phone
             {isEditing ? (
               <InputField
                 id="contact"
-                label="Phone"
                 type="tel"
                 minLength={10}
                 maxLength={10}
                 pattern="[0-9]*"
                 required
                 name="contact"
-                placeholder="Your Phone Number"
+                placeholder="10-digit Phone Number"
                 value={formData.contact}
-                onChange={handleChange}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  setFormData({ ...formData, contact: value });
+                }}
                 icon={<Phone className="w-5 h-5 text-gray-400" />}
               />
             ) : (
@@ -144,16 +155,18 @@ const ProfileInfo = () => {
 
           {/* ADDRESS */}
           <div>
+            Address
             {isEditing ? (
               <InputField
                 id="address"
-                label="Address"
                 type="text"
                 required
                 name="address"
                 placeholder="Your Address"
                 value={formData.address}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
                 icon={<MapPin className="w-5 h-5 text-gray-400" />}
               />
             ) : (

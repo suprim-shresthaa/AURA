@@ -3,312 +3,331 @@ import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "@/lib/axiosInstance";
 import { AppContent } from "./context/AppContext";
 import {
-    Package,
-    Box,
-    CheckCircle,
-    XCircle,
-    ArrowLeft,
-    Phone,
-    Mail,
-    Calendar,
-    MapPin,
-    Headphones,
+  Package,
+  Box,
+  CheckCircle,
+  XCircle,
+  ArrowLeft,
+  Phone,
+  Mail,
+  Calendar,
+  MapPin,
+  Headphones,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import BookingModal from "./BookingModal";
 
-const SUPPORT_EMAIL =
-    import.meta.env.VITE_SUPPORT_EMAIL || "auraofficial.com";
-const SUPPORT_PHONE =
-    import.meta.env.VITE_SUPPORT_PHONE || "014242736";
+const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || "auraofficial.com";
+const SUPPORT_PHONE = import.meta.env.VITE_SUPPORT_PHONE || "014242736";
 const SUPPORT_ADDRESS =
-    import.meta.env.VITE_SUPPORT_ADDRESS ||
-    "AURA Support, Kathmandu, Nepal";
+  import.meta.env.VITE_SUPPORT_ADDRESS || "AURA Support, Kathmandu, Nepal";
 
 export default function SparePartDetailsPage() {
-    const { id } = useParams();
-    const navigate = useNavigate();
-    const { isLoggedin } = useContext(AppContent);
-    const [sparePart, setSparePart] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [selectedImage, setSelectedImage] = useState("");
-    const [showBookingModal, setShowBookingModal] = useState(false);
-    const [canBook, setCanBook] = useState(false);
-    useEffect(() => {
-        const fetchSparePart = async () => {
-            try {
-                const res = await axiosInstance.get(`/spare-parts/${id}`);
-                setSparePart(res.data.data);
-                if (res.data.data.images && res.data.data.images.length > 0) {
-                    setSelectedImage(res.data.data.images[0]);
-                }
-               
-            } catch (err) {
-                console.error("Error fetching spare part:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchSparePart();
-    }, [id]);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { isLoggedin, userData } = useContext(AppContent);
+  const [sparePart, setSparePart] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState("");
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [canBook, setCanBook] = useState(false);
+  useEffect(() => {
+    const fetchSparePart = async () => {
+      try {
+        const res = await axiosInstance.get(`/spare-parts/${id}`);
+        setSparePart(res.data.data);
+        if (res.data.data.images && res.data.data.images.length > 0) {
+          setSelectedImage(res.data.data.images[0]);
+        }
+        setCanBook(userData?.role === "user");
+      } catch (err) {
+        console.error("Error fetching spare part:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSparePart();
+  }, [id]);
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading spare part details...</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (!sparePart) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                    <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-xl text-gray-600 mb-4">Spare part not found</p>
-                    <Button onClick={() => navigate("/spare-parts")}>
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back to Spare Parts
-                    </Button>
-                </div>
-            </div>
-        );
-    }
-
-    const allImages = sparePart.images && sparePart.images.length > 0 ? sparePart.images : [];
-    const isListedAvailable = sparePart.isAvailable && sparePart.status === "Active";
-    const hasRentPrice = sparePart.rentPrice && sparePart.rentPrice > 0;
-
-    const InfoItem = ({ icon: Icon, label, value }) => (
-        <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-            <div className="flex items-center gap-2 text-gray-600">
-                <Icon className="w-4 h-4" />
-                <span className="text-sm">{label}</span>
-            </div>
-            <span className="text-gray-900 font-semibold text-sm">{value}</span>
-        </div>
-    );
-
+  if (loading) {
     return (
-        <div className="min-h-screen">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {/* Back Button */}
-                <Button
-                    variant="ghost"
-                    onClick={() => navigate("/spare-parts")}
-                    className="mb-4"
-                >
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back to Spare Parts
-                </Button>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading spare part details...</p>
+        </div>
+      </div>
+    );
+  }
 
-                {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-3">{sparePart.name}</h1>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                            {sparePart.category}
-                        </span>
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-                            {sparePart.brand}
-                        </span>
-                    </div>
+  if (!sparePart) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <p className="text-xl text-gray-600 mb-4">Spare part not found</p>
+          <Button onClick={() => navigate("/spare-parts")}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Spare Parts
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const allImages =
+    sparePart.images && sparePart.images.length > 0 ? sparePart.images : [];
+  const isListedAvailable =
+    sparePart.isAvailable && sparePart.status === "Active";
+  const hasRentPrice = sparePart.rentPrice && sparePart.rentPrice > 0;
+
+  const InfoItem = ({ icon: Icon, label, value }) => (
+    <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+      <div className="flex items-center gap-2 text-gray-600">
+        <Icon className="w-4 h-4" />
+        <span className="text-sm">{label}</span>
+      </div>
+      <span className="text-gray-900 font-semibold text-sm">{value}</span>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/spare-parts")}
+          className="mb-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Spare Parts
+        </Button>
+
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">
+            {sparePart.name}
+          </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+              {sparePart.category}
+            </span>
+            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+              {sparePart.brand}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Left Column - Images & Description */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Main Image Display */}
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+              {allImages.length > 0 ? (
+                <img
+                  src={selectedImage}
+                  alt={sparePart.name}
+                  className="w-full h-[420px] object-cover"
+                />
+              ) : (
+                <div className="w-full h-[420px] flex items-center justify-center bg-gray-100">
+                  <Package className="w-24 h-24 text-gray-400" />
                 </div>
-
-                <div className="grid lg:grid-cols-3 gap-6">
-                    {/* Left Column - Images & Description */}
-                    <div className="lg:col-span-2 space-y-4">
-                        {/* Main Image Display */}
-                        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                            {allImages.length > 0 ? (
-                                <img
-                                    src={selectedImage}
-                                    alt={sparePart.name}
-                                    className="w-full h-[420px] object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-[420px] flex items-center justify-center bg-gray-100">
-                                    <Package className="w-24 h-24 text-gray-400" />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Thumbnail Images */}
-                        {allImages.length > 1 && (
-                            <div className="grid grid-cols-4 gap-3">
-                                {allImages.map((img, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => setSelectedImage(img)}
-                                        className={`relative bg-white rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md ${
-                                            selectedImage === img ? 'ring-2 ring-blue-600' : ''
-                                        }`}
-                                    >
-                                        <img
-                                            src={img}
-                                            alt={`View ${index + 1}`}
-                                            className="w-full h-24 object-cover"
-                                        />
-                                        {selectedImage === img && (
-                                            <div className="absolute inset-0"></div>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Description */}
-                        {sparePart.description && (
-                            <div className="bg-white rounded-lg shadow-sm p-5">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-3">Description</h2>
-                                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                                    {sparePart.description}
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Compatible Vehicles */}
-                        {sparePart.compatibleVehicles && (
-                            <div className="bg-white rounded-lg shadow-sm p-5">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-3">Compatible Vehicles</h2>
-                                <p className="text-gray-700 leading-relaxed">
-                                    {sparePart.compatibleVehicles}
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Contact Admin — same pattern as Contact Vendor on VehicleDetailsPage */}
-                        <div className="bg-white rounded-lg shadow-sm p-5">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Admin</h2>
-                            <div className="flex items-start gap-4">
-                                <div
-                                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-gray-200 bg-primary/10"
-                                    aria-hidden
-                                >
-                                    <Headphones className="h-8 w-8 text-primary" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-lg font-semibold text-gray-900">AURA Support</p>
-                                    <div className="mt-2 space-y-1">
-                                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                                            <Mail className="h-4 w-4 shrink-0" />
-                                            <p>
-                                                {SUPPORT_EMAIL}
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                                            <Phone className="h-4 w-4 shrink-0" />
-                                            <a
-                                                href={`tel:${SUPPORT_PHONE.replace(/[^\d+]/g, "")}`}
-                                                className="hover:text-gray-900"
-                                            >
-                                                {SUPPORT_PHONE}
-                                            </a>
-                                        </div> 
-                                        <div className="flex items-start gap-2 text-sm text-gray-600">
-                                            <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                                            <span>{SUPPORT_ADDRESS}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column - Details Sidebar */}
-                    <div className="space-y-4">
-                        {/* Pricing Card */}
-                        {hasRentPrice && (
-                            <div className="bg-primary rounded-lg shadow-sm p-5 text-white">
-                                <p className="text-sm opacity-90 mb-2">Pricing</p>
-                                <div className="mb-2">
-                                    <p className="text-xs opacity-80">Rent (per day)</p>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-2xl font-bold">Rs. {sparePart.rentPrice.toLocaleString()}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Specifications Card */}
-                        <div className="bg-white rounded-lg shadow-sm p-5">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-3">Product Details</h2>
-                            <div className="space-y-0">
-                                <InfoItem
-                                    icon={Package}
-                                    label="Category"
-                                    value={sparePart.category}
-                                />
-                                <InfoItem
-                                    icon={Box}
-                                    label="Brand"
-                                    value={sparePart.brand}
-                                />
-                                <InfoItem
-                                    icon={isListedAvailable ? CheckCircle : XCircle}
-                                    label="Status"
-                                    value={isListedAvailable ? "Available" : "Unavailable"}
-                                />
-                            </div>
-                        </div>
-
-                        {sparePart.pickupLocation?.address && sparePart.pickupLocation?.city && (
-                            <div className="bg-white rounded-lg shadow-sm p-5">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-3">Pickup Location</h2>
-                                <div className="flex items-start gap-3">
-                                    <div className="p-2 rounded-lg">
-                                        <MapPin className="w-5 h-5 text-primary" />
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-900 font-medium">{sparePart.pickupLocation.address}</p>
-                                        <p className="text-gray-600 text-sm mt-0.5">{sparePart.pickupLocation.city}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Action Buttons */}
-                        <div className="space-y-3">
-                            {/* Book Button - Show if rentPrice exists */}
-                            {!isLoggedin ? (
-                                <button
-                                    onClick={() => navigate("/login")}
-                                    className="w-full h-12 bg-primary text-white font-semibold py-3 rounded-xl cursor-pointer"
-                                >
-                                    Login to Book
-                                </button>
-                            ) : (
-                                <>
-                                {hasRentPrice && (
-                                <Button
-                                    onClick={() => setShowBookingModal(true)}
-                                    disabled={!isListedAvailable}
-                                    size="lg"
-                                    className="w-full h-12 cursor-pointer bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Calendar className="w-4 h-4 mr-2" />
-                                    {isListedAvailable ? "Book Now" : "Unavailable"}
-                                </Button>
-                                )}
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
+              )}
             </div>
 
-            {/* Booking Modal for Spare Parts */}
-            {hasRentPrice && (
-                <BookingModal
-                    isOpen={showBookingModal}
-                    onClose={() => setShowBookingModal(false)}
-                    sparePart={sparePart}
-                />
+            {/* Thumbnail Images */}
+            {allImages.length > 1 && (
+              <div className="grid grid-cols-4 gap-3">
+                {allImages.map((img, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImage(img)}
+                    className={`relative bg-white rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md ${
+                      selectedImage === img ? "ring-2 ring-blue-600" : ""
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`View ${index + 1}`}
+                      className="w-full h-24 object-cover"
+                    />
+                    {selectedImage === img && (
+                      <div className="absolute inset-0"></div>
+                    )}
+                  </button>
+                ))}
+              </div>
             )}
-        </div>
-    );
-}
 
+            {/* Description */}
+            {sparePart.description && (
+              <div className="bg-white rounded-lg shadow-sm p-5">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                  Description
+                </h2>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {sparePart.description}
+                </p>
+              </div>
+            )}
+
+            {/* Compatible Vehicles */}
+            {sparePart.compatibleVehicles && (
+              <div className="bg-white rounded-lg shadow-sm p-5">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                  Compatible Vehicles
+                </h2>
+                <p className="text-gray-700 leading-relaxed">
+                  {sparePart.compatibleVehicles}
+                </p>
+              </div>
+            )}
+
+            {/* Contact Admin — same pattern as Contact Vendor on VehicleDetailsPage */}
+            <div className="bg-white rounded-lg shadow-sm p-5">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Contact Admin
+              </h2>
+              <div className="flex items-start gap-4">
+                <div
+                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-gray-200 bg-primary/10"
+                  aria-hidden
+                >
+                  <Headphones className="h-8 w-8 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-lg font-semibold text-gray-900">
+                    AURA Support
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Mail className="h-4 w-4 shrink-0" />
+                      <p>{SUPPORT_EMAIL}</p>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Phone className="h-4 w-4 shrink-0" />
+                      <a
+                        href={`tel:${SUPPORT_PHONE.replace(/[^\d+]/g, "")}`}
+                        className="hover:text-gray-900"
+                      >
+                        {SUPPORT_PHONE}
+                      </a>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm text-gray-600">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>{SUPPORT_ADDRESS}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Details Sidebar */}
+          <div className="space-y-4">
+            {/* Pricing Card */}
+            {hasRentPrice && (
+              <div className="bg-primary rounded-lg shadow-sm p-5 text-white">
+                <p className="text-sm opacity-90 mb-2">Pricing</p>
+                <div className="mb-2">
+                  <p className="text-xs opacity-80">Rent (per day)</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold">
+                      Rs. {sparePart.rentPrice.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Specifications Card */}
+            <div className="bg-white rounded-lg shadow-sm p-5">
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                Product Details
+              </h2>
+              <div className="space-y-0">
+                <InfoItem
+                  icon={Package}
+                  label="Category"
+                  value={sparePart.category}
+                />
+                <InfoItem icon={Box} label="Brand" value={sparePart.brand} />
+                <InfoItem
+                  icon={isListedAvailable ? CheckCircle : XCircle}
+                  label="Status"
+                  value={isListedAvailable ? "Available" : "Unavailable"}
+                />
+              </div>
+            </div>
+
+            {sparePart.pickupLocation?.address &&
+              sparePart.pickupLocation?.city && (
+                <div className="bg-white rounded-lg shadow-sm p-5">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                    Pickup Location
+                  </h2>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg">
+                      <MapPin className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-gray-900 font-medium">
+                        {sparePart.pickupLocation.address}
+                      </p>
+                      <p className="text-gray-600 text-sm mt-0.5">
+                        {sparePart.pickupLocation.city}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              {/* Book Button - Show if rentPrice exists */}
+              {!isLoggedin ? (
+                <button
+                  onClick={() => navigate("/login")}
+                  className="w-full h-12 bg-primary text-white font-semibold py-3 rounded-xl cursor-pointer"
+                >
+                  Login to Book
+                </button>
+              ) : !canBook ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-yellow-800 text-sm font-medium">
+                    Vendors and admins cannot book spare parts.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {hasRentPrice && (
+                    <Button
+                      onClick={() => setShowBookingModal(true)}
+                      disabled={!isListedAvailable}
+                      size="lg"
+                      className="w-full h-12 cursor-pointer bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Calendar className="w-4 h-4 mr-2" />
+                      {isListedAvailable ? "Book Now" : "Unavailable"}
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Booking Modal for Spare Parts */}
+      {hasRentPrice && (
+        <BookingModal
+          isOpen={showBookingModal}
+          onClose={() => setShowBookingModal(false)}
+          sparePart={sparePart}
+        />
+      )}
+    </div>
+  );
+}

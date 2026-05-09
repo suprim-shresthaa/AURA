@@ -17,6 +17,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import InputField from "../InputField";
 
 const categories = ["Electrical", "Tires", , "Body", "Accessories", "Brakes"];
 
@@ -91,11 +92,19 @@ const SparePartsForm = () => {
     }));
   };
 
+  const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2 MB
+  const MAX_IMAGE_COUNT = 5;
+
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     setFormData({ ...formData, images: files });
-    const previews = files.map((file) => URL.createObjectURL(file));
-    setImagePreviews(previews);
+    setImagePreviews(files.map((file) => URL.createObjectURL(file)));
+  };
+
+  const handleImageError = (err) => {
+    toast.error(err.message);
+    setFormData({ ...formData, images: [] });
+    setImagePreviews([]);
   };
 
   const handleSubmit = async (e) => {
@@ -208,7 +217,7 @@ const SparePartsForm = () => {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     <Package size={16} className="inline mr-2" /> Part Name *
                   </label>
-                  <input
+                  <InputField
                     type="text"
                     name="name"
                     required
@@ -243,7 +252,7 @@ const SparePartsForm = () => {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Brand *
                   </label>
-                  <input
+                  <InputField
                     type="text"
                     name="brand"
                     required
@@ -259,7 +268,7 @@ const SparePartsForm = () => {
                     <DollarSign size={16} className="inline mr-2" /> Rent Price
                     (per day) (NPR) *
                   </label>
-                  <input
+                  <InputField
                     type="number"
                     name="rentPrice"
                     required
@@ -280,7 +289,7 @@ const SparePartsForm = () => {
                     <Car size={16} className="inline mr-2" /> Compatible
                     Vehicles
                   </label>
-                  <input
+                  <InputField
                     type="text"
                     name="compatibleVehicles"
                     value={formData.compatibleVehicles}
@@ -303,7 +312,7 @@ const SparePartsForm = () => {
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Address *
                       </label>
-                      <input
+                      <InputField
                         type="text"
                         name="address"
                         required
@@ -317,7 +326,7 @@ const SparePartsForm = () => {
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         City *
                       </label>
-                      <input
+                      <InputField
                         type="text"
                         name="city"
                         required
@@ -342,7 +351,7 @@ const SparePartsForm = () => {
                     onChange={handleChange}
                     className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none resize-none"
                     placeholder="Detailed description..."
-                  ></textarea>
+                  />
                 </div>
               </div>
 
@@ -378,23 +387,19 @@ const SparePartsForm = () => {
                   </div>
                 )}
                 <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-400 transition-all bg-gray-50">
-                  <input
+                  <InputField
                     type="file"
-                    accept="image/jpeg, image/png, image/jpg"
+                    accept="image/png, image/jpg, image/jpeg"
                     multiple
+                    className="hidden"
                     id="images"
                     required={!isEdit}
                     onChange={handleImageUpload}
-                    maxSize={10 * 1024 * 1024}
-                    maxFiles={10}
-                    maxFilesExceeded={() => {
-                      setError("You can only upload up to 10 images");
-                      return false;
-                    }}
-                    onError={(error) => {
-                      setError(error.message);
-                    }}
+                    maxSize={MAX_IMAGE_SIZE}
+                    maxFiles={MAX_IMAGE_COUNT}
+                    onError={handleImageError}
                   />
+
                   <label htmlFor="images" className="cursor-pointer">
                     <div className="inline-flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-full mb-3">
                       <Plus className="text-indigo-600" size={24} />
@@ -404,7 +409,9 @@ const SparePartsForm = () => {
                         ? "Upload replacement images"
                         : "Click to upload images"}
                     </p>
-                    <p className="text-sm text-gray-500">PNG, JPG up to 10MB</p>
+                    <p className="text-sm text-gray-500">
+                      PNG, JPG, JPEG · up to {MAX_IMAGE_COUNT} images, 2 MB each
+                    </p>
                   </label>
                 </div>
 

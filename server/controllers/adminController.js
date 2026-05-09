@@ -14,7 +14,7 @@ export const getAdminStats = async (req, res) => {
     try {
         // Get all bookings
         const allBookings = await Booking.find()
-            .populate("userId", "name email")
+            .populate("userId", "name email image")
             .populate("vehicleId", "name vendorId category")
             .populate("sparePartId", "name category brand")
             .sort({ createdAt: -1 });
@@ -981,6 +981,7 @@ export const banUser = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Cannot ban an admin user' });
         }
 
+        target.banInfo = target.banInfo || {};
         target.banInfo.isBanned = true;
         target.banInfo.reason = reason || '';
 

@@ -85,7 +85,8 @@ export const register = async (req, res) => {
 };
 
 export const verifyEmail = async (req, res) => {
-    const { email, otp } = req.body;
+    const email = req.body.email != null ? String(req.body.email).trim().toLowerCase() : '';
+    const otp = req.body.otp != null ? String(req.body.otp).trim() : '';
 
     console.log("Received:", req.body);
 
@@ -106,7 +107,7 @@ export const verifyEmail = async (req, res) => {
             });
         }
 
-        if (String(tempUser.verifyOtp).trim() !== String(otp).trim()) {
+        if (String(tempUser.verifyOtp).trim() !== otp) {
             console.log("DB OTP:", tempUser.verifyOtp);
             console.log("Entered OTP:", otp);
             return res.status(400).json({
@@ -244,7 +245,8 @@ export const logout = async (req, res) => {
 
 export const sendVerifyOtp = async (req, res) => {
     try {
-        const { email } = req.body;
+        const email =
+            req.body.email != null ? String(req.body.email).trim().toLowerCase() : '';
 
         if (!email) {
             return res.status(400).json({ success: false, message: 'Email is required' });
@@ -344,7 +346,7 @@ export const verifyResetOtp = async (req, res) => {
             });
         }
 
-        if (user.resetOtp != otp) {
+        if (String(user.resetOtp).trim() !== String(otp).trim()) {
             return res.status(401).json({
                 success: false,
                 message: "Invalid OTP",
@@ -400,7 +402,7 @@ export const resetPassword = async (req, res) => {
             return res.json({ success: false, message: "User not found" });
         }
 
-        if (!user.resetOtp || user.resetOtp !== otp) {
+        if (!user.resetOtp || String(user.resetOtp).trim() !== String(otp).trim()) {
             return res.json({ success: false, message: "Invalid OTP" });
         }
 

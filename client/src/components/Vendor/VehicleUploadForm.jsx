@@ -12,6 +12,7 @@ import {
 import { AppContent } from "../context/AppContext";
 import axiosInstance from "@/lib/axiosInstance";
 import { toast } from "react-toastify";
+import InputField from "../InputField";
 
 export default function VehicleUploadForm() {
   const { id } = useParams();
@@ -41,6 +42,8 @@ export default function VehicleUploadForm() {
   const [extraImages, setExtraImages] = useState([]);
   const [mainPreview, setMainPreview] = useState(null);
   const [bluebookPreview, setBluebookPreview] = useState(null);
+  const [extraPreviews, setExtraPreviews] = useState([]);
+  const [existingImageUrls, setExistingImageUrls] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
 
@@ -82,6 +85,7 @@ export default function VehicleUploadForm() {
         // Set preview images from existing URLs
         if (vehicle.mainImage) setMainPreview(vehicle.mainImage);
         if (vehicle.bluebook) setBluebookPreview(vehicle.bluebook);
+        setExistingImageUrls(Array.isArray(vehicle.images) ? vehicle.images : []);
       }
     } catch (err) {
       console.error("Error fetching vehicle:", err);
@@ -134,21 +138,41 @@ export default function VehicleUploadForm() {
     }));
   };
 
+  const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2 MB
+  const MAX_EXTRA_IMAGE_COUNT = 10;
+
   const handleMainImage = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0] || null;
     setMainImage(file);
-    if (file) setMainPreview(URL.createObjectURL(file));
+    setMainPreview(file ? URL.createObjectURL(file) : null);
   };
 
   const handleBluebookImage = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0] || null;
     setBluebookImage(file);
-    if (file) setBluebookPreview(URL.createObjectURL(file));
+    setBluebookPreview(file ? URL.createObjectURL(file) : null);
   };
 
   const handleExtraImages = (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files || []);
     setExtraImages(files);
+    setExtraPreviews(files.map((file) => URL.createObjectURL(file)));
+  };
+
+  const handleImageError = (err, field) => {
+    toast.error(err.message);
+    if (field === "mainImage") {
+      setMainImage(null);
+      setMainPreview(null);
+    }
+    if (field === "bluebook") {
+      setBluebookImage(null);
+      setBluebookPreview(null);
+    }
+    if (field === "images") {
+      setExtraImages([]);
+      setExtraPreviews([]);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -269,6 +293,8 @@ export default function VehicleUploadForm() {
     setExtraImages([]);
     setMainPreview(null);
     setBluebookPreview(null);
+    setExtraPreviews([]);
+    setExistingImageUrls([]);
     document
       .querySelectorAll('input[type="file"]')
       .forEach((input) => (input.value = ""));
@@ -316,18 +342,13 @@ export default function VehicleUploadForm() {
                     Vehicle Name *
                   </label>
                   <div className="relative">
-                    <input
+                    <InputField
                       type="text"
                       required
                       name="name"
                       placeholder="e.g., Toyota Corolla"
                       value={formData.name}
                       onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                    />
-                    <Car
-                      className="absolute left-3 top-3.5 text-gray-400"
-                      size={18}
                     />
                   </div>
                 </div>
@@ -340,7 +361,7 @@ export default function VehicleUploadForm() {
                     name="category"
                     value={formData.category}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     required
                   >
                     <option value="">Select category</option>
@@ -357,20 +378,13 @@ export default function VehicleUploadForm() {
                     Model Year *
                   </label>
                   <div className="relative">
-                    <input
-                      type="text"
-                      inputMode="numeric"
+                    <InputField
+                      type="number"
                       name="modelYear"
-                      maxLength={4}
                       placeholder="e.g., 2018"
                       value={formData.modelYear}
                       onChange={handleModelYearChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                       required
-                    />
-                    <Calendar
-                      className="absolute left-3 top-3.5 text-gray-400"
-                      size={18}
                     />
                   </div>
                 </div>
@@ -383,7 +397,7 @@ export default function VehicleUploadForm() {
                     name="condition"
                     value={formData.condition}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     required
                   >
                     <option value="">Select condition</option>
@@ -403,7 +417,7 @@ export default function VehicleUploadForm() {
                     name="fuelType"
                     value={formData.fuelType}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     required
                   >
                     <option value="">Select fuel type</option>
@@ -423,7 +437,7 @@ export default function VehicleUploadForm() {
                     name="rentalFuel"
                     value={formData.rentalFuel}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     required
                   >
                     <option value="">With or without fuel</option>
@@ -440,7 +454,7 @@ export default function VehicleUploadForm() {
                     name="transmission"
                     value={formData.transmission}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     required
                   >
                     <option value="">Select transmission</option>
@@ -461,7 +475,7 @@ export default function VehicleUploadForm() {
                     maxLength={1}
                     value={formData.seatingCapacity}
                     onChange={handleSeatingCapacityChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     pattern="[1-9]"
                     title="Single digit only (1–9)"
                     required
@@ -484,7 +498,7 @@ export default function VehicleUploadForm() {
                       setFormData({ ...formData, mileage: value });
                     }}
                     min="0"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     required
                   />
                 </div>
@@ -494,19 +508,15 @@ export default function VehicleUploadForm() {
                     Rent Per Day *
                   </label>
                   <div className="relative">
-                    <input
+                    <InputField
                       type="number"
                       name="rentPerDay"
                       placeholder="Enter amount"
                       value={formData.rentPerDay}
                       onChange={handleChange}
                       min="0"
-                      className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                       required
                     />
-                    <span className="absolute left-4 top-3.5 text-gray-500 font-medium">
-                      NPR
-                    </span>
                   </div>
                 </div>
 
@@ -536,13 +546,12 @@ export default function VehicleUploadForm() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Address *
                   </label>
-                  <input
+                  <InputField
                     type="text"
                     name="address"
                     placeholder="Full pickup address"
                     value={formData.pickupLocation.address}
                     onChange={handleLocationChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     required
                   />
                 </div>
@@ -550,13 +559,12 @@ export default function VehicleUploadForm() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     City *
                   </label>
-                  <input
+                  <InputField
                     type="text"
                     name="city"
                     placeholder="e.g., Kathmandu"
                     value={formData.pickupLocation.city}
                     onChange={handleLocationChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                     required
                   />
                 </div>
@@ -568,34 +576,40 @@ export default function VehicleUploadForm() {
                   <label className="block text-sm font-medium text-gray-700 mb-3">
                     Main Vehicle Image {!isEditMode && "*"}
                   </label>
-                  <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 transition cursor-pointer bg-gray-50">
-                    <input
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition bg-gray-50">
+                    <InputField
+                      id="mainImage"
+                      name="mainImage"
                       type="file"
-                      accept="image/jpeg, image/png"
+                      accept="image/png, image/jpg, image/jpeg"
+                      maxSize={MAX_IMAGE_SIZE}
                       onChange={handleMainImage}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onError={(err) => handleImageError(err, "mainImage")}
+                      className="hidden"
                       required={!isEditMode}
                       disabled={loading}
                     />
-                    {mainPreview ? (
-                      <img
-                        src={mainPreview}
-                        alt="Main preview"
-                        className="w-full h-32 object-cover rounded"
-                      />
-                    ) : (
-                      <div className="text-center">
-                        <FileImage
-                          className="mx-auto text-gray-400 mb-2"
-                          size={32}
+                    <label htmlFor="mainImage" className="cursor-pointer">
+                      {mainPreview ? (
+                        <img
+                          src={mainPreview}
+                          alt="Main preview"
+                          className="w-full h-32 object-cover rounded mb-3"
                         />
-                        <p className="text-sm text-gray-600">
-                          {isEditMode
-                            ? "Click to change main image (optional)"
-                            : "Click to upload main image"}
-                        </p>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-3">
+                          <FileImage className="text-blue-600" size={24} />
+                        </div>
+                      )}
+                      <p className="text-sm text-gray-600 font-medium">
+                        {isEditMode
+                          ? "Upload replacement main image"
+                          : "Click to upload main image"}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        PNG, JPG, JPEG · max 2 MB
+                      </p>
+                    </label>
                   </div>
                 </div>
 
@@ -603,34 +617,40 @@ export default function VehicleUploadForm() {
                   <label className="block text-sm font-medium text-gray-700 mb-3">
                     Bluebook Photo {!isEditMode && "*"}
                   </label>
-                  <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 transition cursor-pointer bg-gray-50">
-                    <input
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition bg-gray-50">
+                    <InputField
+                      id="bluebook"
+                      name="bluebook"
                       type="file"
-                      accept="image/jpeg, image/png"
+                      accept="image/png, image/jpg, image/jpeg"
+                      maxSize={MAX_IMAGE_SIZE}
                       onChange={handleBluebookImage}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onError={(err) => handleImageError(err, "bluebook")}
+                      className="hidden"
                       required={!isEditMode}
                       disabled={loading}
                     />
-                    {bluebookPreview ? (
-                      <img
-                        src={bluebookPreview}
-                        alt="Bluebook preview"
-                        className="w-full h-32 object-cover rounded"
-                      />
-                    ) : (
-                      <div className="text-center">
-                        <FileText
-                          className="mx-auto text-gray-400 mb-2"
-                          size={32}
+                    <label htmlFor="bluebook" className="cursor-pointer">
+                      {bluebookPreview ? (
+                        <img
+                          src={bluebookPreview}
+                          alt="Bluebook preview"
+                          className="w-full h-32 object-cover rounded mb-3"
                         />
-                        <p className="text-sm text-gray-600">
-                          {isEditMode
-                            ? "Click to change bluebook (optional)"
-                            : "Click to upload bluebook"}
-                        </p>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-3">
+                          <FileText className="text-blue-600" size={24} />
+                        </div>
+                      )}
+                      <p className="text-sm text-gray-600 font-medium">
+                        {isEditMode
+                          ? "Upload replacement bluebook"
+                          : "Click to upload bluebook"}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        PNG, JPG, JPEG · max 2 MB
+                      </p>
+                    </label>
                   </div>
                 </div>
 
@@ -638,30 +658,70 @@ export default function VehicleUploadForm() {
                   <label className="block text-sm font-medium text-gray-700 mb-3">
                     Additional Images (Optional)
                   </label>
-                  <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 transition cursor-pointer bg-gray-50">
-                    <input
+                  {existingImageUrls.length > 0 && (
+                    <>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Current additional images
+                      </p>
+                      <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mb-6">
+                        {existingImageUrls.map((src, i) => (
+                          <div
+                            key={`existing-${i}`}
+                            className="aspect-square rounded-lg overflow-hidden border"
+                          >
+                            <img
+                              src={src}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition bg-gray-50">
+                    <InputField
+                      id="images"
+                      name="images"
                       type="file"
-                      accept="image/jpeg, image/png"
+                      accept="image/png, image/jpg, image/jpeg"
                       multiple
+                      maxFiles={MAX_EXTRA_IMAGE_COUNT}
+                      maxSize={MAX_IMAGE_SIZE}
                       onChange={handleExtraImages}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onError={(err) => handleImageError(err, "images")}
+                      className="hidden"
                       disabled={loading}
                     />
-                    <div className="text-center">
-                      <Upload
-                        className="mx-auto text-gray-400 mb-2"
-                        size={32}
-                      />
-                      <p className="text-sm text-gray-600">
-                        Click to upload multiple images
+                    <label htmlFor="images" className="cursor-pointer">
+                      <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-3">
+                        <Upload className="text-blue-600" size={24} />
+                      </div>
+                      <p className="text-sm text-gray-600 font-medium">
+                        Upload additional images
                       </p>
-                      {extraImages.length > 0 && (
-                        <p className="text-sm text-blue-600 mt-2">
-                          {extraImages.length} file(s) selected
-                        </p>
-                      )}
-                    </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        PNG, JPG, JPEG · up to {MAX_EXTRA_IMAGE_COUNT} images, 2
+                        MB each
+                      </p>
+                    </label>
                   </div>
+                  {extraPreviews.length > 0 && (
+                    <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mt-6">
+                      {extraPreviews.map((src, i) => (
+                        <div
+                          key={i}
+                          className="aspect-square rounded-lg overflow-hidden border"
+                        >
+                          <img
+                            src={src}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

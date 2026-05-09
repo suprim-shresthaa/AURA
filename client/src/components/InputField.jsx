@@ -23,6 +23,9 @@ const InputField = ({
   minLength = null,
   maxLength = null,
   pattern = null,
+  maxSize = null,
+  maxFiles = null,
+  onError,
   ...props
 }) => {
   /* -------------------------------------------------------------------------- */
@@ -57,6 +60,111 @@ const InputField = ({
     .replace(/\s+/g, " ")
     .trim();
 
+  const sanitizeValueForType = (raw, fieldType) => {
+    if (fieldType === "text") {
+      return raw.replace(/\d/g, "");
+    }
+    if (fieldType === "number" || fieldType === "tel") {
+      let s = raw.replace(/[^\d.-]/g, "");
+      const neg = s.startsWith("-");
+      s = s.replace(/-/g, "");
+      const i = s.indexOf(".");
+      if (i === -1) return (neg ? "-" : "") + s;
+      const intPart = s.slice(0, i);
+      const fracPart = s.slice(i + 1).replace(/\./g, "");
+      return (neg ? "-" : "") + intPart + "." + fracPart;
+    }
+    return raw;
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /*                          File-input helpers                                 */
+  /* -------------------------------------------------------------------------- */
+  const formatBytes = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const isAcceptableType = (file, accept) => {
+    if (!accept) return true;
+    const tokens = accept
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+    if (tokens.length === 0) return true;
+    const fileType = (file.type || "").toLowerCase();
+    const fileName = (file.name || "").toLowerCase();
+    return tokens.some((tok) => {
+      if (tok.startsWith(".")) return fileName.endsWith(tok);
+      if (tok.endsWith("/*")) return fileType.startsWith(tok.slice(0, -1));
+      return fileType === tok;
+    });
+  };
+
+  const reportError = (code, message, file) => {
+    if (typeof onError !== "function") return;
+    const err = new Error(message);
+    err.code = code;
+    if (file) err.file = file;
+    onError(err);
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+
+    if (maxFiles != null && files.length > maxFiles) {
+      e.target.value = "";
+      reportError(
+        "TOO_MANY_FILES",
+        `You can only upload up to ${maxFiles} file${maxFiles === 1 ? "" : "s"}.`,
+      );
+      return;
+    }
+
+    for (const file of files) {
+      if (!isAcceptableType(file, props.accept)) {
+        e.target.value = "";
+        reportError(
+          "INVALID_TYPE",
+          `"${file.name}" is not an accepted file type.`,
+          file,
+        );
+        return;
+      }
+      if (maxSize != null && file.size > maxSize) {
+        e.target.value = "";
+        reportError(
+          "FILE_TOO_LARGE",
+          `"${file.name}" is too large. Max size is ${formatBytes(maxSize)}.`,
+          file,
+        );
+        return;
+      }
+    }
+
+    if (typeof onChange === "function") onChange(e);
+  };
+
+  const handleChange = (e) => {
+    if (type === "file") return handleFileChange(e);
+    if (typeof onChange !== "function") return;
+    const raw = e.target.value;
+    const next =
+      type === "text" || type === "number" || type === "tel"
+        ? sanitizeValueForType(raw, type)
+        : raw;
+    if (next === raw) {
+      onChange(e);
+      return;
+    }
+    onChange({
+      ...e,
+      target: { ...e.target, value: next },
+      currentTarget: { ...e.currentTarget, value: next },
+    });
+  };
+
   /* -------------------------------------------------------------------------- */
   /*                                 JSX return                                 */
   /* -------------------------------------------------------------------------- */
@@ -87,8 +195,8 @@ const InputField = ({
           name={props.name ?? id}
           type={type === "password" && isPasswordShown ? "text" : type}
           placeholder={placeholder}
-          value={stringValue}
-          onChange={onChange}
+          {...(type !== "file" ? { value: stringValue } : {})}
+          onChange={handleChange}
           className={inputClasses}
           required={required}
           minLength={minLength}
@@ -149,6 +257,16 @@ InputField.propTypes = {
   minLength: PropTypes.number,
   maxLength: PropTypes.number,
   pattern: PropTypes.string,
+  /** For type="file": maximum bytes per file. */
+  maxSize: PropTypes.number,
+  /** For type="file": maximum number of files allowed. */
+  maxFiles: PropTypes.number,
+  /**
+   * For type="file": invoked with an Error when validation fails.
+   * The error has `.code` (TOO_MANY_FILES | INVALID_TYPE | FILE_TOO_LARGE)
+   * and `.file` (the offending File, when applicable).
+   */
+  onError: PropTypes.func,
 };
 
 InputField.defaultProps = {

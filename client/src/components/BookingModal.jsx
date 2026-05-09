@@ -176,12 +176,19 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
     });
   };
 
-  const handleDateRangeChange = (_, dateStrings) => {
-    const [startDate, endDate] = dateStrings;
-    setFormData((prev) => ({ ...prev, startDate, endDate }));
+  const syncDatesAvailability = (startDate, endDate) => {
     setError("");
 
     if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      if (end <= start) {
+        setError("Return date must be after start date");
+        setAvailabilityStatus(null);
+        return;
+      }
       if (isRangeConflicting(startDate, endDate)) {
         setAvailabilityStatus({ available: false, bookedRanges });
         setError(
@@ -193,6 +200,54 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
     } else {
       setAvailabilityStatus(null);
     }
+  };
+
+  const handleStartDateChange = (_, dateString) => {
+    const startDate = dateString || "";
+    let endDate = formData.endDate;
+    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+      endDate = "";
+    }
+    setFormData((prev) => ({ ...prev, startDate, endDate }));
+    syncDatesAvailability(startDate, endDate);
+  };
+
+  const handleEndDateChange = (_, dateString) => {
+    const endDate = dateString || "";
+    const startDate = formData.startDate;
+    setFormData((prev) => ({ ...prev, endDate }));
+    syncDatesAvailability(startDate, endDate);
+  };
+
+  const isPastOrBookedDate = (current) => {
+    if (!current) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentDate = current.toDate();
+    currentDate.setHours(0, 0, 0, 0);
+    if (currentDate < today) return true;
+    return isDateInBookedRanges(current.format("YYYY-MM-DD"));
+  };
+
+  const disabledEndDate = (current) => {
+    if (!current) return false;
+    if (formData.startDate) {
+      const start = new Date(formData.startDate);
+      start.setHours(0, 0, 0, 0);
+      const currentDate = current.toDate();
+      currentDate.setHours(0, 0, 0, 0);
+      if (currentDate < start) return true;
+    }
+    return isPastOrBookedDate(current);
+  };
+
+  const renderBookedDateCell = (current, info) => {
+    const isBooked = isDateInBookedRanges(current.format("YYYY-MM-DD"));
+    if (!isBooked || !info.originNode) return info.originNode;
+
+    return React.cloneElement(info.originNode, {
+      className: `${info.originNode.props.className || ""} !bg-rose-100 !text-rose-700 rounded-md`,
+    });
   };
 
   const checkAvailability = async (startDate, endDate) => {
@@ -511,48 +566,47 @@ export default function BookingModal({ isOpen, onClose, vehicle, sparePart }) {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                   Select Rental Dates
                 </h3>
-                <div className="w-full gap-4">
-                  <div>
-                    <Label htmlFor="bookingDateRange" className="mb-2 block">
+                <div className="w-full flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1 min-w-0">
+                    <Label htmlFor="bookingStartDate" className="mb-2 block">
                       <Calendar className="inline w-4 h-4 mr-1" />
-                      Booking Date Range
+                      Start date
                     </Label>
-                    <DatePicker.RangePicker
-                      id="bookingDateRange"
+                    <DatePicker
+                      id="bookingStartDate"
                       value={
-                        formData.startDate && formData.endDate
-                          ? [dayjs(formData.startDate), dayjs(formData.endDate)]
+                        formData.startDate
+                          ? dayjs(formData.startDate)
                           : null
                       }
-                      onChange={handleDateRangeChange}
+                      onChange={handleStartDateChange}
                       format="YYYY-MM-DD"
+                      placeholder="Start date"
                       className={`w-full ${availabilityStatus && !availabilityStatus.available ? "border-red-300" : ""}`}
                       inputReadOnly
                       allowClear
-                      disabledDate={(current) => {
-                        if (!current) return false;
-
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        const currentDate = current.toDate();
-                        currentDate.setHours(0, 0, 0, 0);
-
-                        if (currentDate < today) return true;
-                        return isDateInBookedRanges(
-                          current.format("YYYY-MM-DD"),
-                        );
-                      }}
-                      cellRender={(current, info) => {
-                        const isBooked = isDateInBookedRanges(
-                          current.format("YYYY-MM-DD"),
-                        );
-                        if (!isBooked || !info.originNode)
-                          return info.originNode;
-
-                        return React.cloneElement(info.originNode, {
-                          className: `${info.originNode.props.className || ""} !bg-rose-100 !text-rose-700 rounded-md`,
-                        });
-                      }}
+                      disabledDate={isPastOrBookedDate}
+                      cellRender={renderBookedDateCell}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Label htmlFor="bookingEndDate" className="mb-2 block">
+                      <Calendar className="inline w-4 h-4 mr-1" />
+                      End date
+                    </Label>
+                    <DatePicker
+                      id="bookingEndDate"
+                      value={
+                        formData.endDate ? dayjs(formData.endDate) : null
+                      }
+                      onChange={handleEndDateChange}
+                      format="YYYY-MM-DD"
+                      placeholder="End date"
+                      className={`w-full ${availabilityStatus && !availabilityStatus.available ? "border-red-300" : ""}`}
+                      inputReadOnly
+                      allowClear
+                      disabledDate={disabledEndDate}
+                      cellRender={renderBookedDateCell}
                     />
                   </div>
                 </div>

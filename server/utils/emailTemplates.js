@@ -358,6 +358,98 @@ const emailTemplates = {
     <p style="color: #64748b; font-size: 14px; margin-top: 20px;">This is an automated message. Please do not reply directly to this email.</p>
   </div>
   `,
+
+  sparePartBookingConfirmationUser: (userName, sparePartName, startDate, endDate, totalAmount, totalDays, pickupLocation, bookingId) => `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <h1 style="color: #10b981; margin: 0;">Booking confirmed</h1>
+    </div>
+    <p>Dear <strong>${userName}</strong>,</p>
+    <p>Your spare part rental booking is confirmed and payment was processed successfully.</p>
+    <div style="background-color: #f0fdf4; padding: 20px; border-radius: 6px; border-left: 4px solid #10b981; margin: 20px 0;">
+      <h3 style="margin-top: 0; color: #047857;">Booking details</h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Booking ID:</strong></td>
+          <td style="padding: 8px 0;">${bookingId}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Spare part:</strong></td>
+          <td style="padding: 8px 0;">${sparePartName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Rental period:</strong></td>
+          <td style="padding: 8px 0;">${startDate} to ${endDate}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Total days:</strong></td>
+          <td style="padding: 8px 0;">${totalDays} day(s)</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Total paid:</strong></td>
+          <td style="padding: 8px 0; font-weight: bold; color: #10b981;">NPR ${totalAmount}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Pickup:</strong></td>
+          <td style="padding: 8px 0;">${pickupLocation}</td>
+        </tr>
+      </table>
+    </div>
+    <p>View details in your account dashboard. For changes or questions, contact support.</p>
+    <p style="color: #64748b; font-size: 14px; margin-top: 20px;">This is an automated message. Please do not reply directly to this email.</p>
+  </div>
+  `,
+
+  sparePartBookingConfirmationAdmin: (customerName, customerEmail, customerContact, sparePartName, startDate, endDate, totalAmount, totalDays, pickupLocation, bookingId) => `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <h1 style="color: #3b82f6; margin: 0;">New spare part booking</h1>
+    </div>
+    <p>A spare part rental was confirmed (eSewa paid).</p>
+    <div style="background-color: #eff6ff; padding: 20px; border-radius: 6px; border-left: 4px solid #3b82f6; margin: 20px 0;">
+      <h3 style="margin-top: 0; color: #1e40af;">Details</h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Booking ID:</strong></td>
+          <td style="padding: 8px 0;">${bookingId}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Spare part:</strong></td>
+          <td style="padding: 8px 0;">${sparePartName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Customer:</strong></td>
+          <td style="padding: 8px 0;">${customerName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Email:</strong></td>
+          <td style="padding: 8px 0;">${customerEmail}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Contact:</strong></td>
+          <td style="padding: 8px 0;">${customerContact}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Rental period:</strong></td>
+          <td style="padding: 8px 0;">${startDate} to ${endDate}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Total days:</strong></td>
+          <td style="padding: 8px 0;">${totalDays} day(s)</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Amount:</strong></td>
+          <td style="padding: 8px 0; font-weight: bold;">NPR ${totalAmount}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;"><strong>Pickup:</strong></td>
+          <td style="padding: 8px 0;">${pickupLocation}</td>
+        </tr>
+      </table>
+    </div>
+    <p style="color: #64748b; font-size: 14px;">This is an automated message.</p>
+  </div>
+  `,
 };
 
 const sendEmail = async (email, type, data) => {
@@ -449,7 +541,14 @@ const sendEmail = async (email, type, data) => {
             subject: 'New Booking Received',
             template: emailTemplates.bookingConfirmationVendor(data.vendorName, data.vehicleName, data.userName, data.userContact, data.startDate, data.endDate, data.totalAmount, data.totalDays, data.pickupLocation, data.bookingId)
         },
-        // Spare-part purchase order emails removed (rental-only spare parts).
+        'booking-confirmation-user-spare': {
+            subject: 'Spare part rental confirmed',
+            template: emailTemplates.sparePartBookingConfirmationUser(data.userName, data.sparePartName, data.startDate, data.endDate, data.totalAmount, data.totalDays, data.pickupLocation, data.bookingId)
+        },
+        'booking-confirmation-admin-spare': {
+            subject: 'New spare part booking — paid',
+            template: emailTemplates.sparePartBookingConfirmationAdmin(data.customerName, data.customerEmail, data.customerContact, data.sparePartName, data.startDate, data.endDate, data.totalAmount, data.totalDays, data.pickupLocation, data.bookingId)
+        },
     };
 
     if (!templateConfig[type]) {

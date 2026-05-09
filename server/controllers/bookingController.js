@@ -244,8 +244,10 @@ export const createBooking = async (req, res) => {
 
 export const getUserBookings = async (req, res) => {
     try {
+        // also send user information so that we can display in voucher
         const userId = req.userId;
         const bookings = await Booking.find({ userId })
+            .populate("userId", "name email contact")
             .populate("vehicleId", "name mainImage category")
             .populate("sparePartId", "name images category brand")
             .sort({ createdAt: -1 });

@@ -39,11 +39,6 @@ const tempUserSchema = new mongoose.Schema({
         type: Date,
         default: 0,
         select: false
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-        expires: 60
     }
 }, {
     timestamps: true

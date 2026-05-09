@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { navLinks } from "@/data/mockdata";
@@ -6,12 +6,20 @@ import { AppContent } from "./context/AppContext";
 import useLogout from "../hooks/useLogout";
 import { Menu, X, LogOut, User } from "lucide-react";
 
+const DEFAULT_PROFILE_IMAGE =
+  "https://res.cloudinary.com/dxigipf0k/image/upload/v1741190518/wy6ytirqcswljhf3c13v.png";
+
 const Navbar = () => {
   const { isLoggedin, userData } = useContext(AppContent);
   const logout = useLogout();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [avatarSrc, setAvatarSrc] = useState(DEFAULT_PROFILE_IMAGE);
+
+  useEffect(() => {
+    setAvatarSrc(userData?.image || DEFAULT_PROFILE_IMAGE);
+  }, [userData?.image]);
 
   const isActive = (href) => {
     if (href === "/") return location.pathname === "/";
@@ -101,8 +109,16 @@ const Navbar = () => {
                   className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
                 >
                   <img
-                    src={userData?.image || "https://via.placeholder.com/40"}
+                    src={avatarSrc}
                     alt="Profile"
+                    referrerPolicy="no-referrer"
+                    onError={() =>
+                      setAvatarSrc((prev) =>
+                        prev === DEFAULT_PROFILE_IMAGE
+                          ? prev
+                          : DEFAULT_PROFILE_IMAGE,
+                      )
+                    }
                     className="h-8 w-8 rounded-full object-cover border-2 border-primary"
                   />
                   <span className="hidden lg:inline">{userData?.name || "Profile"}</span>

@@ -5,6 +5,10 @@ import User from "../models/user.model.js";
 import { upload } from "../config/cloudinary.js";
 import sendEmail from '../utils/emailTemplates.js';
 
+async function getBannedUserIds() {
+    return User.distinct("_id", { "banInfo.isBanned": true });
+}
+
 // Create a new vehicle
 export const createVehicle = async (req, res) => {
     try {
@@ -122,11 +126,16 @@ export const createVehicle = async (req, res) => {
 
 export const getAllVehicles = async (req, res) => {
     try {
-        // Only return approved and active vehicles for public listings
-        const vehicles = await Vehicle.find({ 
+        // Only return approved and active vehicles for public listings; hide banned vendors (vendorId is User._id).
+        const bannedIds = await getBannedUserIds();
+        const listingFilter = {
             status: "Active",
-            verificationStatus: "approved"
-        });
+            verificationStatus: "approved",
+        };
+        if (bannedIds.length > 0) {
+            listingFilter.vendorId = { $nin: bannedIds };
+        }
+        const vehicles = await Vehicle.find(listingFilter);
         res.status(200).json({ success: true, data: vehicles });
     } catch (error) {
         console.error("Error fetching vehicles:", error);
@@ -211,6 +220,11 @@ export const searchVehicles = async (req, res) => {
         // Only show active and approved vehicles
         query.status = "Active";
         query.verificationStatus = "approved";
+
+        const bannedIds = await getBannedUserIds();
+        if (bannedIds.length > 0) {
+            query.vendorId = { $nin: bannedIds };
+        }
 
         const vehicles = await Vehicle.find(query)
             .populate({
@@ -307,6 +321,18 @@ export const getVehicleById = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Vehicle not found."
+            });
+        }
+
+        const vendorObjectId = vehicle.vendorId?._id ?? vehicle.vendorId;
+        const vendorBanned = await User.exists({
+            _id: vendorObjectId,
+            "banInfo.isBanned": true,
+        });
+        if (vendorBanned) {
+            return res.status(404).json({
+                success: false,
+                message: "Vehicle not found.",
             });
         }
 

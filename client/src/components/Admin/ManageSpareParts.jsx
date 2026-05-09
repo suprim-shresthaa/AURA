@@ -7,7 +7,6 @@ import {
   EyeOff,
   RefreshCw,
   Package,
-  DollarSign,
   Pencil,
   Trash,
 } from "lucide-react";
@@ -163,7 +162,7 @@ const ManageSpareParts = () => {
             <CardHeader>
               <CardDescription>Total Value</CardDescription>
               <CardTitle className="text-2xl text-blue-600 flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
+                Rs.
                 {stats.totalValue}
               </CardTitle>
             </CardHeader>
