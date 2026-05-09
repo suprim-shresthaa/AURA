@@ -45,6 +45,7 @@ export default function MyVehicleListings() {
       if (!res.ok) throw new Error(`Failed: ${res.status}`);
       const { data } = await res.json();
       setVehicles(data || []);
+      setLoading(false);
     } catch (err) {
       setError(err.message);
       setVehicles([]);
@@ -155,17 +156,6 @@ export default function MyVehicleListings() {
         (statusOrder[b.verificationStatus] || 3)
       );
     });
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-slate-600 font-medium">Loading your vehicles...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
